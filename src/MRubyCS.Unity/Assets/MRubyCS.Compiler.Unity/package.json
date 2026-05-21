@@ -1,7 +1,7 @@
 {
   "name": "jp.hadashikick.mrubycs-compiler",
   "displayName": "MRubyCS.Compiler",
-  "version": "0.105.1",
+  "version": "0.106.0",
   "unity": "2021.3",
   "description": "mruby compiler wrappter for MRubyCS",
   "keywords": ["mruby", "ruby"],
