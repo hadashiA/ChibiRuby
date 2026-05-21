@@ -2,10 +2,11 @@ using System;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Class", Superclass = "Module")]
 static class ClassMembers
 {
-    [MRubyMethod(OptionalArguments = 1, BlockArgument = true)]
-    public static MRubyMethod NewClass = new((state, self) =>
+    [RubyDef("(?Class) ?{ (Class) -> void } -> Class")]
+    public static MRubyValue NewClass(MRubyState state, MRubyValue self)
     {
         var superClass = state.TryGetArgumentAt(0, out var superValue)
             ? superValue.As<RClass>()
@@ -23,7 +24,7 @@ static class ClassMembers
         if (state.TryFindMethod(newClass.Class, Names.Initialize, out var method, out _) &&
             method == Initialize)
         {
-            Initialize.Invoke(state, newClassValue);
+            Initialize(state, newClassValue);
         }
         else
         {
@@ -35,9 +36,11 @@ static class ClassMembers
         }
         state.ClassInheritedHook(superClass, newClass);
         return newClassValue;
-    });
+    }
 
-    public static MRubyMethod New = new((state, self) =>
+    [RubyDef("(*untyped) -> instance")]
+
+    public static MRubyValue New(MRubyState state, MRubyValue self)
     {
         var args = state.GetRestArgumentsAfter(0);
         var kargs = state.GetKeywordArguments();
@@ -76,10 +79,10 @@ static class ClassMembers
         state.Send(instanceValue, Names.Initialize, args, kargs, block);
         return instanceValue;
 
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Superclass = new((state, self) =>
+    [RubyDef("() -> Class?")]
+    public static MRubyValue Superclass(MRubyState state, MRubyValue self)
     {
         var c = self.As<RClass>().AsOrigin().Super;
         while (c != null! && c.VType == MRubyVType.IClass)
@@ -87,11 +90,11 @@ static class ClassMembers
             c = c.AsOrigin().Super;
         }
         return c == null ? MRubyValue.Nil : new MRubyValue(c);
-    });
+    }
 
 
-    [MRubyMethod(OptionalArguments = 1, BlockArgument = true)]
-    public static MRubyMethod Initialize = new((state, self) =>
+    [RubyDef("(?Class) ?{ (Class) -> void } -> void")]
+    public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
         var c = self.As<RClass>();
         var block = state.GetBlockArgument();
@@ -100,6 +103,6 @@ static class ClassMembers
             state.YieldWithClass(c, self, [self], proc);
         }
         return self;
-    });
+    }
 
 }

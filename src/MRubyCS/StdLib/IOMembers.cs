@@ -4,10 +4,11 @@ using System.IO;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("IO")]
 static class IOMembers
 {
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Read = new((state, self) =>
+    [RubyDef("(?Integer?) -> String?")]
+    public static MRubyValue Read(MRubyState state, MRubyValue self)
     {
         var io = self.As<RIO>();
         EnsureOpen(state, io);
@@ -63,10 +64,10 @@ static class IOMembers
         return rd == 0
             ? MRubyValue.Nil
             : state.NewString(buf.AsSpan(0, rd));
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Write = new((state, self) =>
+    [RubyDef("(String) -> Integer")]
+    public static MRubyValue Write(MRubyState state, MRubyValue self)
     {
         var io = self.As<RIO>();
         EnsureOpen(state, io);
@@ -90,20 +91,20 @@ static class IOMembers
 
         stream.Write(bytes);
         return new MRubyValue((long)bytes.Length);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Close = new((state, self) =>
+    [RubyDef("() -> nil")]
+    public static MRubyValue Close(MRubyState state, MRubyValue self)
     {
         self.As<RIO>().Close();
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ClosedQ = new((state, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue ClosedQ(MRubyState state, MRubyValue self)
     {
         return self.As<RIO>().Closed ? MRubyValue.True : MRubyValue.False;
-    });
+    }
 
     static void EnsureOpen(MRubyState state, RIO io)
     {

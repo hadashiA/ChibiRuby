@@ -64,6 +64,7 @@ class MRubyRegexpData(string pattern, int rubyOptions = 0) : IEquatable<MRubyReg
     }
 }
 
+[RubyClass("Regexp")]
 static class RegexpMembers
 {
     public static RData CreateRDataFromRegexp(MRubyState mrb, MRubyRegexpData regexpData)
@@ -164,8 +165,8 @@ static class RegexpMembers
     }
 
     // Regexp.new(pattern, options = 0)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod New = new((mrb, self) =>
+    [RubyDef("(String, ?(Integer | bool)) -> Regexp")]
+    public static MRubyValue New(MRubyState mrb, MRubyValue self)
     {
         var patternValue = mrb.GetArgumentAt(0);
         string pattern;
@@ -209,24 +210,24 @@ static class RegexpMembers
             mrb.Raise(Names.RegexpError, $"{ex.Message}");
             return MRubyValue.Nil;
         }
-    });
+    }
 
     // Regexp.compile(pattern, options = 0) - alias for new
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Compile = new((mrb, self) =>
+    [RubyDef("(String, ?(Integer | bool)) -> Regexp")]
+    public static MRubyValue Compile(MRubyState mrb, MRubyValue self)
     {
-        return New.Invoke(mrb, self);
-    });
+        return New(mrb, self);
+    }
 
     // Regexp.escape(str) - Escapes metacharacters
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Escape = new((mrb, self) =>
+    [RubyDef("(String) -> String")]
+    public static MRubyValue Escape(MRubyState mrb, MRubyValue self)
     {
         var str = mrb.GetArgumentAsStringAt(0);
         var input = str.ToString();
         var escaped = EscapeForRegexp(input);
         return mrb.NewString(escaped);
-    });
+    }
 
     static string EscapeForRegexp(string input)
     {
@@ -273,15 +274,15 @@ static class RegexpMembers
     }
 
     // Regexp.quote(str) - alias for escape
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Quote = new((mrb, self) =>
+    [RubyDef("(String) -> String")]
+    public static MRubyValue Quote(MRubyState mrb, MRubyValue self)
     {
-        return Escape.Invoke(mrb, self);
-    });
+        return Escape(mrb, self);
+    }
 
     // Regexp.union(*patterns)
-    [MRubyMethod]
-    public static MRubyMethod Union = new((mrb, self) =>
+    [RubyDef("(*untyped) -> Regexp")]
+    public static MRubyValue Union(MRubyState mrb, MRubyValue self)
     {
         var argc = mrb.GetArgumentCount();
         var patterns = new List<string>();
@@ -325,7 +326,7 @@ static class RegexpMembers
             mrb.Raise(Names.RegexpError, $"{ex.Message}");
             return MRubyValue.Nil;
         }
-    });
+    }
 
     static string ExtractPattern(MRubyState mrb, MRubyValue value)
     {
@@ -361,8 +362,8 @@ static class RegexpMembers
     }
 
     // Regexp.try_convert(obj)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod TryConvert = new((mrb, self) =>
+    [RubyDef("(untyped) -> Regexp?")]
+    public static MRubyValue TryConvert(MRubyState mrb, MRubyValue self)
     {
         var arg = mrb.GetArgumentAt(0);
         if (TryGetRegexpData(arg, out _))
@@ -370,11 +371,11 @@ static class RegexpMembers
             return arg;
         }
         return MRubyValue.Nil;
-    });
+    }
 
     // Regexp.last_match(n = nil)
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod LastMatch = new((mrb, self) =>
+    [RubyDef("(?Integer) -> untyped")]
+    public static MRubyValue LastMatch(MRubyState mrb, MRubyValue self)
     {
         var matchValue = mrb.GetGlobalVariable(mrb.Intern("$~"u8));
         if (matchValue.IsNil)
@@ -389,12 +390,12 @@ static class RegexpMembers
 
         // Regexp.last_match(n) returns the nth capture
         var n = (int)mrb.AsInteger(indexArg);
-        return MatchDataMembers.OpAref.Invoke(mrb, matchValue);
-    });
+        return MatchDataMembers.OpAref(mrb, matchValue);
+    }
 
     // Regexp#match(str, pos = 0)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Match = new((mrb, self) =>
+    [RubyDef("(String, ?Integer) -> MatchData?")]
+    public static MRubyValue Match(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         var str = mrb.GetArgumentAsStringAt(0);
@@ -427,11 +428,11 @@ static class RegexpMembers
         var matchData = new MRubyMatchData(match, regexpData, input);
         UpdateRegexpGlobalVariables(mrb, matchData);
         return MatchDataMembers.CreateRDataFromMatchData(mrb, matchData);
-    });
+    }
 
     // Regexp#match?(str, pos = 0) - boolean match without setting global variables
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod QMatch = new((mrb, self) =>
+    [RubyDef("(String, ?Integer) -> bool")]
+    public static MRubyValue QMatch(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         var str = mrb.GetArgumentAsStringAt(0);
@@ -454,11 +455,11 @@ static class RegexpMembers
 
         var match = regexpData.Regex.Match(input, pos);
         return match.Success ? MRubyValue.True : MRubyValue.False;
-    });
+    }
 
     // Regexp#=~(str)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpMatch = new((mrb, self) =>
+    [RubyDef("(String?) -> Integer?")]
+    public static MRubyValue OpMatch(MRubyState mrb, MRubyValue self)
     {
         var arg = mrb.GetArgumentAt(0);
         if (arg.IsNil)
@@ -482,11 +483,11 @@ static class RegexpMembers
 
         // Return character index (not byte index)
         return match.Index;
-    });
+    }
 
     // Regexp#===(str)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Eqq = new((mrb, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Eqq(MRubyState mrb, MRubyValue self)
     {
         var arg = mrb.GetArgumentAt(0);
         if (arg.IsNil)
@@ -523,35 +524,35 @@ static class RegexpMembers
 
         UpdateRegexpGlobalVariables(mrb, null);
         return MRubyValue.False;
-    });
+    }
 
     // Regexp#source
-    [MRubyMethod]
-    public static MRubyMethod Source = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Source(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         return mrb.NewString(regexpData.Pattern);
-    });
+    }
 
     // Regexp#options
-    [MRubyMethod]
-    public static MRubyMethod Options = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Options(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         return regexpData.RubyOptions;
-    });
+    }
 
     // Regexp#casefold?
-    [MRubyMethod]
-    public static MRubyMethod QCasefold = new((mrb, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QCasefold(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         return (regexpData.RubyOptions & MRubyRegexpData.RubyIgnoreCase) != 0;
-    });
+    }
 
     // Regexp#to_s
-    [MRubyMethod]
-    public static MRubyMethod ToS = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         var sb = new StringBuilder();
@@ -590,11 +591,11 @@ static class RegexpMembers
         sb.Append(regexpData.Pattern);
         sb.Append(')');
         return mrb.NewString(sb.ToString());
-    });
+    }
 
     // Regexp#inspect
-    [MRubyMethod]
-    public static MRubyMethod Inspect = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         var sb = new StringBuilder();
@@ -615,11 +616,11 @@ static class RegexpMembers
             sb.Append('x');
         }
         return mrb.NewString(sb.ToString());
-    });
+    }
 
     // Regexp#==
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEq = new((mrb, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState mrb, MRubyValue self)
     {
         var other = mrb.GetArgumentAt(0);
         if (!TryGetRegexpData(other, out var otherData))
@@ -628,26 +629,26 @@ static class RegexpMembers
         }
         var selfData = GetRegexpData(mrb, self);
         return selfData.Equals(otherData);
-    });
+    }
 
     // Regexp#eql?
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod QEql = new((mrb, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue QEql(MRubyState mrb, MRubyValue self)
     {
-        return OpEq.Invoke(mrb, self);
-    });
+        return OpEq(mrb, self);
+    }
 
     // Regexp#hash
-    [MRubyMethod]
-    public static MRubyMethod Hash = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Hash(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         return regexpData.GetHashCode();
-    });
+    }
 
     // Regexp#named_captures
-    [MRubyMethod]
-    public static MRubyMethod NamedCaptures = new((mrb, self) =>
+    [RubyDef("() -> Hash[String, Array[Integer]]")]
+    public static MRubyValue NamedCaptures(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         var hash = mrb.NewHash(0);
@@ -665,11 +666,11 @@ static class RegexpMembers
         }
 
         return hash;
-    });
+    }
 
     // Regexp#names
-    [MRubyMethod]
-    public static MRubyMethod NamesMethod = new((mrb, self) =>
+    [RubyDef("() -> Array[String]")]
+    public static MRubyValue NamesMethod(MRubyState mrb, MRubyValue self)
     {
         var regexpData = GetRegexpData(mrb, self);
         var groupNames = regexpData.Regex.GetGroupNames();
@@ -690,7 +691,7 @@ static class RegexpMembers
             array.Push(mrb.NewString(name));
         }
         return array;
-    });
+    }
 }
 
 /// <summary>
@@ -699,8 +700,8 @@ static class RegexpMembers
 static class StringRegexpMembers
 {
     // String#=~ (regexp)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpMatch = new((state, self) =>
+    [RubyDef("(String?) -> Integer?")]
+    public static MRubyValue OpMatch(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var arg = state.GetArgumentAt(0);
@@ -728,11 +729,11 @@ static class StringRegexpMembers
         var matchData = new MRubyMatchData(match, regexpData, input);
         RegexpMembers.UpdateRegexpGlobalVariables(state, matchData);
         return match.Index;
-    });
+    }
 
     // String#match(regexp, pos = 0)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Match = new((state, self) =>
+    [RubyDef("(String, ?Integer) -> MatchData?")]
+    public static MRubyValue Match(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var arg = state.GetArgumentAt(0);
@@ -787,11 +788,11 @@ static class StringRegexpMembers
         var matchData = new MRubyMatchData(match, regexpData, input);
         RegexpMembers.UpdateRegexpGlobalVariables(state, matchData);
         return MatchDataMembers.CreateRDataFromMatchData(state, matchData);
-    });
+    }
 
     // String#match?(regexp, pos = 0)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod QMatch = new((state, self) =>
+    [RubyDef("(String, ?Integer) -> bool")]
+    public static MRubyValue QMatch(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var arg = state.GetArgumentAt(0);
@@ -837,24 +838,24 @@ static class StringRegexpMembers
 
         var match = regexpData.Regex.Match(input, pos);
         return match.Success ? MRubyValue.True : MRubyValue.False;
-    });
+    }
 
     // String#sub(pattern, replacement) or String#sub(pattern) { |match| block }
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Sub = new((state, self) =>
+    [RubyDef("(Regexp | String, ?String) ?{ (String) -> String } -> String")]
+    public static MRubyValue Sub(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         return SubImpl(state, str, false);
-    });
+    }
 
     // String#sub!(pattern, replacement) or String#sub!(pattern) { |match| block }
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod SubBang = new((state, self) =>
+    [RubyDef("(Regexp | String, ?String) ?{ (String) -> String } -> self?")]
+    public static MRubyValue SubBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
         return SubImpl(state, str, true);
-    });
+    }
 
     static MRubyValue SubImpl(MRubyState state, RString str, bool inPlace)
     {
@@ -942,21 +943,21 @@ static class StringRegexpMembers
     }
 
     // String#gsub(pattern, replacement) or String#gsub(pattern) { |match| block } or String#gsub(pattern, hash)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Gsub = new((state, self) =>
+    [RubyDef("(Regexp | String, ?(String | Hash[String, String])) ?{ (String) -> String } -> String")]
+    public static MRubyValue Gsub(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         return GsubImpl(state, str, false);
-    });
+    }
 
     // String#gsub!(pattern, replacement) or String#gsub!(pattern) { |match| block } or String#gsub!(pattern, hash)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod GsubBang = new((state, self) =>
+    [RubyDef("(Regexp | String, ?(String | Hash[String, String])) ?{ (String) -> String } -> self?")]
+    public static MRubyValue GsubBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
         return GsubImpl(state, str, true);
-    });
+    }
 
     static MRubyValue GsubImpl(MRubyState state, RString str, bool inPlace)
     {
@@ -1280,8 +1281,8 @@ static class StringRegexpMembers
     }
 
     // String#scan(pattern) or String#scan(pattern) { |match| block }
-    [MRubyMethod(RequiredArguments = 1, BlockArgument = true)]
-    public static MRubyMethod Scan = new((state, self) =>
+    [RubyDef("(Regexp | String) ?{ (untyped) -> void } -> Array[untyped] | self")]
+    public static MRubyValue Scan(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var patternArg = state.GetArgumentAt(0);
@@ -1354,11 +1355,11 @@ static class StringRegexpMembers
         }
 
         return block != null ? self : (MRubyValue)result;
-    });
+    }
 
     // String#index with Regexp support
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Index = new((state, self) =>
+    [RubyDef("(Regexp | String, ?Integer) -> Integer?")]
+    public static MRubyValue Index(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var arg = state.GetArgumentAt(0);
@@ -1394,6 +1395,6 @@ static class StringRegexpMembers
         }
 
         // Fall back to string index
-        return StringMembers.Index.Invoke(state, self);
-    });
+        return StringMembers.Index(state, self);
+    }
 }

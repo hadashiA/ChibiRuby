@@ -5,6 +5,7 @@ namespace MRubyCS.StdLib;
 /// the <c>Thread</c> class exists primarily to host CRuby-compatible
 /// cooperative-scheduling entry points such as <c>Thread.pass</c>.
 /// </summary>
+[RubyClass("Thread")]
 static class ThreadMembers
 {
     /// <summary>
@@ -13,13 +14,13 @@ static class ThreadMembers
     /// in-flight fibers and host async work can run before this fiber is
     /// resumed. No-op at the root fiber or when no scheduler is installed.
     /// </summary>
-    [MRubyMethod]
-    public static MRubyMethod Pass = new((state, _) =>
+    [RubyDef("() -> nil")]
+    public static MRubyValue Pass(MRubyState state, MRubyValue _)
     {
         if (state.TryGetActiveFiberScheduler(out var scheduler))
         {
             scheduler.Yield();
         }
         return MRubyValue.Nil;
-    });
+    }
 }

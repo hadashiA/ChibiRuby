@@ -3,18 +3,20 @@ using System.Collections.Generic;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Array", TypeParameters = "Elem")]
 static class ArrayMembers
 {
-    public static MRubyMethod Create = new((state, self) =>
+    [RubyDef("(*Elem) -> Array[Elem]")]
+    public static MRubyValue Create(MRubyState state, MRubyValue self)
     {
         var args = state.GetRestArgumentsAfter(0);
         var array = state.NewArray(args);
         array.Class = self.As<RClass>();
         return array;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod OpAref = new((state, self) =>
+    [RubyDef("(int) -> Elem | (int, int) -> Array[Elem]? | (Range[int]) -> Array[Elem]?")]
+    public static MRubyValue OpAref(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var argc = state.GetArgumentCount();
@@ -54,9 +56,10 @@ static class ArrayMembers
                 state.RaiseArgumentNumberError(argc, 1, 2);
                 return default;
         }
-    });
+    }
 
-    public static MRubyMethod OpAset = new((state, self) =>
+    [RubyDef("(int, Elem) -> Elem | (int, int, Elem) -> Elem | (Range[int], Elem) -> Elem")]
+    public static MRubyValue OpAset(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
@@ -100,20 +103,20 @@ static class ArrayMembers
                 state.RaiseArgumentNumberError(argc, 2, 3);
                 return default;
         }
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Replace = new((state, self) =>
+    [RubyDef("(Array[Elem]) -> self")]
+    public static MRubyValue Replace(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var other = state.GetArgumentAsArrayAt(0);
 
         other.ReplaceTo(array);
         return self;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod Push = new((state, self) =>
+    [RubyDef("(*Elem) -> self")]
+    public static MRubyValue Push(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
@@ -126,20 +129,20 @@ static class ArrayMembers
         var span = array.AsSpan(start, args.Length);
         args.CopyTo(span);
         return self;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Pop = new((state, self) =>
+    [RubyDef("() -> Elem")]
+    public static MRubyValue Pop(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
 
         array.TryPop(out var result);
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Plus = new((state, self) =>
+    [RubyDef("(Array[Elem]) -> Array[Elem]")]
+    public static MRubyValue Plus(MRubyState state, MRubyValue self)
     {
         var a1 = self.As<RArray>();
         var a2 = state.GetArgumentAsArrayAt(0);
@@ -150,24 +153,24 @@ static class ArrayMembers
         a1.AsSpan().CopyTo(result.AsSpan());
         a2.AsSpan().CopyTo(result.AsSpan(a1.Length));
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Size = new((state, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Size(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         return array.Length;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Empty = new((state, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue Empty(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         return array.Length <= 0;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod First = new((state, self) =>
+    [RubyDef("() -> Elem | (int) -> Array[Elem]")]
+    public static MRubyValue First(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var argc = state.GetArgumentCount();
@@ -188,10 +191,10 @@ static class ArrayMembers
 
         var subSequence = array.SubSequence(0, (int)size);
         return subSequence;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Last = new((state, self) =>
+    [RubyDef("() -> Elem | (int) -> Array[Elem]")]
+    public static MRubyValue Last(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var argc = state.GetArgumentCount();
@@ -211,10 +214,10 @@ static class ArrayMembers
         }
         var subSequence = array.SubSequence(array.Length - (int)size, (int)size);
         return subSequence;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var arg = state.GetArgumentAt(0);
@@ -240,10 +243,10 @@ static class ArrayMembers
             }
         }
         return MRubyValue.True;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Eql = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var arg = state.GetArgumentAt(0);
@@ -269,10 +272,10 @@ static class ArrayMembers
             }
         }
         return MRubyValue.True;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpAdd = new((state, self) =>
+    [RubyDef("(Array[Elem]) -> Array[Elem]")]
+    public static MRubyValue OpAdd(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var other = state.GetArgumentAt(0);
@@ -288,10 +291,10 @@ static class ArrayMembers
         array.AsSpan().CopyTo(span);
         otherArray.AsSpan().CopyTo(span[array.Length..]);
         return newArray;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Times = new((state, self) =>
+    [RubyDef("(Integer) -> Array[Elem] | (String) -> String")]
+    public static MRubyValue Times(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var arg = state.GetArgumentAt(0);
@@ -324,20 +327,20 @@ static class ArrayMembers
             source.CopyTo(result.AsSpan(array.Length * i));
         }
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Reverse = new((state, self) =>
+    [RubyDef("() -> Array[Elem]")]
+    public static MRubyValue Reverse(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var result = state.NewArray(array.Length);
         array.CopyTo(result);
         result.AsSpan().Reverse();
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ReverseBang = new((state, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue ReverseBang(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var span = array.AsSpan();
@@ -351,17 +354,19 @@ static class ArrayMembers
             right--;
         }
         return self;
-    });
+    }
 
-    public static MRubyMethod DeleteAt = new((state, self) =>
+    [RubyDef("(int) -> Elem")]
+    public static MRubyValue DeleteAt(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var arg = state.GetArgumentAt(0);
         var index = state.AsInteger(arg);
         return array.DeleteAt((int)index);
-    });
+    }
 
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var result = state.NewString("["u8);
@@ -386,10 +391,11 @@ static class ArrayMembers
             result.Concat("]"u8);
         }
         return result;
-    });
+    }
 
 
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var result = state.NewString("["u8);
@@ -414,10 +420,10 @@ static class ArrayMembers
             result.Concat("]"u8);
         }
         return result;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Index = new((state, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue Index(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var arg = state.GetArgumentAt(0);
@@ -430,10 +436,10 @@ static class ArrayMembers
             }
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod RIndex = new((state, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue RIndex(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var arg = state.GetArgumentAt(0);
@@ -446,10 +452,10 @@ static class ArrayMembers
             }
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Join = new((state, self) =>
+    [RubyDef("(?String) -> String")]
+    public static MRubyValue Join(MRubyState state, MRubyValue self)
     {
         RString? separator = null;
         if (state.TryGetArgumentAt(0, out var arg0))
@@ -461,16 +467,17 @@ static class ArrayMembers
         var array = self.As<RArray>();
         var result = JoinArray(state, array, separator!, new Stack<RArray>());
         return result;
-    });
+    }
 
-    public static MRubyMethod Clear = new((state, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue Clear(MRubyState state, MRubyValue self)
     {
         self.As<RArray>().Clear();
         return self;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod Concat = new((state, self) =>
+    [RubyDef("(*Array[Elem]) -> self")]
+    public static MRubyValue Concat(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         var args = state.GetRestArgumentsAfter(0);
@@ -483,10 +490,10 @@ static class ArrayMembers
             array.Concat(arg.As<RArray>());
         }
         return self;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Shift = new((state, self) =>
+    [RubyDef("() -> Elem | (Integer) -> Array[Elem]")]
+    public static MRubyValue Shift(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
@@ -496,17 +503,17 @@ static class ArrayMembers
             return result;
         }
         return array.Shift();
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod Unshift = new((state, self) =>
+    [RubyDef("(*Elem) -> self")]
+    public static MRubyValue Unshift(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
         var newItems = state.GetRestArgumentsAfter(0);
         array.Unshift(newItems);
         return self;
-    });
+    }
 
 
     static int AsIndex(MRubyState state, MRubyValue index)
@@ -562,8 +569,8 @@ static class ArrayMembers
         return result;
     }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InternalEq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue InternalEq(MRubyState state, MRubyValue self)
     {
         var arg = state.GetArgumentAt(0);
         if (self == arg)
@@ -582,10 +589,10 @@ static class ArrayMembers
             return MRubyValue.False;
         }
         return arg;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InternalCmp = new((state, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue InternalCmp(MRubyState state, MRubyValue self)
     {
         var arg = state.GetArgumentAt(0);
         if (self == arg) return 0;
@@ -594,10 +601,11 @@ static class ArrayMembers
             return MRubyValue.Nil;
         }
         return arg;
-    });
+    }
 
     // internal method to convert multi-value to single value
-    public static MRubyMethod InternalSValue = new((state, self) =>
+    [RubyDef("() -> Elem")]
+    public static MRubyValue InternalSValue(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
         return array.Length switch
@@ -606,8 +614,8 @@ static class ArrayMembers
             1 => array[0],
             _ => self
         };
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Deconstruct = new((state, self) => self);
+    [RubyDef("() -> Array[Elem]")]
+    public static MRubyValue Deconstruct(MRubyState state, MRubyValue self) => self;
 }

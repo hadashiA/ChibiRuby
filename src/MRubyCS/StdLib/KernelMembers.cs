@@ -3,9 +3,11 @@ using System.Threading;
 
 namespace MRubyCS.StdLib;
 
+[RubyModule("Kernel")]
 static class KernelMembers
 {
-    public static MRubyMethod InternalCaseEqq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue InternalCaseEqq(MRubyState state, MRubyValue self)
     {
         if (self.IsNil)
         {
@@ -41,21 +43,23 @@ static class KernelMembers
             }
         }
         return MRubyValue.False;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod InternalToInt = new((state, self) =>
+    [RubyDef("(untyped) -> Integer")]
+    public static MRubyValue InternalToInt(MRubyState state, MRubyValue self)
     {
         return state.AsInteger(self);
-    });
+    }
 
-    public static MRubyMethod BlockGiven = new((state, self) =>
+    [RubyDef("() -> bool")]
+
+    public static MRubyValue BlockGiven(MRubyState state, MRubyValue self)
     {
         throw new NotSupportedException();
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 2)]
-    public static MRubyMethod Raise = new((state, self) =>
+    [RubyDef("(*untyped) -> bot")]
+    public static MRubyValue Raise(MRubyState state, MRubyValue self)
     {
         var argc = state.GetArgumentCount();
         switch (argc)
@@ -93,17 +97,17 @@ static class KernelMembers
                 break;
         }
         return MRubyValue.Nil; // not reached
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEqq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEqq(MRubyState state, MRubyValue self)
     {
         var arg = state.GetArgumentAt(0);
         return state.ValueEquals(self, arg);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Cmp = new((state, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue Cmp(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (state.IsRecursiveCalling(Names.OpCmp, self, other))
@@ -115,30 +119,38 @@ static class KernelMembers
             return 0;
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    public static MRubyMethod Class = new((state, self) =>
+    [RubyDef("() -> Class")]
+
+    public static MRubyValue Class(MRubyState state, MRubyValue self)
     {
         return state.ClassOf(self).GetRealClass();
-    });
+    }
 
-    public static MRubyMethod Clone = new((state, self) =>
+    [RubyDef("() -> instance")]
+
+    public static MRubyValue Clone(MRubyState state, MRubyValue self)
     {
         return state.CloneObject(self);
-    });
+    }
 
-    public static MRubyMethod Dup = new((state, self) =>
+    [RubyDef("() -> instance")]
+
+    public static MRubyValue Dup(MRubyState state, MRubyValue self)
     {
         return state.DupObject(self);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Eql = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
         return self == state.GetArgumentAt(0);
-    });
+    }
 
-    public static MRubyMethod Freeze = new((state, self) =>
+    [RubyDef("() -> self")]
+
+    public static MRubyValue Freeze(MRubyState state, MRubyValue self)
     {
         if (self.Object is { } obj)
         {
@@ -152,24 +164,28 @@ static class KernelMembers
             }
         }
         return self;
-    });
+    }
 
-    public static MRubyMethod Frozen = new((state, self) =>
+    [RubyDef("() -> bool")]
+
+    public static MRubyValue Frozen(MRubyState state, MRubyValue self)
     {
         if (self.Object is { } obj)
         {
             return obj.IsFrozen;
         }
         return MRubyValue.True;
-    });
+    }
 
-    public static MRubyMethod Hash = new((state, self) =>
+    [RubyDef("() -> Integer")]
+
+    public static MRubyValue Hash(MRubyState state, MRubyValue self)
     {
         return self.ObjectId;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InitializeCopy = new((state, self) =>
+    [RubyDef("(untyped) -> self")]
+    public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
         var original = state.GetArgumentAt(0);
         if (original == self) return self;
@@ -179,34 +195,38 @@ static class KernelMembers
             state.Raise(Names.TypeError, "initialize_copy shoud take same class object"u8);
         }
         return self;
-    });
+    }
 
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         return state.InspectObject(self);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InstanceOf = new((state, self) =>
+    [RubyDef("(Class) -> bool")]
+    public static MRubyValue InstanceOf(MRubyState state, MRubyValue self)
     {
         var c= state.GetArgumentAsClassAt(0);
         return state.InstanceOf(self, c);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod KindOf = new((state, self) =>
+    [RubyDef("(Module) -> bool")]
+    public static MRubyValue KindOf(MRubyState state, MRubyValue self)
     {
         var c= state.GetArgumentAsClassAt(0);
         return state.KindOf(self, c);
-    });
+    }
 
-    public static MRubyMethod ObjectId = new((state, self) =>
+    [RubyDef("() -> Integer")]
+
+    public static MRubyValue ObjectId(MRubyState state, MRubyValue self)
     {
         return self.ObjectId;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod Print = new((state, self) =>
+    [RubyDef("(*untyped) -> nil")]
+    public static MRubyValue Print(MRubyState state, MRubyValue self)
     {
         var args = state.GetRestArgumentsAfter(0);
         foreach (var arg in args)
@@ -215,10 +235,10 @@ static class KernelMembers
             Console.WriteLine(System.Text.Encoding.UTF8.GetString(s.AsSpan()));
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod P = new((state, self) =>
+    [RubyDef("(*untyped) -> untyped")]
+    public static MRubyValue P(MRubyState state, MRubyValue self)
     {
         var args = state.GetRestArgumentsAfter(0);
         foreach (var arg in args)
@@ -232,10 +252,10 @@ static class KernelMembers
             return args[0];
         }
         return state.NewArray(args);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod RemoveInstanceVariable = new((state, self) =>
+    [RubyDef("(Symbol | String) -> untyped")]
+    public static MRubyValue RemoveInstanceVariable(MRubyState state, MRubyValue self)
     {
         var name = state.GetArgumentAsSymbolAt(0);
         if (self.Object is RObject obj)
@@ -246,10 +266,10 @@ static class KernelMembers
             }
         }
         return MRubyValue.Undef;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod RespondTo = new((state, self) =>
+    [RubyDef("(Symbol | String, ?bool) -> bool")]
+    public static MRubyValue RespondTo(MRubyState state, MRubyValue self)
     {
         var methodId = state.GetArgumentAsSymbolAt(0);
         var includesPrivate = state.GetArgumentAt(1).Truthy;
@@ -262,14 +282,18 @@ static class KernelMembers
             }
         }
         return result;
-    });
+    }
 
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         return state.StringifyAny(self);
-    });
+    }
 
-    public static MRubyMethod Lambda = new((state, self) =>
+    [RubyDef("() { (*untyped) -> untyped } -> Proc")]
+
+    public static MRubyValue Lambda(MRubyState state, MRubyValue self)
     {
         var block = state.GetBlockArgument();
         if (block == null)
@@ -284,10 +308,10 @@ static class KernelMembers
             return dup;
         }
         return block;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Sleep = new((state, self) =>
+    [RubyDef("(?Numeric) -> Integer")]
+    public static MRubyValue Sleep(MRubyState state, MRubyValue self)
     {
         double seconds;
         if (state.GetArgumentCount() == 0 || state.GetArgumentAt(0).IsNil)
@@ -333,5 +357,5 @@ static class KernelMembers
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
         }
         return new MRubyValue((long)seconds);
-    });
+    }
 }

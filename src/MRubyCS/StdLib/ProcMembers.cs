@@ -7,10 +7,11 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Proc")]
 static class ProcMembers
 {
-    [MRubyMethod(BlockArgument = true)]
-    public static MRubyMethod New = new((state, self) =>
+    [RubyDef("() { (*untyped) -> untyped } -> Proc")]
+    public static MRubyValue New(MRubyState state, MRubyValue self)
     {
         var block = state.GetBlockArgument(false);
         var proc = block!.Dup();
@@ -22,10 +23,10 @@ static class ProcMembers
             proc.SetFlag(MRubyObjectFlags.ProcOrphan);
         }
         return procValue;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Eql = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (other.VType != MRubyVType.Proc)
@@ -33,9 +34,10 @@ static class ProcMembers
             return MRubyValue.False;
         }
         return self.As<RProc>() == other.As<RProc>();
-    });
+    }
 
-    public static MRubyMethod Arity = new((state, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Arity(MRubyState state, MRubyValue self)
     {
         var proc = self.As<RProc>();
         var sequence = proc.Irep.Sequence;
@@ -54,5 +56,5 @@ static class ProcMembers
             ? -(aspec.MandatoryArguments1Count + aspec.MandatoryArguments2Count + 1)
             : aspec.MandatoryArguments1Count + aspec.MandatoryArguments2Count;
         return arity;
-    });
+    }
 }

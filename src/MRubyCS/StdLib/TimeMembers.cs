@@ -61,6 +61,7 @@ class MRubyTimeData(DateTimeOffset dateTimeOffset) :
     }
 }
 
+[RubyClass("Time")]
 static class TimeMembers
 {
     const long TicksPerMicrosecond = 10;
@@ -83,12 +84,14 @@ static class TimeMembers
         return false;
     }
 
-    public static MRubyMethod Now = new((mrb, _) =>
+    [RubyDef("() -> Time")]
+    public static MRubyValue Now(MRubyState mrb, MRubyValue _)
     {
         return CreateRDataFromDateTime(mrb, DateTimeOffset.Now);
-    });
+    }
 
-    public static MRubyMethod CreateAt = new((mrb, _) =>
+    [RubyDef("(Numeric, ?Numeric) -> Time")]
+    public static MRubyValue CreateAt(MRubyState mrb, MRubyValue _)
     {
         var secValue = mrb.GetArgumentAt(0);
 
@@ -112,9 +115,10 @@ static class TimeMembers
             throw; // unreached
         }
         return CreateRDataFromDateTime(mrb, dateTimeOffset);
-    });
+    }
 
-    public static MRubyMethod CreateUtc = new((mrb, _) =>
+    [RubyDef("(Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> Time")]
+    public static MRubyValue CreateUtc(MRubyState mrb, MRubyValue _)
     {
         var year = (int)mrb.GetArgumentAsIntegerAt(0);
         var month = 1;
@@ -152,9 +156,10 @@ static class TimeMembers
         var dateTime = new DateTime(year, month, day, hour, minute, sec, DateTimeKind.Utc);
         dateTime = dateTime.AddTicks(usec * TicksPerMicrosecond);
         return CreateRDataFromDateTime(mrb, dateTime);
-    });
+    }
 
-    public static MRubyMethod CreateLocal = new((mrb, _) =>
+    [RubyDef("(Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> Time")]
+    public static MRubyValue CreateLocal(MRubyState mrb, MRubyValue _)
     {
         var year = (int)mrb.GetArgumentAsIntegerAt(0);
         var month = 1;
@@ -192,9 +197,10 @@ static class TimeMembers
         var dateTime = new DateTime(year, month, day, hour, minute, sec, DateTimeKind.Local);
         dateTime = dateTime.AddTicks(usec * TicksPerMicrosecond);
         return CreateRDataFromDateTime(mrb, dateTime);
-    });
+    }
 
-    public static MRubyMethod Initialize = new((mrb, self) =>
+    [RubyDef("(?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> void")]
+    public static MRubyValue Initialize(MRubyState mrb, MRubyValue self)
     {
         DateTimeOffset dateTimeOffset;
         if (mrb.GetArgumentCount() <= 0)
@@ -246,9 +252,10 @@ static class TimeMembers
         }
         self.As<RData>().Data = CreateRDataFromDateTime(mrb, dateTimeOffset);
         return self;
-    });
+    }
 
-    public static MRubyMethod InitializeCopy = new((mrb, self) =>
+    [RubyDef("(Time) -> self")]
+    public static MRubyValue InitializeCopy(MRubyState mrb, MRubyValue self)
     {
         var copyValue = mrb.GetArgumentAt(0);
         if (mrb.ValueEquals(copyValue, self)) return copyValue;
@@ -271,14 +278,16 @@ static class TimeMembers
         }
         src.DateTimeOffset = dateTimeOffset;
         return copyValue;
-    });
+    }
 
-    public static MRubyMethod Hash = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Hash(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).Ticks.GetHashCode();
-    });
+    }
 
-    public static MRubyMethod OpEq = new((mrb, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState mrb, MRubyValue self)
     {
         if (!TryGetTimeData(mrb.GetArgumentAt(0), out var otherTime))
         {
@@ -286,9 +295,10 @@ static class TimeMembers
         }
         var selfTime = GetTimeData(mrb, self);
         return selfTime.Equals(otherTime);
-    });
+    }
 
-    public static MRubyMethod OpCmp = new((mrb, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue OpCmp(MRubyState mrb, MRubyValue self)
     {
         if (!TryGetTimeData(mrb.GetArgumentAt(0), out var otherTime))
         {
@@ -296,9 +306,10 @@ static class TimeMembers
         }
         var selfTime = GetTimeData(mrb, self);
         return selfTime.CompareTo(otherTime);
-    });
+    }
 
-    public static MRubyMethod OpAdd = new((mrb, self) =>
+    [RubyDef("(Numeric) -> Time")]
+    public static MRubyValue OpAdd(MRubyState mrb, MRubyValue self)
     {
         var time = GetTimeData(mrb, self);
         var ticksAdd = ConvertToTicks(mrb, mrb.GetArgumentAt(0), true);
@@ -319,9 +330,10 @@ static class TimeMembers
 
         var result = new DateTimeOffset(newTicks, time.DateTimeOffset.Offset);
         return CreateRDataFromDateTime(mrb, result);
-    });
+    }
 
-    public static MRubyMethod OpSub = new((mrb, self) =>
+    [RubyDef("(Time) -> Integer | (Numeric) -> Time")]
+    public static MRubyValue OpSub(MRubyState mrb, MRubyValue self)
     {
         var time = GetTimeData(mrb, self);
 
@@ -358,18 +370,20 @@ static class TimeMembers
             throw; // unreached
         }
         return CreateRDataFromDateTime(mrb, result);
-    });
+    }
 
-    public static MRubyMethod Asctime = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Asctime(MRubyState mrb, MRubyValue self)
     {
         var d = GetTimeData(mrb, self).DateTimeOffset;
         using var buffer = Utf8String.CreateWriter(out var writer, CultureInfo.InvariantCulture);
         writer.AppendFormat($"{d:ddd} {d:MMM} {d.Day,2} {d:HH}:{d:mm}:{d:ss} {d:yyyy}");
         writer.Flush();
         return mrb.NewString(buffer.WrittenSpan);
-    });
+    }
 
-    public static MRubyMethod ToS = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState mrb, MRubyValue self)
     {
         var data = GetTimeData(mrb, self);
         var t = data.DateTimeOffset;
@@ -380,64 +394,78 @@ static class TimeMembers
         }
         // local
         return mrb.NewString($"{t.Year:0000}-{t.Month:00}-{t.Day:00} {t.Hour:00}:{t.Minute:00}:{t.Second:00} +{t.Offset.Hours:00}00");
-    });
+    }
 
-    public static MRubyMethod ToF = new((mrb, self) =>
+    [RubyDef("() -> Float")]
+    public static MRubyValue ToF(MRubyState mrb, MRubyValue self)
     {
         var dateTimeOffset = GetTimeData(mrb, self).DateTimeOffset;
         return (dateTimeOffset - DateTimeOffset.UnixEpoch).TotalSeconds;
-    });
+    }
 
-    public static MRubyMethod ToI = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue ToI(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.ToUnixTimeSeconds();
-    });
+    }
 
-    public static MRubyMethod UtcOffset = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue UtcOffset(MRubyState mrb, MRubyValue self)
     {
         return (int)GetTimeData(mrb, self).DateTimeOffset.Offset.TotalSeconds;
-    });
+    }
 
-    public static MRubyMethod Year = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.Year);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Year(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.Year;
 
-    public static MRubyMethod Month = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.Month);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Month(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.Month;
 
-    public static MRubyMethod Day = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.Day);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Day(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.Day;
 
-    public static MRubyMethod Hour = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.Hour);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Hour(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.Hour;
 
-    public static MRubyMethod Minute = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.Minute);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Minute(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.Minute;
 
-    public static MRubyMethod Second = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.Second);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Second(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.Second;
 
-    public static MRubyMethod MicroSecond = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue MicroSecond(MRubyState mrb, MRubyValue self)
     {
         var dateTimeOffset = GetTimeData(mrb, self).DateTimeOffset;
         return dateTimeOffset.Millisecond * 1_000 +
                (int)((dateTimeOffset.Ticks / TicksPerMicrosecond) % 1000);
-    });
+    }
 
-    public static MRubyMethod NanoSecond = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue NanoSecond(MRubyState mrb, MRubyValue self)
     {
         var dateTimeOffset = GetTimeData(mrb, self).DateTimeOffset;
         return dateTimeOffset.Millisecond * 1_000_000 +
                (int)((dateTimeOffset.Ticks / TicksPerMicrosecond) % 1_000) * 1_000 +
                (dateTimeOffset.Ticks % TicksPerMicrosecond) * 100;
-    });
+    }
 
-    public static MRubyMethod Wday = new((mrb, self) =>
-        (int)GetTimeData(mrb, self).DateTimeOffset.DayOfWeek);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Wday(MRubyState mrb, MRubyValue self) =>
+        (int)GetTimeData(mrb, self).DateTimeOffset.DayOfWeek;
 
-    public static MRubyMethod Yday = new((mrb, self) =>
-        GetTimeData(mrb, self).DateTimeOffset.DayOfYear);
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Yday(MRubyState mrb, MRubyValue self) =>
+        GetTimeData(mrb, self).DateTimeOffset.DayOfYear;
 
-    public static MRubyMethod Zone = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Zone(MRubyState mrb, MRubyValue self)
     {
         var dateTimeOffset = GetTimeData(mrb, self).DateTimeOffset;
         if (dateTimeOffset.Offset == TimeSpan.Zero)
@@ -451,80 +479,93 @@ static class TimeMembers
         format[0..3].CopyTo(result);
         format[4..6].CopyTo(result[3..]);
         return mrb.NewString(result);
-    });
+    }
 
-    public static MRubyMethod QUtc = new((mrb, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QUtc(MRubyState mrb, MRubyValue self)
     {
         var dateTimeOffset =  GetTimeData(mrb, self).DateTimeOffset;
         return dateTimeOffset.Offset == TimeSpan.Zero;
-    });
+    }
 
-    public static MRubyMethod QSunday = new((mrb, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QSunday(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Sunday;
-    });
+    }
 
-    public static MRubyMethod QMonday = new((mrb, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QMonday(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Monday;
-    });
+    }
 
+    [RubyDef("() -> bool")]
     public static MRubyMethod QTuesday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Tuesday;
     });
 
+    [RubyDef("() -> bool")]
     public static MRubyMethod QWednesday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Wednesday;
     });
 
+    [RubyDef("() -> bool")]
     public static MRubyMethod QThursday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Thursday;
     });
 
+    [RubyDef("() -> bool")]
     public static MRubyMethod QFriday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Friday;
     });
 
-    public static MRubyMethod QSaturday = new((mrb, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QSaturday(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Saturday;
-    });
+    }
 
-    public static MRubyMethod QDaylightSavintTime = new((mrb, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QDaylightSavintTime(MRubyState mrb, MRubyValue self)
     {
         var dateTimeOffset = GetTimeData(mrb, self).DateTimeOffset;
         return TimeZoneInfo.Local.IsDaylightSavingTime(dateTimeOffset);
-    });
+    }
 
-    public static MRubyMethod GetUtc = new((mrb, self) =>
+    [RubyDef("() -> Time")]
+    public static MRubyValue GetUtc(MRubyState mrb, MRubyValue self)
     {
         var t = GetTimeData(mrb, self);
         return CreateRDataFromDateTime(mrb, t.DateTimeOffset.ToUniversalTime());
-    });
+    }
 
-    public static MRubyMethod GetLocal = new((mrb, self) =>
+    [RubyDef("() -> Time")]
+    public static MRubyValue GetLocal(MRubyState mrb, MRubyValue self)
     {
         var t = GetTimeData(mrb, self);
         return CreateRDataFromDateTime(mrb, t.DateTimeOffset.ToLocalTime());
-    });
+    }
 
-    public static MRubyMethod ConvertToUtc = new((mrb, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue ConvertToUtc(MRubyState mrb, MRubyValue self)
     {
         var t = GetTimeData(mrb, self);
         t.DateTimeOffset = t.DateTimeOffset.ToUniversalTime();
         return self;
-    });
+    }
 
-    public static MRubyMethod ConvertToLocal = new((mrb, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue ConvertToLocal(MRubyState mrb, MRubyValue self)
     {
         var t = GetTimeData(mrb, self);
         t.DateTimeOffset = t.DateTimeOffset.ToLocalTime();
         return self;
-    });
+    }
 
     static bool TryGetTimeData(MRubyValue value, out MRubyTimeData data)
     {

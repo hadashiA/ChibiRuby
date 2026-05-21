@@ -1,38 +1,47 @@
 namespace MRubyCS.StdLib;
 
+[RubyClass("BasicObject", Superclass = "")]
 static class BasicObjectMembers
 {
-    [MRubyMethod]
-    public static MRubyMethod Not = new((_, self) => new MRubyValue(!self.Truthy));
+    [RubyDef("() -> bool")]
+    public static MRubyValue Not(MRubyState _, MRubyValue self) => new MRubyValue(!self.Truthy);
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
         return self == state.GetArgumentAt(0);
-    });
+    }
 
-    public static MRubyMethod Id = new((state, self) =>
+    [RubyDef("() -> Integer")]
+
+    public static MRubyValue Id(MRubyState state, MRubyValue self)
     {
         return self.ObjectId;
-    });
+    }
 
-    public static MRubyMethod Send = new((state, self) =>
+    [RubyDef("(Symbol | String, *untyped) ?{ (*untyped) -> untyped } -> untyped")]
+
+    public static MRubyValue Send(MRubyState state, MRubyValue self)
     {
         return state.SendMeta(self);
-    });
+    }
 
-    public static MRubyMethod InstanceEval = new((state, self) =>
+    [RubyDef("(*untyped) ?{ (instance) -> untyped } -> untyped")]
+
+    public static MRubyValue InstanceEval(MRubyState state, MRubyValue self)
     {
         var block = state.GetBlockArgument(false);
         return state.EvalUnder(self, block!, state.SingletonClassOf(self));
-    });
+    }
 
-    public static MRubyMethod MethodMissing = new((state, self) =>
+    [RubyDef("(Symbol, *untyped) ?{ (*untyped) -> untyped } -> untyped")]
+
+    public static MRubyValue MethodMissing(MRubyState state, MRubyValue self)
     {
         var methodId = state.GetArgumentAsSymbolAt(0);
         var args = state.GetRestArgumentsAfter(1);
         var array = state.NewArray(args);
         state.RaiseMethodMissing(methodId, self, array);
         return MRubyValue.Nil;
-    });
+    }
 }

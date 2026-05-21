@@ -116,24 +116,29 @@ class MRubyRandomData
     }
 }
 
+[RubyClass("Random")]
 static class RandomMembers
 {
-    public static MRubyMethod DefaultRand = new((mrb, self) =>
+    [RubyDef("(?(Integer | Float | Range[Numeric])) -> (Integer | Float)")]
+    public static MRubyValue DefaultRand(MRubyState mrb, MRubyValue self)
     {
         return DefaultInstanceOf(mrb).Rand(mrb);
-    });
+    }
 
-    public static MRubyMethod DefaultSRand = new((mrb, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+    public static MRubyValue DefaultSRand(MRubyState mrb, MRubyValue self)
     {
         return DefaultInstanceOf(mrb).SRand(mrb);
-    });
+    }
 
-    public static MRubyMethod DefaultBytes = new((mrb, self) =>
+    [RubyDef("(Integer) -> String")]
+    public static MRubyValue DefaultBytes(MRubyState mrb, MRubyValue self)
     {
         return DefaultInstanceOf(mrb).Bytes(mrb);
-    });
+    }
 
-    public static MRubyMethod Initialize = new((mrb, self) =>
+    [RubyDef("(?Integer) -> void")]
+    public static MRubyValue Initialize(MRubyState mrb, MRubyValue self)
     {
         if (mrb.TryGetArgumentAt(0, out var seedValue))
         {
@@ -146,32 +151,37 @@ static class RandomMembers
         }
 
         return self;
-    });
+    }
 
-    public static MRubyMethod Rand = new((mrb, self) =>
+    [RubyDef("(?(Integer | Float | Range[Numeric])) -> (Integer | Float)")]
+    public static MRubyValue Rand(MRubyState mrb, MRubyValue self)
     {
         return InstanceOf(mrb, self).Rand(mrb);
-    });
+    }
 
-    public static MRubyMethod SRand = new((mrb, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+    public static MRubyValue SRand(MRubyState mrb, MRubyValue self)
     {
         return InstanceOf(mrb, self).SRand(mrb);
-    });
+    }
 
-    public static MRubyMethod Bytes = new((mrb, self) =>
+    [RubyDef("(Integer) -> String")]
+    public static MRubyValue Bytes(MRubyState mrb, MRubyValue self)
     {
         return InstanceOf(mrb, self).Bytes(mrb);
-    });
+    }
 
-    public static MRubyMethod ArrayShuffle = new((mrb, self) =>
+    [RubyDef("(?random: Random) -> Array[untyped]")]
+    public static MRubyValue ArrayShuffle(MRubyState mrb, MRubyValue self)
     {
         var array = self.As<RArray>();
         var result = array.Dup();
-        ArrayShuffleBang.Invoke(mrb, result);
+        ArrayShuffleBang(mrb, result);
         return result;
-    });
+    }
 
-    public static MRubyMethod ArrayShuffleBang = new((mrb, self) =>
+    [RubyDef("(?random: Random) -> self")]
+    public static MRubyValue ArrayShuffleBang(MRubyState mrb, MRubyValue self)
     {
         var array = self.As<RArray>();
         if (array.Length <= 1)
@@ -194,9 +204,10 @@ static class RandomMembers
             (array[i], array[j]) = (array[j], array[i]);
         }
         return self;
-    });
+    }
 
-    public static MRubyMethod ArraySample = new((mrb, self) =>
+    [RubyDef("(?Integer, ?random: Random) -> untyped")]
+    public static MRubyValue ArraySample(MRubyState mrb, MRubyValue self)
     {
         Random rand;
         if (mrb.TryGetKeywordArgument(mrb.Intern("random"u8), out var randomInstance))
@@ -261,7 +272,7 @@ static class RandomMembers
                 var i = rand.Next(0, array.Length);
                 return array[i];
         }
-    });
+    }
 
     static MRubyRandomData DefaultInstanceOf(MRubyState mrb)
     {

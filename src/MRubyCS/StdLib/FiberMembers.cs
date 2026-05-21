@@ -3,45 +3,46 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Fiber")]
 static class FiberMembers
 {
-    [MRubyMethod(BlockArgument = true)]
-    public static MRubyMethod Initialize = new((state, self) =>
+    [RubyDef("() { (*untyped) -> untyped } -> void")]
+    public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
         var fiber = self.As<RFiber>();
         var proc = state.GetBlockArgument(false)!;
         fiber.Reset(proc);
         return self;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod Resume = new((state, self) =>
+    [RubyDef("(*untyped) -> untyped")]
+    public static MRubyValue Resume(MRubyState state, MRubyValue self)
     {
         var fiber = self.As<RFiber>();
         var args = state.GetRestArgumentsAfter(0);
         var vmexec = state.Context.CurrentCallInfo.CallerType > CallerType.InVmLoop;
         return fiber.MoveNext(args, false, vmexec);
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod Transfer = new((state, self) =>
+    [RubyDef("(*untyped) -> untyped")]
+    public static MRubyValue Transfer(MRubyState state, MRubyValue self)
     {
         var fiber = self.As<RFiber>();
         var args = state.GetRestArgumentsAfter(0);
         return fiber.Transfer(args);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Yield = new((state, self) =>
+    [RubyDef("(*untyped) -> untyped")]
+    public static MRubyValue Yield(MRubyState state, MRubyValue self)
     {
         var fiber = state.Context.Fiber!;
         var args = state.GetRestArgumentsAfter(0);
         fiber.Yield();
         return state.AsFiberResult(args);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Current = new((state, _) => state.CurrentFiber);
+    [RubyDef("() -> Fiber")]
+    public static MRubyValue Current(MRubyState state, MRubyValue _) => state.CurrentFiber;
 
     /// <summary>
     /// <c>Fiber.schedule { ... }</c> — convenience for creating a fiber and
@@ -52,24 +53,24 @@ static class FiberMembers
     /// fiber under a scheduler that hits <c>sleep</c>/<c>Thread.pass</c>/IO
     /// will dispatch through the scheduler.
     /// </summary>
-    [MRubyMethod(BlockArgument = true)]
-    public static MRubyMethod Schedule = new((state, _) =>
+    [RubyDef("() { (*untyped) -> untyped } -> Fiber")]
+    public static MRubyValue Schedule(MRubyState state, MRubyValue _)
     {
         var block = state.GetBlockArgument(false)!;
         var fiber = state.CreateFiber(block);
         fiber.Resume();
         return new MRubyValue(fiber);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Alive = new((state, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue Alive(MRubyState state, MRubyValue self)
     {
         var fiber = self.As<RFiber>();
         return fiber.IsAlive;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
         var fiber = self.As<RFiber>();
         var arg = state.GetArgumentAt(0);
@@ -78,10 +79,10 @@ static class FiberMembers
             return fiber == other;
         }
         return MRubyValue.False;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var fiber = self.As<RFiber>();
         var result = state.NewString("#<"u8);
@@ -103,5 +104,5 @@ static class FiberMembers
         result.Concat(s);
         result.Concat(")"u8);
         return result;
-    });
+    }
 }
