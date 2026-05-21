@@ -31,6 +31,10 @@ internal sealed record MethodBinding(
     string FieldName,
     bool IsClassMethod);
 
+internal sealed record IncludeBinding(
+    string ClassExpr,
+    string ModuleRubyName);
+
 internal sealed record RbsBlock(
     string Name,
     bool IsModule,
@@ -85,6 +89,13 @@ internal static class RbsGenerator
             .Select(static (x, _) => x!)
             .Collect();
 
+        var includes = context.SyntaxProvider.CreateSyntaxProvider(
+            predicate: static (n, _) => IsIncludeModuleInvocation(n),
+            transform: static (ctx, _) => TryExtractInclude(ctx))
+            .Where(static x => x is not null)
+            .Select(static (x, _) => x!)
+            .Collect();
+
         // Read pre-generated RBS files (e.g. lib.rbs from `rbs prototype rb lib.rb`)
         // and parse class/module blocks so they can be merged into emitted sig/*.rbs.
         var rbBlocks = context.AdditionalTextsProvider
@@ -92,13 +103,13 @@ internal static class RbsGenerator
             .Select((t, ct) => ParseRbsBlocks(t.GetText(ct)?.ToString() ?? ""))
             .Collect();
 
-        var combined = rubyTypes.Combine(bindings).Combine(rbBlocks).Combine(options);
+        var combined = rubyTypes.Combine(bindings).Combine(includes).Combine(rbBlocks).Combine(options);
 
         context.RegisterSourceOutput(combined, (spc, tuple) =>
         {
-            var (((types, defineCalls), blocks), opts) = tuple;
+            var ((((types, defineCalls), includeCalls), blocks), opts) = tuple;
             if (!opts.Enabled) return;
-            Emit(spc, types, defineCalls, blocks.SelectMany(b => b.Array).ToList(), opts.OutputDirectory!);
+            Emit(spc, types, defineCalls, includeCalls, blocks.SelectMany(b => b.Array).ToList(), opts.OutputDirectory!);
         });
     }
 
@@ -192,6 +203,54 @@ internal static class RbsGenerator
         return new RubyTypeInfo(rubyName, superclass, isModule, typeParameters, symbol.ToDisplayString(), new(members.ToImmutable()));
     }
 
+    static bool IsIncludeModuleInvocation(SyntaxNode node)
+    {
+        if (node is not InvocationExpressionSyntax inv) return false;
+        var name = inv.Expression switch
+        {
+            IdentifierNameSyntax id => id.Identifier.ValueText,
+            MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText,
+            _ => null
+        };
+        return name == "IncludeModule";
+    }
+
+    static IncludeBinding? TryExtractInclude(GeneratorSyntaxContext ctx)
+    {
+        var inv = (InvocationExpressionSyntax)ctx.Node;
+        var args = inv.ArgumentList.Arguments;
+        if (args.Count != 2) return null;
+        var classExpr = ExtractClassExpr(args[0].Expression);
+        if (classExpr is null) return null;
+        var moduleName = ExtractRubyNameFromExpr(args[1].Expression);
+        if (moduleName is null) return null;
+        return new IncludeBinding(classExpr, moduleName);
+    }
+
+    /// <summary>
+    /// Given an expression like `KernelModule`, `comparableModule.As<RClass>()`,
+    /// `ObjectClass`, etc., return the Ruby-side name (e.g. "Kernel", "Comparable", "Object").
+    /// </summary>
+    static string? ExtractRubyNameFromExpr(ExpressionSyntax expr)
+    {
+        // Unwrap `.As<T>()` / `.foo()` wrappers, walking down to the receiver.
+        while (expr is InvocationExpressionSyntax inv2 && inv2.Expression is MemberAccessExpressionSyntax ma2)
+        {
+            expr = ma2.Expression;
+        }
+        string? ident = expr switch
+        {
+            IdentifierNameSyntax id => id.Identifier.ValueText,
+            MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText,
+            _ => null
+        };
+        if (ident == null) return null;
+        if (ident.EndsWith("Class", StringComparison.Ordinal) && ident.Length > 5) ident = ident.Substring(0, ident.Length - 5);
+        else if (ident.EndsWith("Module", StringComparison.Ordinal) && ident.Length > 6) ident = ident.Substring(0, ident.Length - 6);
+        if (ident.Length > 0 && char.IsLower(ident[0])) ident = char.ToUpperInvariant(ident[0]) + ident.Substring(1);
+        return ident;
+    }
+
     static bool IsDefineMethodInvocation(SyntaxNode node)
     {
         if (node is not InvocationExpressionSyntax inv) return false;
@@ -256,7 +315,7 @@ internal static class RbsGenerator
         return null;
     }
 
-    static void Emit(SourceProductionContext spc, ImmutableArray<RubyTypeInfo> types, ImmutableArray<MethodBinding> bindings, List<RbsBlock> rbBlocks, string outputDir)
+    static void Emit(SourceProductionContext spc, ImmutableArray<RubyTypeInfo> types, ImmutableArray<MethodBinding> bindings, ImmutableArray<IncludeBinding> includes, List<RbsBlock> rbBlocks, string outputDir)
     {
         try
         {
@@ -268,6 +327,7 @@ internal static class RbsGenerator
         }
 
         var bindingsByClass = bindings.ToLookup(b => b.ClassExpr);
+        var includesByClass = includes.ToLookup(b => b.ClassExpr);
         var blocksByName = rbBlocks
             .GroupBy(b => b.Name)
             .ToDictionary(g => g.Key, g => g.ToList());
@@ -296,6 +356,17 @@ internal static class RbsGenerator
             else
                 header = $"class {type.RubyName}{typeParams} < {type.Superclass}";
             sb.AppendLine(header);
+
+            // include modules wired via Init.cs IncludeModule(klass, module)
+            var includedModules = candidates.SelectMany(c => includesByClass[c])
+                .Select(b => b.ModuleRubyName)
+                .Distinct()
+                .ToList();
+            foreach (var mod in includedModules)
+            {
+                sb.AppendLine($"  include {mod}");
+            }
+            if (includedModules.Count > 0) sb.AppendLine();
 
             EmitMembers(sb, type, relevant, isClassMethodSection: false);
             EmitMembers(sb, type, relevant, isClassMethodSection: true);

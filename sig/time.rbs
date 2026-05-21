@@ -2,6 +2,8 @@
 # Source: MRubyCS.StdLib.TimeMembers
 
 class Time < Object
+  include Comparable
+
   def initialize: (?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> void
 
   def initialize_copy: (Time) -> self
