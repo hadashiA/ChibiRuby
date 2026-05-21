@@ -2,46 +2,58 @@ using System;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Module")]
 static class ModuleMembers
 {
-    public static MRubyMethod Public = new((mrb, mod) =>
+    [RubyDef("(*Symbol | *String) -> self")]
+    public static MRubyValue Public(MRubyState mrb, MRubyValue mod)
     {
         SetMethodVisibility(mrb, mod.As<RClass>(), MRubyMethodVisibility.Public);
         return mod;
-    });
+    }
 
-    public static MRubyMethod Private = new((mrb, mod) =>
+    [RubyDef("(*Symbol | *String) -> self")]
+
+    public static MRubyValue Private(MRubyState mrb, MRubyValue mod)
     {
         SetMethodVisibility(mrb, mod.As<RClass>(), MRubyMethodVisibility.Private);
         return mod;
-    });
+    }
 
-    public static MRubyMethod Protected = new((mrb, mod) =>
+    [RubyDef("(*Symbol | *String) -> self")]
+
+    public static MRubyValue Protected(MRubyState mrb, MRubyValue mod)
     {
         SetMethodVisibility(mrb, mod.As<RClass>(), MRubyMethodVisibility.Protected);
         return mod;
-    });
+    }
 
-    public static MRubyMethod TopPublic = new((mrb, mod) =>
+    [RubyDef("(*Symbol | *String) -> Object")]
+
+    public static MRubyValue TopPublic(MRubyState mrb, MRubyValue mod)
     {
         SetMethodVisibility(mrb, mrb.ObjectClass, MRubyMethodVisibility.Public);
         return mrb.ObjectClass;
-    });
+    }
 
-    public static MRubyMethod TopPrivate = new((mrb, mod) =>
+    [RubyDef("(*Symbol | *String) -> Object")]
+
+    public static MRubyValue TopPrivate(MRubyState mrb, MRubyValue mod)
     {
         SetMethodVisibility(mrb, mrb.ObjectClass, MRubyMethodVisibility.Private);
         return mrb.ObjectClass;
-    });
+    }
 
-    public static MRubyMethod TopProtected = new((mrb, mod) =>
+    [RubyDef("(*Symbol | *String) -> Object")]
+
+    public static MRubyValue TopProtected(MRubyState mrb, MRubyValue mod)
     {
         SetMethodVisibility(mrb, mrb.ObjectClass, MRubyMethodVisibility.Protected);
         return mrb.ObjectClass;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Initialize = new((state, self) =>
+    [RubyDef("() ?{ (Module) -> void } -> void")]
+    public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var block = state.GetBlockArgument();
@@ -50,38 +62,38 @@ static class ModuleMembers
             state.YieldWithClass(mod, self, [self], block);
         }
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod ExtendObject = new((state, self) =>
+    [RubyDef("(untyped) -> self")]
+    public static MRubyValue ExtendObject(MRubyState state, MRubyValue self)
     {
         // state.EnsureValueType(self, MRubyVType.Module);
         var obj = state.GetArgumentAt(0);
         var target = state.SingletonClassOf(obj);
         state.IncludeModule(target, self.As<RClass>());
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod PrependFeatures = new((state, self) =>
+    [RubyDef("(Module) -> self")]
+    public static MRubyValue PrependFeatures(MRubyState state, MRubyValue self)
     {
         state.EnsureValueType(self, MRubyVType.Module);
         var c = state.GetArgumentAt(0);
         state.PrependModule(c.As<RClass>(), self.As<RClass>());
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod AppendFeatures = new((state, self) =>
+    [RubyDef("(Module) -> self")]
+    public static MRubyValue AppendFeatures(MRubyState state, MRubyValue self)
     {
         state.EnsureValueType(self, MRubyVType.Module);
         var c = state.GetArgumentAt(0);
         state.IncludeModule(c.As<RClass>(), self.As<RClass>());
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod QInclude = new((state, self) =>
+    [RubyDef("(Module) -> bool")]
+    public static MRubyValue QInclude(MRubyState state, MRubyValue self)
     {
         var c = self.As<RClass>();
         var mod2 = state.GetArgumentAt(0);
@@ -98,17 +110,17 @@ static class ModuleMembers
         }
 
         return MRubyValue.False;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod ClassEval = new((state, self) =>
+    [RubyDef("(*untyped) ?{ (Module) -> untyped } -> untyped")]
+    public static MRubyValue ClassEval(MRubyState state, MRubyValue self)
     {
         var block = state.GetBlockArgument(false);
         return state.EvalUnder(self, block!, self.As<RClass>());
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod ModuleFunction = new((state, self) =>
+    [RubyDef("(*Symbol | *String) -> self")]
+    public static MRubyValue ModuleFunction(MRubyState state, MRubyValue self)
     {
         state.EnsureValueType(self, MRubyVType.Module);
         var argv = state.GetRestArgumentsAfter(0);
@@ -132,10 +144,10 @@ static class ModuleMembers
             state.DefineClassMethod(mod, arg.SymbolValue, method);
         }
         return self;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod AttrReader = new((state, self) =>
+    [RubyDef("(*Symbol | *String) -> nil")]
+    public static MRubyValue AttrReader(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var argv = state.GetRestArgumentsAfter(0);
@@ -153,10 +165,10 @@ static class ModuleMembers
             }, name));
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod AttrWriter = new((state, self) =>
+    [RubyDef("(*Symbol | *String) -> nil")]
+    public static MRubyValue AttrWriter(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var argv = state.GetRestArgumentsAfter(0);
@@ -175,17 +187,17 @@ static class ModuleMembers
             });
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod AttrAccessor = new((state, mod) =>
+    [RubyDef("(*Symbol | *String) -> nil")]
+    public static MRubyValue AttrAccessor(MRubyState state, MRubyValue mod)
     {
-        AttrReader.Invoke(state, mod);
-        return AttrWriter.Invoke(state, mod);
-    });
+        AttrReader(state, mod);
+        return AttrWriter(state, mod);
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         if (mod.VType == MRubyVType.SClass)
@@ -197,10 +209,10 @@ static class ModuleMembers
         }
 
         return state.NameOf(mod);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 2)]
-    public static MRubyMethod AliasMethod = new((state, self) =>
+    [RubyDef("(Symbol | String, Symbol | String) -> self")]
+    public static MRubyValue AliasMethod(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var newName = state.GetArgumentAt(0).SymbolValue;
@@ -208,10 +220,10 @@ static class ModuleMembers
         state.AliasMethod(mod, newName, oldName);
         state.MethodAddedHook(mod, newName);
         return self;
-    });
+    }
 
-    [MRubyMethod(RestArguments = true)]
-    public static MRubyMethod UndefMethod = new((state, self) =>
+    [RubyDef("(*Symbol | *String) -> self")]
+    public static MRubyValue UndefMethod(MRubyState state, MRubyValue self)
     {
         var c = self.As<RClass>();
         var argv = state.GetRestArgumentsAfter(0);
@@ -221,10 +233,10 @@ static class ModuleMembers
         }
 
         return self;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Ancestors = new((state, self) =>
+    [RubyDef("() -> Array[Module]")]
+    public static MRubyValue Ancestors(MRubyState state, MRubyValue self)
     {
         var c = self.As<RClass>();
         var result = state.NewArray();
@@ -244,10 +256,10 @@ static class ModuleMembers
         }
 
         return result;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod ConstDefined = new((state, self) =>
+    [RubyDef("(Symbol | String, ?bool) -> bool")]
+    public static MRubyValue ConstDefined(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var id = state.GetArgumentAsSymbolAt(0);
@@ -257,10 +269,10 @@ static class ModuleMembers
             ? state.ConstDefinedAt(id, mod)
             : state.ConstDefinedAt(id, mod, true);
         return result;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod ConstGet = new((state, self) =>
+    [RubyDef("(Symbol | String, ?bool) -> untyped")]
+    public static MRubyValue ConstGet(MRubyState state, MRubyValue self)
     {
         if (self.VType is not (MRubyVType.Class or MRubyVType.Module or MRubyVType.SClass))
         {
@@ -295,20 +307,20 @@ static class ModuleMembers
         }
 
         return result;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 2)]
-    public static MRubyMethod ConstSet = new((state, self) =>
+    [RubyDef("(Symbol | String, untyped) -> untyped")]
+    public static MRubyValue ConstSet(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var id = state.GetArgumentAt(0).SymbolValue;
         var value = state.GetArgumentAt(1);
         state.DefineConst(mod, id, value);
         return value;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod RemoveConst = new((state, self) =>
+    [RubyDef("(Symbol | String) -> untyped")]
+    public static MRubyValue RemoveConst(MRubyState state, MRubyValue self)
     {
         var n = state.GetArgumentAt(0).SymbolValue;
         state.EnsureConstName(n);
@@ -319,25 +331,25 @@ static class ModuleMembers
         }
 
         return removed;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod ConstMissing = new((state, self) =>
+    [RubyDef("(Symbol) -> untyped")]
+    public static MRubyValue ConstMissing(MRubyState state, MRubyValue self)
     {
         var name = state.GetArgumentAsSymbolAt(0);
         state.RaiseConstMissing(self.As<RClass>(), name);
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod MethodDefined = new((state, self) =>
+    [RubyDef("(Symbol | String, ?bool) -> bool")]
+    public static MRubyValue MethodDefined(MRubyState state, MRubyValue self)
     {
         var methodId = state.GetArgumentAsSymbolAt(0);
         return state.RespondTo(self.As<RClass>(), methodId);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1, BlockArgument = true)]
-    public static MRubyMethod DefineMethod = new((state, self) =>
+    [RubyDef("(Symbol | String, ?Proc) ?{ (*untyped) -> untyped } -> Symbol")]
+    public static MRubyValue DefineMethod(MRubyState state, MRubyValue self)
     {
         var methodId = state.GetArgumentAsSymbolAt(0);
         var proc = state.GetArgumentAt(1);
@@ -368,18 +380,18 @@ static class ModuleMembers
         state.MethodAddedHook(mod, methodId);
 
         return methodId;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Eqq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Eqq(MRubyState state, MRubyValue self)
     {
         var mod = self.As<RClass>();
         var other = state.GetArgumentAt(0);
         return state.KindOf(other, mod);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Dup = new((state, self) =>
+    [RubyDef("() -> instance")]
+    public static MRubyValue Dup(MRubyState state, MRubyValue self)
     {
         var clone = state.CloneObject(self);
         if (clone.Object is { } obj)
@@ -387,7 +399,7 @@ static class ModuleMembers
             obj.UnFreeze();
         }
         return clone;
-    });
+    }
 
     static void SetMethodVisibility(MRubyState mrb, RClass c, MRubyMethodVisibility visibility)
     {

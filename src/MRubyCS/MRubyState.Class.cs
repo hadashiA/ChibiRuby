@@ -247,6 +247,9 @@ partial class MRubyState
         DefineMethod(c, id, method.WithVisibility(MRubyMethodVisibility.Private));
     }
 
+    public void DefinePrivateMethod(RClass c, Symbol id, MRubyFunc func) =>
+        DefinePrivateMethod(c, id, new MRubyMethod(func));
+
     public void AliasMethod(RClass c, Symbol aliasMethodId, Symbol methodId)
     {
         if (aliasMethodId == methodId) return;
@@ -429,6 +432,9 @@ partial class MRubyState
         PrepareSingletonClass(o);
         DefineMethod(o.Class, methodId, method);
     }
+
+    void DefineSingletonMethod(RObject o, Symbol methodId, MRubyFunc func) =>
+        DefineSingletonMethod(o, methodId, new MRubyMethod(func));
 
     RClass CloneSingletonClass(MRubyValue obj)
     {

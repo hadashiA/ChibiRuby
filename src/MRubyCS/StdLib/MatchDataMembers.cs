@@ -22,6 +22,7 @@ class MRubyMatchData
     }
 }
 
+[RubyClass("MatchData")]
 static class MatchDataMembers
 {
     public static RData CreateRDataFromMatchData(MRubyState mrb, MRubyMatchData matchData)
@@ -51,8 +52,8 @@ static class MatchDataMembers
     }
 
     // MatchData#[](index) or MatchData#[](name) or MatchData#[](range)
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod OpAref = new((mrb, self) =>
+    [RubyDef("(Integer | Symbol | String | Range[Integer]) -> String? | (Integer, Integer) -> Array[String?]?")]
+    public static MRubyValue OpAref(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var arg = mrb.GetArgumentAt(0);
@@ -86,7 +87,7 @@ static class MatchDataMembers
         }
 
         return GetByIndex(mrb, matchData, index);
-    });
+    }
 
     static MRubyValue GetByIndex(MRubyState mrb, MRubyMatchData matchData, int index)
     {
@@ -187,8 +188,8 @@ static class MatchDataMembers
     }
 
     // MatchData#begin(n)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Begin = new((mrb, self) =>
+    [RubyDef("(Integer) -> Integer?")]
+    public static MRubyValue Begin(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var index = (int)mrb.GetArgumentAsIntegerAt(0);
@@ -213,11 +214,11 @@ static class MatchDataMembers
 
         // Return character index
         return group.Index;
-    });
+    }
 
     // MatchData#end(n)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod End = new((mrb, self) =>
+    [RubyDef("(Integer) -> Integer?")]
+    public static MRubyValue End(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var index = (int)mrb.GetArgumentAsIntegerAt(0);
@@ -242,11 +243,11 @@ static class MatchDataMembers
 
         // Return character index of end (exclusive)
         return group.Index + group.Length;
-    });
+    }
 
     // MatchData#offset(n)
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Offset = new((mrb, self) =>
+    [RubyDef("(Integer) -> Array[Integer?]")]
+    public static MRubyValue Offset(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var index = (int)mrb.GetArgumentAsIntegerAt(0);
@@ -278,11 +279,11 @@ static class MatchDataMembers
         }
 
         return array;
-    });
+    }
 
     // MatchData#captures
-    [MRubyMethod]
-    public static MRubyMethod Captures = new((mrb, self) =>
+    [RubyDef("() -> Array[String?]")]
+    public static MRubyValue Captures(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var groups = matchData.Match.Groups;
@@ -302,11 +303,11 @@ static class MatchDataMembers
             }
         }
         return array;
-    });
+    }
 
     // MatchData#to_a
-    [MRubyMethod]
-    public static MRubyMethod ToA = new((mrb, self) =>
+    [RubyDef("() -> Array[String?]")]
+    public static MRubyValue ToA(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var groups = matchData.Match.Groups;
@@ -325,70 +326,70 @@ static class MatchDataMembers
             }
         }
         return array;
-    });
+    }
 
     // MatchData#to_s
-    [MRubyMethod]
-    public static MRubyMethod ToS = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         return mrb.NewString(matchData.Match.Value);
-    });
+    }
 
     // MatchData#size
-    [MRubyMethod]
-    public static MRubyMethod Size = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Size(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         return matchData.Match.Groups.Count;
-    });
+    }
 
     // MatchData#length - alias for size
-    [MRubyMethod]
-    public static MRubyMethod Length = new((mrb, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Length(MRubyState mrb, MRubyValue self)
     {
-        return Size.Invoke(mrb, self);
-    });
+        return Size(mrb, self);
+    }
 
     // MatchData#pre_match
-    [MRubyMethod]
-    public static MRubyMethod PreMatch = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue PreMatch(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var match = matchData.Match;
         return mrb.NewString(matchData.OriginalString.Substring(0, match.Index));
-    });
+    }
 
     // MatchData#post_match
-    [MRubyMethod]
-    public static MRubyMethod PostMatch = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue PostMatch(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var match = matchData.Match;
         return mrb.NewString(matchData.OriginalString.Substring(match.Index + match.Length));
-    });
+    }
 
     // MatchData#regexp
-    [MRubyMethod]
-    public static MRubyMethod Regexp = new((mrb, self) =>
+    [RubyDef("() -> Regexp")]
+    public static MRubyValue Regexp(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         return RegexpMembers.CreateRDataFromRegexp(mrb, matchData.Regexp);
-    });
+    }
 
     // MatchData#string
-    [MRubyMethod]
-    public static MRubyMethod String = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue String(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var str = mrb.NewString(matchData.OriginalString);
         str.MarkAsFrozen();
         return str;
-    });
+    }
 
     // MatchData#named_captures
-    [MRubyMethod]
-    public static MRubyMethod NamedCaptures = new((mrb, self) =>
+    [RubyDef("() -> Hash[String, String?]")]
+    public static MRubyValue NamedCaptures(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var hash = mrb.NewHash(0);
@@ -411,19 +412,19 @@ static class MatchDataMembers
         }
 
         return hash;
-    });
+    }
 
     // MatchData#names
-    [MRubyMethod]
-    public static MRubyMethod NamesMethod = new((mrb, self) =>
+    [RubyDef("() -> Array[String]")]
+    public static MRubyValue NamesMethod(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
-        return RegexpMembers.NamesMethod.Invoke(mrb, RegexpMembers.CreateRDataFromRegexp(mrb, matchData.Regexp));
-    });
+        return RegexpMembers.NamesMethod(mrb, RegexpMembers.CreateRDataFromRegexp(mrb, matchData.Regexp));
+    }
 
     // MatchData#values_at(*indices)
-    [MRubyMethod]
-    public static MRubyMethod ValuesAt = new((mrb, self) =>
+    [RubyDef("(*Integer) -> Array[String?]")]
+    public static MRubyValue ValuesAt(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var argc = mrb.GetArgumentCount();
@@ -436,11 +437,11 @@ static class MatchDataMembers
             array.Push(GetByIndex(mrb, matchData, index));
         }
         return array;
-    });
+    }
 
     // MatchData#inspect
-    [MRubyMethod]
-    public static MRubyMethod Inspect = new((mrb, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState mrb, MRubyValue self)
     {
         var matchData = GetMatchData(mrb, self);
         var sb = new StringBuilder();
@@ -487,5 +488,5 @@ static class MatchDataMembers
 
         sb.Append('>');
         return mrb.NewString(sb.ToString());
-    });
+    }
 }

@@ -47,11 +47,11 @@ end
 - **High performance** — leverages .NET JIT, GC, and modern C# optimizations with minimal overhead.
 - **Ruby compatible** — all opcodes implemented; passes mruby's official test suite
   - [Syntax](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/syntax.rb), [Literals](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/literals.rb), [Lang](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/lang.rb), [Methods](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/methods.rb), [Module](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/module.rb), [Exception](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/exception.rb), ...
-  - Supported Types: [Array](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/array.rb), [Class](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/class.rb), [Enumerator](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/enumerator.rb), [Fiber](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/fiber.rb), [Float](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/float.rb), [Hash](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/hash.rb), [Integer](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/integer.rb), [Module](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/module.rb), [Nil](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/nil.rb), [Proc](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/proc.rb), [Random](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/random.rb), [Range](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/range.rb), [Symbol](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/symbol.rb), [String](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/string.rb), [Time](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/time.rb)
-  - Enumerable extensions ([mruby-enum-ext](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/enum_ext.rb)): `each_cons`, `each_slice`, `each_with_object`, `flat_map`, `group_by`, `sort_by`, `min_by`/`max_by`, `minmax`/`minmax_by`, `tally`, `filter_map`, `chunk`/`chunk_while`, `zip`, `to_h`, `uniq`, `cycle`, etc.
+  - Supported classes/modules and their method signatures are published as RBS files under [`sig/`](https://github.com/hadashiA/MRubyCS/tree/main/sig) — `Array`, `Hash`, `String`, `Integer`, `Float`, `Range`, `Proc`, `Symbol`, `Fiber`, `Time`, `Random`, `Enumerable`, `Comparable`, etc.
+  - Enumerable extensions (mruby-enum-ext): see [`sig/enumerable.rbs`](https://github.com/hadashiA/MRubyCS/blob/main/sig/enumerable.rbs)
   - **Optional (opt-in)** — see [Optional Classes](#optional-classes-opt-in)
-      - `Regexp` / `MatchData` (via `mrb.DefineRegexp()`)
-      - `IO` / `File` / `IOError` (via `mrb.DefineIO()`)
+      - [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs) / [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs) (via `mrb.DefineRegexp()`)
+      - [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
 - **Fiber & async/await integration** — suspend Ruby execution and await C# async methods without blocking threads.
 - **Prism-based compiler** — uses [mruby-compiler2](https://github.com/picoruby/mruby-compiler2), the next-generation mruby compiler built on [Prism](https://github.com/ruby/prism) (the official CRuby parser), for more accurate and modern Ruby syntax support.
 
@@ -925,10 +925,10 @@ mrb.DefineMethod(yourClass, mrb.Intern("foo_method"u8), (s, self) =>
 
 Some bundled classes are **not** registered by `MRubyState.Create()` so that embedding hosts only pay for the surface area they actually need. Enable them explicitly per `MRubyState` instance:
 
-| Class | Enable with | Adds |
-|---|---|---|
-| `Regexp` | `mrb.DefineRegexp()` | `Regexp`, `MatchData`, and `String#=~` / `#match` / `#sub` / `#gsub` / `#scan` / `#index` |
-| `IO` / `File` | `mrb.DefineIO()` | `IO`, `File`, `IOError` |
+| Enable with | Adds |
+|---|---|
+| `mrb.DefineRegexp()` | [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs), [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs), and regexp-related `String` methods (`=~` / `match` / `sub` / `gsub` / `scan` / `index`) |
+| `mrb.DefineIO()` | [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs), [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs), `IOError` |
 
 Both calls are idempotent and must be made **before** compiling/running Ruby code that references the classes.
 

@@ -274,5 +274,8 @@ static class Names
 """);
             initContext.AddSource("KnownSymbols.g.cs", stringBuilder.ToString());
         });
+
+        var knownSymbolMap = KnownSymbols.ToDictionary(kv => kv.Key, kv => kv.Value);
+        RbsGenerator.Register(context, knownSymbolMap);
     }
 }

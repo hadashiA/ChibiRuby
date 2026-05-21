@@ -68,7 +68,7 @@ partial class MRubyState
             {
                 Raise(Names.RangeError, $"float `{f}` out of range");
             }
-            return FloatMembers.ToI.Invoke(this, value).IntegerValue;
+            return FloatMembers.ToI(this, value).IntegerValue;
         }
 
         // TODO: more numeric types

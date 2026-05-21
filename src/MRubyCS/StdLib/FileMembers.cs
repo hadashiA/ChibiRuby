@@ -5,6 +5,7 @@ using System.Text;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("File", Superclass = "IO")]
 static class FileMembers
 {
     /// <summary>
@@ -15,8 +16,8 @@ static class FileMembers
     /// block can <c>yield</c>/<c>sleep</c>/<c>I/O</c> without crossing a
     /// C# stack frame (<see cref="MRubyState.EnsureValidFiberBoundary"/>).
     /// </summary>
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Open = new((state, self) =>
+    [RubyDef("(String, ?String) -> File | (String, ?String) { (File) -> untyped } -> untyped")]
+    public static MRubyValue Open(MRubyState state, MRubyValue self)
     {
         var path = PathArg(state);
         var mode = ModeArg(state);
@@ -35,13 +36,13 @@ static class FileMembers
             useAsync: useAsync);
         var rfile = new RFile(state.FileClass, stream, path);
         return new MRubyValue(rfile);
-    });
+    }
 
     /// <summary>
     /// <c>File.read(path)</c> — convenience: read whole file as a String.
     /// </summary>
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Read = new((state, self) =>
+    [RubyDef("(String) -> String")]
+    public static MRubyValue Read(MRubyState state, MRubyValue self)
     {
         var path = PathArg(state);
 
@@ -69,14 +70,14 @@ static class FileMembers
         }
 
         return state.NewStringOwned(File.ReadAllBytes(path));
-    });
+    }
 
     /// <summary>
     /// <c>File.write(path, content)</c> — convenience: replace file content.
     /// Returns the number of bytes written.
     /// </summary>
-    [MRubyMethod(RequiredArguments = 2)]
-    public static MRubyMethod Write = new((state, self) =>
+    [RubyDef("(String, String) -> Integer")]
+    public static MRubyValue Write(MRubyState state, MRubyValue self)
     {
         var path = PathArg(state);
         var content = state.GetArgumentAsStringAt(1);
@@ -100,14 +101,14 @@ static class FileMembers
 
         File.WriteAllBytes(path, data);
         return new MRubyValue((long)data.Length);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod ExistQ = new((state, self) =>
+    [RubyDef("(String) -> bool")]
+    public static MRubyValue ExistQ(MRubyState state, MRubyValue self)
     {
         var path = PathArg(state);
         return File.Exists(path) ? MRubyValue.True : MRubyValue.False;
-    });
+    }
 
     static string PathArg(MRubyState state)
         => Encoding.UTF8.GetString(state.GetArgumentAsStringAt(0).AsSpan());

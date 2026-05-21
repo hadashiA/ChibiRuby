@@ -2,10 +2,11 @@ using System.Collections.Generic;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Hash", TypeParameters = "K, V")]
 static class HashMembers
 {
-    [MRubyMethod(OptionalArguments = 1, BlockArgument = true)]
-    public static MRubyMethod Initialize = new((state, self) =>
+    [RubyDef("(?V) ?{ (Hash[K, V], K) -> V } -> void")]
+    public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
         var hash = self.As<RHash>();
         state.EnsureArgumentCount(0, 1);
@@ -24,10 +25,10 @@ static class HashMembers
             hash.DefaultProc = block;
         }
         return self;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod InitializeCopy = new((state, self) =>
+    [RubyDef("(Hash[K, V]) -> self")]
+    public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
         var hash = self.As<RHash>();
         state.EnsureNotFrozen(hash);
@@ -40,9 +41,11 @@ static class HashMembers
         }
 
         return self;
-    });
+    }
 
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         var hash = self.As<RHash>();
         var result = state.NewString("{"u8);
@@ -86,10 +89,10 @@ static class HashMembers
         }
 
         return result;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpAref = new((state, self) =>
+    [RubyDef("(K) -> V?")]
+    public static MRubyValue OpAref(MRubyState state, MRubyValue self)
     {
         var hash = self.As<RHash>();
         var key = state.GetArgumentAt(0);
@@ -99,10 +102,10 @@ static class HashMembers
         }
 
         return state.Send(self, Names.Default, key);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpAset = new((state, self) =>
+    [RubyDef("(K, V) -> V")]
+    public static MRubyValue OpAset(MRubyState state, MRubyValue self)
     {
         var hash = self.As<RHash>();
         state.EnsureNotFrozen(hash);
@@ -117,17 +120,17 @@ static class HashMembers
         var value = state.GetArgumentAt(1);
         hash[key] = value;
         return value;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Size = new((state, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Size(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         return h.Length;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Keys = new((state, self) =>
+    [RubyDef("() -> Array[K]")]
+    public static MRubyValue Keys(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var result = state.NewArray(h.Length);
@@ -137,10 +140,10 @@ static class HashMembers
         }
 
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Values = new((state, self) =>
+    [RubyDef("() -> Array[V]")]
+    public static MRubyValue Values(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var result = state.NewArray(h.Length);
@@ -150,33 +153,33 @@ static class HashMembers
         }
 
         return result;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod HasKey = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue HasKey(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var key = state.GetArgumentAt(0);
         return h.ContainsKey(key);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod HasValue = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue HasValue(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var value = state.GetArgumentAt(0);
         return h.ContainsValue(value);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Empty = new((state, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue Empty(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         return h.Length <= 0;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Default = new((state, self) =>
+    [RubyDef("(?K) -> V?")]
+    public static MRubyValue Default(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         state.EnsureArgumentCount(0, 1);
@@ -192,10 +195,10 @@ static class HashMembers
         }
 
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod DefaultProc = new((state, self) =>
+    [RubyDef("() -> Proc?")]
+    public static MRubyValue DefaultProc(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         if (h.DefaultProc is { } proc)
@@ -204,30 +207,30 @@ static class HashMembers
         }
 
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod SetDefault = new((state, self) =>
+    [RubyDef("(V) -> V")]
+    public static MRubyValue SetDefault(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         state.EnsureNotFrozen(h);
         var value = state.GetArgumentAt(0);
         h.DefaultValue = value;
         return value;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Clear = new((state, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue Clear(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         state.EnsureNotFrozen(h);
 
         h.Clear();
         return self;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Shift = new((state, self) =>
+    [RubyDef("() -> [K, V]?")]
+    public static MRubyValue Shift(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         state.EnsureNotFrozen(h);
@@ -241,10 +244,10 @@ static class HashMembers
         }
 
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Assoc = new((state, self) =>
+    [RubyDef("(K) -> [K, V]?")]
+    public static MRubyValue Assoc(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var searchKey = state.GetArgumentAt(0);
@@ -259,10 +262,10 @@ static class HashMembers
             }
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod RAssoc = new((state, self) =>
+    [RubyDef("(V) -> [K, V]?")]
+    public static MRubyValue RAssoc(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
 
@@ -278,18 +281,18 @@ static class HashMembers
             }
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Rehash = new((state, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue Rehash(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         h.Rehash();
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InternalDelete = new((state, self) =>
+    [RubyDef("(K) -> V?")]
+    public static MRubyValue InternalDelete(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
 
@@ -299,10 +302,10 @@ static class HashMembers
         var key = state.GetArgumentAt(0);
         h.TryDelete(key, out var value);
         return value;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InternalMerge = new((state, self) =>
+    [RubyDef("(Hash[K, V]) -> Hash[K, V]")]
+    public static MRubyValue InternalMerge(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var args = state.GetRestArgumentsAfter(0);
@@ -317,10 +320,11 @@ static class HashMembers
             }
         }
         return self;
-    });
+    }
 
     // Hash#slice(*keys) — returns a new hash containing only entries whose key matches an arg.
-    public static MRubyMethod Slice = new((state, self) =>
+    [RubyDef("(*K) -> Hash[K, V]")]
+    public static MRubyValue Slice(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var keys = state.GetRestArgumentsAfter(0);
@@ -333,10 +337,11 @@ static class HashMembers
             }
         }
         return result;
-    });
+    }
 
     // Hash#slice!(*keys) — keeps only the listed keys in self, returns the removed entries.
-    public static MRubyMethod SliceBang = new((state, self) =>
+    [RubyDef("(*K) -> Hash[K, V]?")]
+    public static MRubyValue SliceBang(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         state.EnsureNotFrozen(h);
@@ -364,10 +369,11 @@ static class HashMembers
             }
         }
         return removed;
-    });
+    }
 
     // Hash#__except(*keys) — pattern matching support for **rest binding.
-    public static MRubyMethod InternalExcept = new((state, self) =>
+    [RubyDef("(*K) -> Hash[K, V]")]
+    public static MRubyValue InternalExcept(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var keys = state.GetRestArgumentsAfter(0);
@@ -389,12 +395,12 @@ static class HashMembers
             }
         }
         return result;
-    });
+    }
 
     // Hash#__pat_values(keys) — used by case/in for hash patterns. Returns the
     // values array when every key is present, or false otherwise.
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod InternalPatValues = new((state, self) =>
+    [RubyDef("(*K) -> Array[V]?")]
+    public static MRubyValue InternalPatValues(MRubyState state, MRubyValue self)
     {
         var h = self.As<RHash>();
         var keysArray = state.GetArgumentAsArrayAt(0);
@@ -408,5 +414,5 @@ static class HashMembers
             result.Push(value);
         }
         return result;
-    });
+    }
 }

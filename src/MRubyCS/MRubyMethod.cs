@@ -101,6 +101,19 @@ public readonly struct MRubyMethod : IEquatable<MRubyMethod>
         return left.Equals(right);
     }
 
+    // Compare against a raw MRubyFunc. C# caches static method-group conversions
+    // for the same target method, so `method == ArrayMembers.Push` works when
+    // the right side is a non-generic static method.
+    public static bool operator ==(MRubyMethod left, MRubyFunc right)
+    {
+        return ReferenceEquals(left.body, right);
+    }
+
+    public static bool operator !=(MRubyMethod left, MRubyFunc right)
+    {
+        return !(left == right);
+    }
+
     public static bool operator !=(MRubyMethod left, MRubyMethod right)
     {
         return !(left == right);

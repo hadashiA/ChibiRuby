@@ -1,20 +1,21 @@
 namespace MRubyCS.StdLib;
 
+[RubyClass("NilClass")]
 static class NilClassMembers
 {
-    [MRubyMethod]
-    public static MRubyMethod Tos = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Tos(MRubyState state, MRubyValue self)
     {
         var result = state.NewString(0);
         result.MarkAsFrozen();
         return new MRubyValue(result);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         var result = state.NewString("nil"u8);
         result.MarkAsFrozen();
         return new MRubyValue(result);
-    });
+    }
 }

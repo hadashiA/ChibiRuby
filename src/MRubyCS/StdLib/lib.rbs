@@ -1,0 +1,1000 @@
+class BasicObject
+  def !=: (untyped other) -> (false | true)
+end
+
+module Kernel
+  #
+  # call-seq:
+  #    obj.extend(module, ...)    -> obj
+  #
+  # Adds to _obj_ the instance methods from each module given as a
+  # parameter.
+  #
+  #    module Mod
+  #      def hello
+  #        "Hello from Mod.\n"
+  #      end
+  #    end
+  #
+  #    class Klass
+  #      def hello
+  #        "Hello from Klass.\n"
+  #      end
+  #    end
+  #
+  #    k = Klass.new
+  #    k.hello         #=> "Hello from Klass.\n"
+  #    k.extend(Mod)   #=> #<Klass:0x401b3bc8>
+  #    k.hello         #=> "Hello from Mod.\n"
+  #
+  # ISO 15.3.1.3.13
+  def extend: (*untyped args) -> self
+
+  # 15.3.1.2.1 Kernel.`
+  # provided by Kernel#`
+  # 15.3.1.3.3
+  def `: (untyped s) -> untyped
+
+  private
+
+  #
+  # Calls the given block repetitively.
+  #
+  # ISO 15.3.1.3.29
+  def loop: () ?{ () -> untyped } -> untyped
+
+  public
+
+  # 11.4.4 Step c)
+  def !~: (untyped y) -> untyped
+
+  # call-seq:
+  #   obj.yield_self {|_obj|...} -> an_object
+  #   obj.then {|_obj|...}       -> an_object
+  #
+  # Yields *obj* and returns the result.
+  #
+  #   'my string'.yield_self {|s|s.upcase} #=> "MY STRING"
+  #
+  def yield_self: () ?{ (?) -> untyped } -> untyped
+
+  alias then yield_self
+
+  #
+  #  call-seq:
+  #     obj.tap{|x|...}    -> obj
+  #
+  #  Yields `x` to the block, and then returns `x`.
+  #  The primary purpose of this method is to "tap into" a method chain,
+  #  in order to perform operations on intermediate results within the chain.
+  #
+  #  (1..10)                .tap {|x| puts "original: #{x.inspect}"}
+  #    .to_a                .tap {|x| puts "array: #{x.inspect}"}
+  #    .select {|x| x%2==0} .tap {|x| puts "evens: #{x.inspect}"}
+  #    .map { |x| x*x }     .tap {|x| puts "squares: #{x.inspect}"}
+  #
+  def tap: () { (untyped) -> untyped } -> self
+end
+
+# ISO 15.2.31
+class NameError < StandardError
+  @name: untyped
+
+  attr_accessor name: untyped
+
+  def initialize: (?untyped? message, ?untyped? name) -> void
+end
+
+# ISO 15.2.32
+class NoMethodError < NameError
+  @args: untyped
+
+  attr_reader args: untyped
+
+  def initialize: (?untyped? message, ?untyped? name, ?untyped? args) -> void
+end
+
+class Module
+  # 15.2.2.4.11
+  alias attr attr_reader
+
+  # 15.2.2.4.27
+  def include: (*untyped args) -> self
+
+  def prepend: (*untyped args) -> self
+end
+
+#
+# Enumerable
+#
+# The <code>Enumerable</code> mixin provides collection classes with
+# several traversal and searching methods, and with the ability to
+# sort. The class must provide a method `each`, which
+# yields successive members of the collection. If
+# {Enumerable#max}, {#min}, or
+# {#sort} is used, the objects in the collection must also
+# implement a meaningful `<=>` operator, as these methods
+# rely on an ordering between members of the collection.
+#
+# ISO 15.3.2
+module Enumerable
+  NONE: untyped
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Return false
+  # if one block value is false. Otherwise
+  # return true. If no block is given and
+  # +self+ is false return false.
+  #
+  # ISO 15.3.2.2.1
+  def all?: () ?{ (?) -> untyped } -> (false | true)
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Return true
+  # if one block value is true. Otherwise
+  # return false. If no block is given and
+  # +self+ is true object return true.
+  #
+  # ISO 15.3.2.2.2
+  def any?: () ?{ (?) -> untyped } -> (true | false)
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Append all
+  # values of each block together and
+  # return this value.
+  #
+  # ISO 15.3.2.2.3
+  def collect: () ?{ (?) -> untyped } -> untyped
+
+  #
+  # Return the first element for which
+  # value from the block is true. If no
+  # object matches, calls +ifnone+ and
+  # returns its result. Otherwise returns
+  # +nil+.
+  #
+  # ISO 15.3.2.2.4
+  def detect: (?untyped? ifnone) ?{ (?) -> untyped } -> untyped
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Pass an
+  # index to the block which starts at 0
+  # and increase by 1 for each element.
+  #
+  # ISO 15.3.2.2.5
+  def each_with_index: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # Return an array of all elements which
+  # are yield by +each+.
+  #
+  # ISO 15.3.2.2.6
+  def entries: () -> untyped
+
+  #
+  # Alias for find
+  #
+  # ISO 15.3.2.2.7
+  alias find detect
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Return an array
+  # which contains all elements whose block
+  # value was true.
+  #
+  # ISO 15.3.2.2.8
+  def find_all: () ?{ (?) -> untyped } -> untyped
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+ and which return
+  # value was true when invoking === with
+  # +pattern+. Return an array with all
+  # elements or the respective block values.
+  #
+  # ISO 15.3.2.2.9
+  def grep: (untyped pattern) { (?) -> untyped } -> untyped
+
+  #
+  # Return true if at least one element which
+  # is yield by +each+ returns a true value
+  # by invoking == with +obj+. Otherwise return
+  # false.
+  #
+  # ISO 15.3.2.2.10
+  def include?: (untyped obj) -> (true | false)
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Return value
+  # is the sum of all block values. Pass
+  # to each block the current sum and the
+  # current element.
+  #
+  # ISO 15.3.2.2.11
+  def inject: (*untyped args) { (?) -> untyped } -> untyped
+
+  alias reduce inject
+
+  #
+  # Alias for collect
+  #
+  # ISO 15.3.2.2.12
+  alias map collect
+
+  #
+  # Return the maximum value of all elements
+  # yield by +each+. If no block is given <=>
+  # will be invoked to define this value. If
+  # a block is given it will be used instead.
+  #
+  # ISO 15.3.2.2.13
+  def max: () { (?) -> untyped } -> untyped
+
+  #
+  # Return the minimum value of all elements
+  # yield by +each+. If no block is given <=>
+  # will be invoked to define this value. If
+  # a block is given it will be used instead.
+  #
+  # ISO 15.3.2.2.14
+  def min: () { (?) -> untyped } -> untyped
+
+  #
+  # Alias for include?
+  #
+  # ISO 15.3.2.2.15
+  alias member? include?
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Return an
+  # array which contains two arrays. The
+  # first array contains all elements
+  # whose block value was true. The second
+  # array contains all elements whose
+  # block value was false.
+  #
+  # ISO 15.3.2.2.16
+  def partition: () ?{ (?) -> untyped } -> (untyped | ::Array[untyped])
+
+  #
+  # Call the given block for each element
+  # which is yield by +each+. Return an
+  # array which contains only the elements
+  # whose block value was false.
+  #
+  # ISO 15.3.2.2.17
+  def reject: () ?{ (?) -> untyped } -> untyped
+
+  #
+  # Alias for find_all.
+  #
+  # ISO 15.3.2.2.18
+  alias select find_all
+
+  #
+  # Return a sorted array of all elements
+  # which are yield by +each+. If no block
+  # is given <=> will be invoked on each
+  # element to define the order. Otherwise
+  # the given block will be used for
+  # sorting.
+  #
+  # ISO 15.3.2.2.19
+  def sort: () { (?) -> untyped } -> untyped
+
+  #
+  # Alias for entries.
+  #
+  # ISO 15.3.2.2.20
+  alias to_a entries
+
+  # redefine #hash 15.3.1.3.15
+  def hash: () -> untyped
+end
+
+# Enumerable extensions (from mruby-enum-ext)
+module Enumerable
+  def drop: (untyped n) -> untyped
+
+  def drop_while: () ?{ (?) -> untyped } -> untyped
+
+  def take: (untyped n) -> untyped
+
+  def take_while: () ?{ (?) -> untyped } -> untyped
+
+  def each_cons: (untyped n) ?{ (?) -> untyped } -> (untyped | nil)
+
+  def each_slice: (untyped n) ?{ (?) -> untyped } -> (untyped | nil)
+
+  def group_by: () ?{ (?) -> untyped } -> untyped
+
+  def sort_by: () ?{ (?) -> untyped } -> untyped
+
+  def first: (*untyped args) -> untyped
+
+  def count: (?untyped v) ?{ (?) -> untyped } -> untyped
+
+  def flat_map: () ?{ (?) -> untyped } -> untyped
+
+  alias collect_concat flat_map
+
+  def max_by: () ?{ (?) -> untyped } -> untyped
+
+  def min_by: () ?{ (?) -> untyped } -> untyped
+
+  def minmax: () { (?) -> untyped } -> ::Array[untyped]
+
+  def minmax_by: () ?{ (?) -> untyped } -> (untyped | ::Array[untyped])
+
+  def none?: (?untyped pat) ?{ (?) -> untyped } -> (false | true)
+
+  def one?: (?untyped pat) ?{ (?) -> untyped } -> (false | untyped)
+
+  def all?: (?untyped pat) ?{ (?) -> untyped } -> (false | true)
+
+  def any?: (?untyped pat) ?{ (?) -> untyped } -> (true | false)
+
+  def each_with_object: (untyped obj) ?{ (?) -> untyped } -> untyped
+
+  def reverse_each: () ?{ (?) -> untyped } -> (untyped | self)
+
+  def cycle: (?untyped? nv) ?{ (untyped) -> untyped } -> (untyped | nil)
+
+  def find_index: (?untyped val) ?{ (?) -> untyped } -> (untyped | nil)
+
+  def zip: (*untyped arg) ?{ (?) -> untyped } -> untyped
+
+  def to_h: () ?{ (?) -> untyped } -> untyped
+
+  def uniq: () ?{ (?) -> untyped } -> untyped
+
+  def filter_map: () ?{ (?) -> untyped } -> untyped
+
+  alias filter select
+
+  def grep_v: (untyped pattern) { (?) -> untyped } -> untyped
+
+  def tally: () -> untyped
+
+  def sum: (?::Integer init) ?{ (?) -> untyped } -> untyped
+
+  def each_entry: (*untyped args) ?{ (untyped) -> untyped } -> (untyped | self)
+end
+
+#
+# Array
+#
+# ISO 15.2.12
+class Array
+  #
+  # call-seq:
+  #   array.each {|element| ... } -> self
+  #   array.each -> Enumerator
+  #
+  # Calls the given block for each element of +self+
+  # and pass the respective element.
+  #
+  # ISO 15.2.12.5.10
+  def each: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # call-seq:
+  #   array.each_index {|index| ... } -> self
+  #   array.each_index -> Enumerator
+  #
+  # Calls the given block for each element of +self+
+  # and pass the index of the respective element.
+  #
+  # ISO 15.2.12.5.11
+  def each_index: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # call-seq:
+  #   array.collect! {|element| ... } -> self
+  #   array.collect! -> new_enumerator
+  #
+  # Calls the given block for each element of +self+
+  # and pass the respective element. Each element will
+  # be replaced by the resulting values.
+  #
+  # ISO 15.2.12.5.7
+  def collect!: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # call-seq:
+  #   array.map! {|element| ... } -> self
+  #   array.map! -> new_enumerator
+  #
+  # Alias for collect!
+  #
+  # ISO 15.2.12.5.20
+  alias map! collect!
+
+  #
+  # Private method for Array creation.
+  #
+  # ISO 15.2.12.5.15
+  def initialize: (?::Integer size, ?untyped? obj) ?{ (?) -> untyped } -> void
+
+  #
+  # call-seq:
+  #   array == other   -> true or false
+  #
+  #  Equality---Two arrays are equal if they contain the same number
+  #  of elements and if each element is equal to (according to
+  #  Object.==) the corresponding element in the other array.
+  #
+  def ==: (untyped other) -> (false | true | untyped)
+
+  #
+  # call-seq:
+  #   array.eql? other_array -> true or false
+  #
+  #  Returns <code>true</code> if +self+ and _other_ are the same object,
+  #  or are both arrays with the same content.
+  #
+  def eql?: (untyped other) -> (false | true | untyped)
+
+  #
+  # call-seq:
+  #   array <=> other_array -> -1, 0, or 1
+  #
+  #  Comparison---Returns an integer (-1, 0, or +1)
+  #  if this array is less than, equal to, or greater than <i>other_ary</i>.
+  #  Each object in each array is compared (using <=>). If any value isn't
+  #  equal, then that inequality is the return value. If all the
+  #  values found are equal, then the return is based on a
+  #  comparison of the array lengths. Thus, two arrays are
+  #  "equal" according to <code>Array#<=></code> if and only if they have
+  #  the same length and the value of each element is equal to the
+  #  value of the corresponding element in the other array.
+  #
+  def <=>: (untyped other) -> (0 | nil | untyped)
+
+  #
+  # call-seq:
+  #   array.delete(obj) -> deleted_object
+  #   array.delete(obj) {|nosuch| ... } -> deleted_object or block_return
+  #
+  # Delete element with index +key+
+  def delete: (untyped key) ?{ (?) -> untyped } -> untyped
+
+  #
+  # call-seq:
+  #   array.sort! -> self
+  #   array.sort! {|a, b| ... } -> self
+  #
+  # Sort all elements and replace +self+ with these
+  # elements.
+  def sort!: () ?{ (?) -> untyped } -> self
+
+  #
+  # call-seq:
+  #   array.sort -> new_array
+  #   array.sort {|a, b| ... } -> new_array
+  #
+  # Returns a new Array whose elements are those from +self+, sorted.
+  def sort: () { (?) -> untyped } -> untyped
+
+  #
+  # call-seq:
+  #   array.to_a -> self
+  #
+  # Returns self, no need to convert.
+  def to_a: () -> self
+
+  alias entries to_a
+
+  #
+  # Array is enumerable
+  # ISO 15.2.12.3
+  include Enumerable
+end
+
+# Array extensions (from mruby-enum-ext)
+class Array
+  def sort_by: () ?{ (?) -> untyped } -> untyped
+
+  def sort_by!: () { (?) -> untyped } -> untyped
+end
+
+#
+# Hash
+#
+# ISO 15.2.13
+class Hash
+  #
+  # Hash is enumerable
+  #
+  # ISO 15.2.13.3
+  include Enumerable
+
+  #
+  # call-seq:
+  #   hash == object -> true or false
+  #
+  #  Equality---Two hashes are equal if they each contain the same number
+  #  of keys and if each key-value pair is equal to (according to
+  #  <code>Object#==</code>) the corresponding elements in the other
+  #  hash.
+  #
+  # ISO 15.2.13.4.1
+  def ==: (untyped hash) -> (true | false | untyped)
+
+  #
+  # call-seq:
+  #   hash.eql? object -> true or false
+  #
+  # Returns <code>true</code> if <i>hash</i> and <i>other</i> are
+  # both hashes with the same content compared by eql?.
+  #
+  def eql?: (untyped hash) -> (true | false | untyped)
+
+  #
+  # call-seq:
+  #   hash.delete(key) -> value or nil
+  #   hash.delete(key) {|key| ... } -> object
+  #
+  # Delete the element with the key +key+.
+  # Return the value of the element if +key+
+  # was found. Return nil if nothing was
+  # found. If a block is given, call the
+  # block with the value of the element.
+  #
+  # ISO 15.2.13.4.8
+  def delete: (untyped key) ?{ (?) -> untyped } -> untyped
+
+  #
+  # call-seq:
+  #   hsh.each      {| key, value | block } -> hsh
+  #   hsh.each_pair {| key, value | block } -> hsh
+  #   hsh.each                              -> an_enumerator
+  #   hsh.each_pair                         -> an_enumerator
+  #
+  # Calls the given block for each element of +self+
+  # and pass the key and value of each element.
+  #
+  # If no block is given, an enumerator is returned instead.
+  #
+  #     h = { "a" => 100, "b" => 200 }
+  #     h.each {|key, value| puts "#{key} is #{value}" }
+  #
+  # <em>produces:</em>
+  #
+  # a is 100
+  # b is 200
+  #
+  # ISO 15.2.13.4.9
+  def each: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # call-seq:
+  #   hsh.each_key {| key | block } -> hsh
+  #   hsh.each_key                  -> an_enumerator
+  #
+  # Calls the given block for each element of +self+
+  # and pass the key of each element.
+  #
+  # If no block is given, an enumerator is returned instead.
+  #
+  #   h = { "a" => 100, "b" => 200 }
+  #   h.each_key {|key| puts key }
+  #
+  # <em>produces:</em>
+  #
+  #  a
+  #  b
+  #
+  # ISO 15.2.13.4.10
+  def each_key: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # call-seq:
+  #   hsh.each_value {| value | block } -> self
+  #   hsh.each_value                    -> an_enumerator
+  #
+  # Calls the given block with each value; returns +self+:
+  #
+  # If no block is given, an enumerator is returned instead.
+  #
+  #  h = { "a" => 100, "b" => 200 }
+  #  h.each_value {|value| puts value }
+  #
+  # <em>produces:</em>
+  #
+  #  100
+  #  200
+  #
+  # ISO 15.2.13.4.11
+  def each_value: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # call-seq:
+  #     hsh.merge(other_hash..)                                 -> hsh
+  #     hsh.merge(other_hash..){|key, oldval, newval| block}    -> hsh
+  #
+  #  Returns the new \Hash formed by merging each of +other_hashes+
+  #  into a copy of +self+.
+  #
+  #  Each argument in +other_hashes+ must be a \Hash.
+  #  Adds the contents of _other_hash_ to _hsh_. If no block is specified,
+  #  entries with duplicate keys are overwritten with the values from
+  #  _other_hash_, otherwise the value of each duplicate key is determined by
+  #  calling the block with the key, its value in _hsh_ and its value in
+  #  _other_hash_.
+  #
+  #  Example:
+  #   h = {foo: 0, bar: 1, baz: 2}
+  #   h1 = {bat: 3, bar: 4}
+  #   h2 = {bam: 5, bat:6}
+  #   h3 = h.merge(h1, h2) { |key, old_value, new_value| old_value + new_value }
+  #   h3 # => {:foo=>0, :bar=>5, :baz=>2, :bat=>9, :bam=>5}
+  #
+  # ISO 15.2.13.4.22
+  def merge: (*untyped others) ?{ (?) -> untyped } -> untyped
+
+  #
+  #  call-seq:
+  #     hsh.reject! {| key, value | block }  -> hsh or nil
+  #     hsh.reject!                          -> an_enumerator
+  #
+  #  Equivalent to <code>Hash#delete_if</code>, but returns
+  #  <code>nil</code> if no changes were made.
+  #
+  #  1.8/1.9 Hash#reject! returns Hash; ISO says nothing.
+  #
+  def reject!: () ?{ (?) -> untyped } -> (untyped | nil | self)
+
+  #
+  #  call-seq:
+  #     hsh.reject {|key, value| block}   -> a_hash
+  #     hsh.reject                        -> an_enumerator
+  #
+  #  Returns a new hash consisting of entries for which the block returns false.
+  #
+  #  If no block is given, an enumerator is returned instead.
+  #
+  #     h = { "a" => 100, "b" => 200, "c" => 300 }
+  #     h.reject {|k,v| k < "b"}  #=> {"b" => 200, "c" => 300}
+  #     h.reject {|k,v| v > 100}  #=> {"a" => 100}
+  #
+  #  1.8/1.9 Hash#reject returns Hash; ISO says nothing.
+  #
+  def reject: () ?{ (?) -> untyped } -> untyped
+
+  #
+  #  call-seq:
+  #     hsh.select! {| key, value | block }  -> hsh or nil
+  #     hsh.select!                          -> an_enumerator
+  #
+  #  Equivalent to <code>Hash#keep_if</code>, but returns
+  #  <code>nil</code> if no changes were made.
+  #
+  #  1.9 Hash#select! returns Hash; ISO says nothing.
+  #
+  def select!: () ?{ (?) -> untyped } -> (untyped | nil | self)
+
+  #
+  #  call-seq:
+  #     hsh.select {|key, value| block}   -> a_hash
+  #     hsh.select                        -> an_enumerator
+  #
+  #  Returns a new hash consisting of entries for which the block returns true.
+  #
+  #  If no block is given, an enumerator is returned instead.
+  #
+  #     h = { "a" => 100, "b" => 200, "c" => 300 }
+  #     h.select {|k,v| k > "a"}  #=> {"b" => 200, "c" => 300}
+  #     h.select {|k,v| v < 200}  #=> {"a" => 100}
+  #
+  #  1.9 Hash#select returns Hash; ISO says nothing
+  #
+  def select: () ?{ (?) -> untyped } -> untyped
+end
+
+#
+# Integer
+#
+# ISO 15.2.8
+#
+class Integer
+  #
+  # Calls the given block once for each Integer
+  # from +self+ downto +num+.
+  #
+  # ISO 15.2.8.3.15
+  def downto: (untyped num) ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # Calls the given block +self+ times.
+  #
+  # ISO 15.2.8.3.22
+  def times: () ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # Calls the given block once for each Integer
+  # from +self+ upto +num+.
+  #
+  # ISO 15.2.8.3.27
+  def upto: (untyped num) ?{ (?) -> untyped } -> (untyped | self)
+end
+
+#
+# Range
+#
+# ISO 15.2.14
+class Range
+  #
+  # Range is enumerable
+  #
+  # ISO 15.2.14.3
+  include Enumerable
+
+  #
+  # Calls the given block for each element of +self+
+  # and pass the respective element.
+  #
+  # ISO 15.2.14.4.4
+  def each: () ?{ (?) -> untyped } -> (untyped | self)
+
+  # redefine #hash 15.3.1.3.15
+  def hash: () -> untyped
+
+  #
+  # call-seq:
+  #    rng.to_a                   -> array
+  #    rng.entries                -> array
+  #
+  # Returns an array containing the items in the range.
+  #
+  #   (1..7).to_a  #=> [1, 2, 3, 4, 5, 6, 7]
+  #   (1..).to_a   #=> RangeError: cannot convert endless range to an array
+  def to_a: () -> untyped
+
+  alias entries to_a
+end
+
+class Symbol
+  def to_proc: () -> untyped
+end
+
+#
+# Comparable
+#
+# ISO 15.3.3
+module Comparable
+  #
+  # call-seq:
+  #   obj < other    -> true or false
+  #
+  # Return true if +self+ is less
+  # than +other+. Otherwise return
+  # false.
+  #
+  # ISO 15.3.3.2.1
+  def <: (untyped other) -> untyped
+
+  #
+  # call-seq:
+  #   obj <= other   -> true or false
+  #
+  # Return true if +self+ is less
+  # than or equal to +other+.
+  # Otherwise return false.
+  #
+  # ISO 15.3.3.2.2
+  def <=: (untyped other) -> untyped
+
+  #
+  # call-seq:
+  #   obj == other   -> true or false
+  #
+  # Return true if +self+ is equal
+  # to +other+. Otherwise return
+  # false.
+  #
+  # ISO 15.3.3.2.3
+  def ==: (untyped other) -> untyped
+
+  #
+  # call-seq:
+  #   obj > other    -> true or false
+  #
+  # Return true if +self+ is greater
+  # than +other+. Otherwise return
+  # false.
+  #
+  # ISO 15.3.3.2.4
+  def >: (untyped other) -> untyped
+
+  #
+  # call-seq:
+  #   obj >= other   -> true or false
+  #
+  # Return true if +self+ is greater
+  # than or equal to +other+.
+  # Otherwise return false.
+  #
+  # ISO 15.3.3.2.5
+  def >=: (untyped other) -> untyped
+
+  #
+  # call-seq:
+  #   obj.between?(min,max) -> true or false
+  #
+  # Return true if +self+ is greater
+  # than or equal to +min+ and
+  # less than or equal to +max+.
+  # Otherwise return false.
+  #
+  # ISO 15.3.3.2.6
+  def between?: (untyped min, untyped max) -> untyped
+end
+
+#
+# String
+#
+# ISO 15.2.10
+class String
+  # ISO 15.2.10.3
+  include Comparable
+
+  #
+  # Calls the given block for each line
+  # and pass the respective line.
+  #
+  # ISO 15.2.10.5.15
+  def each_line: (?::String separator) ?{ (?) -> untyped } -> (untyped | self)
+
+  #
+  # Replace all matches of +pattern+ with +replacement+.
+  # Call block (if given) for each match and replace
+  # +pattern+ with the value of the block. Return the
+  # final value.
+  #
+  # ISO 15.2.10.5.18
+  def gsub: (*untyped args) ?{ (?) -> untyped } -> untyped
+
+  #
+  # Replace all matches of +pattern+ with +replacement+.
+  # Call block (if given) for each match and replace
+  # +pattern+ with the value of the block. Modify
+  # +self+ with the final value.
+  #
+  # ISO 15.2.10.5.19
+  def gsub!: (*untyped args) { (?) -> untyped } -> (untyped | nil)
+
+  #
+  # Replace only the first match of +pattern+ with
+  # +replacement+. Call block (if given) for each
+  # match and replace +pattern+ with the value of the
+  # block. Return the final value.
+  #
+  # ISO 15.2.10.5.36
+  def sub: (*untyped args) ?{ (?) -> untyped } -> (self | untyped)
+
+  #
+  # Replace only the first match of +pattern+ with
+  # +replacement+. Call block (if given) for each
+  # match and replace +pattern+ with the value of the
+  # block. Modify +self+ with the final value.
+  #
+  # ISO 15.2.10.5.37
+  def sub!: (*untyped args) { (?) -> untyped } -> (nil | untyped)
+
+  #
+  # Call the given block for each byte of +self+.
+  def each_byte: () ?{ (?) -> untyped } -> (untyped | self)
+end
+
+# StopIteration#result accessor (from mruby-fiber upstream)
+class StopIteration
+  attr_accessor result: untyped
+end
+
+#
+# Enumerator
+#
+# A class which allows both internal and external iteration.
+# (from mruby-enumerator)
+class Enumerator
+  @obj: untyped
+
+  @meth: untyped
+
+  @args: untyped
+
+  @kwd: untyped
+
+  @fib: untyped
+
+  @dst: untyped
+
+  @lookahead: untyped
+
+  @feedvalue: untyped
+
+  @stop_exc: untyped
+
+  include Enumerable
+
+  def initialize: (?untyped obj, ?::Symbol meth, *untyped args, **untyped kwd) ?{ (?) -> untyped } -> void
+
+  def initialize_copy: (untyped obj) -> self
+
+  def with_index: (?::Integer offset) ?{ (?) -> untyped } -> untyped
+
+  def each_with_index: () { (?) -> untyped } -> untyped
+
+  def with_object: (untyped object) ?{ (?) -> untyped } -> untyped
+
+  def inspect: () -> ::String
+
+  def size: () -> (untyped | untyped | nil)
+
+  def each: (*untyped argv) ?{ (?) -> untyped } -> untyped
+
+  private
+
+  def __enumerator_block_call: () { (?) -> untyped } -> untyped
+
+  public
+
+  def next: () -> untyped
+
+  def next_values: () -> untyped
+
+  def peek: () -> untyped
+
+  def peek_values: () -> untyped
+
+  def rewind: () -> self
+
+  def feed: (untyped value) -> nil
+
+  # just for internal
+  class Generator
+    @proc: untyped
+
+    include Enumerable
+
+    def initialize: () { (?) -> untyped } -> void
+
+    def each: (*untyped args) { (?) -> untyped } -> untyped
+  end
+
+  # just for internal
+  class Yielder
+    @proc: untyped
+
+    def initialize: () ?{ (?) -> untyped } -> void
+
+    def yield: (*untyped args) -> untyped
+
+    def <<: (*untyped args) -> self
+  end
+
+  def self.produce: (?untyped init) { (?) -> untyped } -> untyped
+end
+
+module Kernel
+  def to_enum: (?::Symbol meth, *untyped args, **untyped kwd) -> untyped
+
+  alias enum_for to_enum
+end
+
+module Enumerable
+  # use Enumerator to use infinite sequence
+  def zip: (*untyped args) ?{ (?) -> untyped } -> untyped
+
+  def chunk: () ?{ (?) -> untyped } -> untyped
+
+  def chunk_while: () { (?) -> untyped } -> untyped
+end

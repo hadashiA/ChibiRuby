@@ -1,9 +1,10 @@
 namespace MRubyCS.StdLib;
 
+[RubyClass("Range", TypeParameters = "Elem")]
 static class RangeMembers
 {
-    [MRubyMethod(RequiredArguments = 2, OptionalArguments = 1)]
-    public static MRubyMethod Initialize = new((state, self) =>
+    [RubyDef("(Elem, Elem, ?bool) -> void")]
+    public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
         var range = self.As<RRange>();
         if (range.IsFrozen)
@@ -18,9 +19,10 @@ static class RangeMembers
         }
         range.MarkAsFrozen();
         return self;
-    });
+    }
 
-    public static MRubyMethod InitializeCopy = new((state, self) =>
+    [RubyDef("(Range[Elem]) -> self")]
+    public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
         var range = self.As<RRange>();
         if (range.IsFrozen)
@@ -38,25 +40,28 @@ static class RangeMembers
         range.Exclusive = src.Exclusive;
         range.MarkAsFrozen();
         return self;
-    });
+    }
 
-    public static MRubyMethod Begin = new((state, self) =>
+    [RubyDef("() -> Elem")]
+    public static MRubyValue Begin(MRubyState state, MRubyValue self)
     {
         return self.As<RRange>().Begin;
-    });
+    }
 
-    public static MRubyMethod End = new((state, self) =>
+    [RubyDef("() -> Elem")]
+    public static MRubyValue End(MRubyState state, MRubyValue self)
     {
         return self.As<RRange>().End;
-    });
+    }
 
-    public static MRubyMethod ExcludeEnd = new((state, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue ExcludeEnd(MRubyState state, MRubyValue self)
     {
         return self.As<RRange>().Exclusive;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
         var arg0 = state.GetArgumentAt(0);
         if (self == arg0) return MRubyValue.True;
@@ -69,10 +74,10 @@ static class RangeMembers
         return state.ValueEquals(range.Begin, rangeOther.Begin) &&
             state.ValueEquals(range.End, rangeOther.End) &&
             range.Exclusive == rangeOther.Exclusive;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod IsInclude = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue IsInclude(MRubyState state, MRubyValue self)
     {
         var range = self.As<RRange>();
         var value = state.GetArgumentAt(0);
@@ -103,9 +108,10 @@ static class RangeMembers
             return result;
         }
         return MRubyValue.False;
-    });
+    }
 
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var range = self.As<RRange>();
         var b = state.Stringify(range.Begin);
@@ -115,9 +121,10 @@ static class RangeMembers
             ? state.NewString($"{b}...{e}")
             : state.NewString($"{b}..{e}");
         return new MRubyValue(result);
-    });
+    }
 
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         var range = self.As<RRange>();
         var result = state.NewString(6);
@@ -131,10 +138,10 @@ static class RangeMembers
             result.Concat(state.Inspect(range.End));
         }
         return new MRubyValue(result);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEql = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEql(MRubyState state, MRubyValue self)
     {
         var arg0 = state.GetArgumentAt(0);
         if (self == arg0) return MRubyValue.True;
@@ -149,19 +156,22 @@ static class RangeMembers
         var beginEql = state.Send(range.Begin, Names.QEql, rangeOther.Begin);
         var endEql = state.Send(range.End, Names.QEql, rangeOther.End);
         return beginEql.Truthy && endEql.Truthy && range.Exclusive == rangeOther.Exclusive;
-    });
+    }
 
-    public static MRubyMethod First = new((state, self) =>
+    [RubyDef("() -> Elem")]
+    public static MRubyValue First(MRubyState state, MRubyValue self)
     {
         return self.As<RRange>().Begin;
-    });
+    }
 
-    public static MRubyMethod Last = new((state, self) =>
+    [RubyDef("() -> Elem")]
+    public static MRubyValue Last(MRubyState state, MRubyValue self)
     {
         return self.As<RRange>().End;
-    });
+    }
 
-    public static MRubyMethod InternalNumToA = new((state, self) =>
+    [RubyDef("() -> Array[Elem]?")]
+    public static MRubyValue InternalNumToA(MRubyState state, MRubyValue self)
     {
         var range = self.As<RRange>();
         if (range.End.IsNil)
@@ -219,5 +229,5 @@ static class RangeMembers
             }
         }
         return MRubyValue.Nil;
-    });
+    }
 }

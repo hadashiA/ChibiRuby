@@ -7,6 +7,8 @@
         <LangVersion>13</LangVersion>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <!-- RS1035: file IO; intentionally allowed for RBS generation (MemoryPack pattern). -->
+        <NoWarn>$(NoWarn);RS1035</NoWarn>
         <AnalyzerLanguage>cs</AnalyzerLanguage>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <DevelopmentDependency>true</DevelopmentDependency>

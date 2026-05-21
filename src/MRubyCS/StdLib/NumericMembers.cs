@@ -1,9 +1,10 @@
 namespace MRubyCS.StdLib;
 
+[RubyClass("Numeric")]
 static class NumericMembers
 {
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Eql = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (self.IsFloat)
@@ -20,11 +21,11 @@ static class NumericMembers
         }
 
         return self == other;
-    });
+    }
 
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpLt = new((state, self) =>
+    [RubyDef("(Numeric) -> bool")]
+    public static MRubyValue OpLt(MRubyState state, MRubyValue self)
     {
         var x = self.FloatValue;
         var arg = state.GetArgumentAt(0);
@@ -44,10 +45,10 @@ static class NumericMembers
         }
 
         return x < y;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpLe = new((state, self) =>
+    [RubyDef("(Numeric) -> bool")]
+    public static MRubyValue OpLe(MRubyState state, MRubyValue self)
     {
         var x = self.FloatValue;
         var arg = state.GetArgumentAt(0);
@@ -67,10 +68,10 @@ static class NumericMembers
         }
 
         return x <= y;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpGt = new((state, self) =>
+    [RubyDef("(Numeric) -> bool")]
+    public static MRubyValue OpGt(MRubyState state, MRubyValue self)
     {
         var x = self.FloatValue;
         var arg = state.GetArgumentAt(0);
@@ -90,10 +91,10 @@ static class NumericMembers
         }
 
         return x > y;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpGe = new((state, self) =>
+    [RubyDef("(Numeric) -> bool")]
+    public static MRubyValue OpGe(MRubyState state, MRubyValue self)
     {
         var x = self.FloatValue;
         var arg = state.GetArgumentAt(0);
@@ -113,10 +114,10 @@ static class NumericMembers
         }
 
         return x >= y;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpCmp = new((state, self) =>
+    [RubyDef("(untyped) -> Integer")]
+    public static MRubyValue OpCmp(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (self.IsInteger)
@@ -142,5 +143,5 @@ static class NumericMembers
             }
         }
         return -2;
-    });
+    }
 }

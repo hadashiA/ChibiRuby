@@ -35,10 +35,21 @@
       </ProjectReference>
     </ItemGroup>
 
+    <PropertyGroup>
+        <MRubyCSGenerator_RbsOutputDirectory>$(MSBuildProjectDirectory)/../../sig</MRubyCSGenerator_RbsOutputDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+        <CompilerVisibleProperty Include="MRubyCSGenerator_RbsOutputDirectory" />
+    </ItemGroup>
+
     <ItemGroup>
         <None Include="StdLib\**\*.mrb">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="StdLib\lib.rbs" />
     </ItemGroup>
 
 </Project>

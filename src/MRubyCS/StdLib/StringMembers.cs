@@ -8,10 +8,11 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("String")]
 static class StringMembers
 {
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Initialize = new((state, self) =>
+    [RubyDef("(?String) -> void")]
+    public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
         if (state.TryGetArgumentAt(0, out var arg))
         {
@@ -26,35 +27,35 @@ static class StringMembers
             }
         }
         return self;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod InitializeCopy = new((state, self) =>
+    [RubyDef("(String) -> self")]
+    public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var other = state.GetArgumentAsStringAt(0);
         other.CopyTo(str);
         return self;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Intern = new((state, self) =>
+    [RubyDef("() -> Symbol")]
+    public static MRubyValue Intern(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         return state.Intern(str);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Replace = new((state, self) =>
+    [RubyDef("(String) -> self")]
+    public static MRubyValue Replace(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var other = state.GetArgumentAsStringAt(0);
         other.CopyTo(str);
         return self;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var output = ArrayPool<byte>.Shared.Rent(str.Length * 2 + 2);
@@ -68,10 +69,10 @@ static class StringMembers
         ArrayPool<byte>.Shared.Return(output);
 
         return state.NewString(output.AsSpan(0, written));
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpEq = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (other.Object is RString otherString)
@@ -79,10 +80,10 @@ static class StringMembers
             return self.As<RString>().Equals(otherString);
         }
         return MRubyValue.False;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpCmp = new((state, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue OpCmp(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (other.Object is RString otherStr)
@@ -91,10 +92,10 @@ static class StringMembers
             return str.CompareTo(otherStr);
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod OpAref = new((state, self) =>
+    [RubyDef("(Integer | Range[Integer]) -> String? | (Integer, Integer) -> String?")]
+    public static MRubyValue OpAref(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
 
@@ -107,10 +108,10 @@ static class StringMembers
 
         var result = str.GetPartial(state, indexValue, rangeLength);
         return result != null ? new MRubyValue(result) : MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 2, OptionalArguments = 1)]
-    public static MRubyMethod OpAset = new((state, self) =>
+    [RubyDef("(Integer, String) -> String | (Integer, Integer, String) -> String | (Range[Integer], String) -> String")]
+    public static MRubyValue OpAset(MRubyState state, MRubyValue self)
     {
         MRubyValue index;
         RString? value;
@@ -135,27 +136,27 @@ static class StringMembers
         var str = self.As<RString>();
         str.SetPartial(state, index, rangeLength, value);
         return value;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ToSym = new((state, self) =>
+    [RubyDef("() -> Symbol")]
+    public static MRubyValue ToSym(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         return state.Intern(str.AsSpan());
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         if (state.ClassOf(self) == state.StringClass)
         {
             return self.As<RString>().Dup();
         }
         return self;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod ToI = new((state, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+    public static MRubyValue ToI(MRubyState state, MRubyValue self)
     {
         var source = self.As<RString>().AsSpan();
 
@@ -204,10 +205,10 @@ static class StringMembers
                 : Utf8Parser.TryParse(buffer, out value, out var consumed, format);
         }
         return result ? value : 0;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ToF = new((state, self) =>
+    [RubyDef("() -> Float")]
+    public static MRubyValue ToF(MRubyState state, MRubyValue self)
     {
         var source = self.As<RString>().AsSpan();
 
@@ -228,32 +229,32 @@ static class StringMembers
         }
 
         return result ? value : 0;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Size = new((state, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Size(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         return Encoding.UTF8.GetCharCount(str.AsSpan());
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Empty = new((state, self) =>
+    [RubyDef("() -> bool")]
+    public static MRubyValue Empty(MRubyState state, MRubyValue self)
     {
         return self.As<RString>().Length <= 0;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Include = new((state, self) =>
+    [RubyDef("(String) -> bool")]
+    public static MRubyValue Include(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var v = state.GetArgumentAsStringAt(0);
         var i = str.AsSpan().IndexOf(v.AsSpan());
         return i >= 0;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod Index = new((state, self) =>
+    [RubyDef("(String, ?Integer) -> Integer?")]
+    public static MRubyValue Index(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var argc = state.GetArgumentCount();
@@ -275,10 +276,10 @@ static class StringMembers
         }
         var result = str.IndexOf(target, pos);
         return result < 0 ? MRubyValue.Nil : new MRubyValue(result);
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod RIndex = new((state, self) =>
+    [RubyDef("(String, ?Integer) -> Integer?")]
+    public static MRubyValue RIndex(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var argc = state.GetArgumentCount();
@@ -300,9 +301,11 @@ static class StringMembers
         }
         var result = str.LstIndexOf(target, pos);
         return result < 0 ? MRubyValue.Nil : result;
-    });
+    }
 
-    public static MRubyMethod Times = new((state, self) =>
+    [RubyDef("(Integer) -> String")]
+
+    public static MRubyValue Times(MRubyState state, MRubyValue self)
     {
         var n = state.GetArgumentAsIntegerAt(0);
         if (n < 0)
@@ -323,27 +326,31 @@ static class StringMembers
             dst = dst[src.Length..];
         }
         return result;
-    });
+    }
 
-    public static MRubyMethod Capitalize = new((state, self) =>
+    [RubyDef("() -> String")]
+
+    public static MRubyValue Capitalize(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var result = str.Dup();
         result.Capitalize();
         return result;
-    });
+    }
 
-    public static MRubyMethod CapitalizeBang = new((state, self) =>
+    [RubyDef("() -> self?")]
+
+    public static MRubyValue CapitalizeBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
 
         str.Capitalize();
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod Chomp = new((state, self) =>
+    [RubyDef("(?String) -> String")]
+    public static MRubyValue Chomp(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var result = str.Dup();
@@ -358,10 +365,10 @@ static class StringMembers
             result.Chomp();
         }
         return result;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 1)]
-    public static MRubyMethod ChompBang = new((state, self) =>
+    [RubyDef("(?String) -> self?")]
+    public static MRubyValue ChompBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
@@ -377,72 +384,72 @@ static class StringMembers
             str.Chomp();
         }
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Chop = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Chop(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var result = str.Dup();
         result.Chop();
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ChopBang = new((state, self) =>
+    [RubyDef("() -> self?")]
+    public static MRubyValue ChopBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
         str.Chop();
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Downcase = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Downcase(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var result = str.Dup();
         result.Downcase();
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod DowncaseBang = new((state, self) =>
+    [RubyDef("() -> self?")]
+    public static MRubyValue DowncaseBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
         str.Downcase();
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Upcase = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Upcase(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var result = str.Dup();
         result.Upcase();
         return result;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod UpcaseBang = new((state, self) =>
+    [RubyDef("() -> self?")]
+    public static MRubyValue UpcaseBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
         str.Upcase();
         return MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Reverse = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Reverse(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var buf = Utf8Helper.Reverse(str.AsSpan());
         return state.NewStringOwned(buf);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod ReverseBang = new((state, self) =>
+    [RubyDef("() -> self")]
+    public static MRubyValue ReverseBang(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         state.EnsureNotFrozen(str);
@@ -451,10 +458,10 @@ static class StringMembers
         str.MakeModifiable(str.Length);
         buf.CopyTo(str.AsSpan());
         return self;
-    });
+    }
 
-    [MRubyMethod(OptionalArguments = 2)]
-    public static MRubyMethod Split = new((state, self) =>
+    [RubyDef("(?(String | Regexp), ?Integer) -> Array[String]")]
+    public static MRubyValue Split(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var argc = state.GetArgumentCount();
@@ -531,7 +538,7 @@ static class StringMembers
             }
         }
         return result;
-    });
+    }
 
     static MRubyValue SplitByRegexp(MRubyState state, RString str, MRubyRegexpData regexpData, int limit)
     {
@@ -619,15 +626,15 @@ static class StringMembers
         return result;
     }
 
-    [MRubyMethod]
-    public static MRubyMethod ByteCount = new((state, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue ByteCount(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         return str.AsSpan().Length;
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Bytes = new((state, self) =>
+    [RubyDef("() -> Array[Integer]")]
+    public static MRubyValue Bytes(MRubyState state, MRubyValue self)
     {
         var span = self.As<RString>().AsSpan();
         var array = state.NewArray(span.Length);
@@ -636,10 +643,10 @@ static class StringMembers
             array.Push(x);
         }
         return array;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod ByteIndex = new((state, self) =>
+    [RubyDef("(String, ?Integer) -> Integer?")]
+    public static MRubyValue ByteIndex(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
 
@@ -652,10 +659,10 @@ static class StringMembers
 
         var index = str.ByteIndexOf(target, pos);
         return index < 0 ? MRubyValue.Nil : index;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1, OptionalArguments = 1)]
-    public static MRubyMethod BytesSlice = new((state, self) =>
+    [RubyDef("(Integer, ?Integer) -> String?")]
+    public static MRubyValue BytesSlice(MRubyState state, MRubyValue self)
     {
         int start;
         int length;
@@ -698,10 +705,10 @@ static class StringMembers
             return MRubyValue.Nil;
         }
         return result != null ? result : MRubyValue.Nil;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 2, OptionalArguments = 3)]
-    public static MRubyMethod ByteSplice = new((state, self) =>
+    [RubyDef("(*untyped) -> String")]
+    public static MRubyValue ByteSplice(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
 
@@ -821,10 +828,10 @@ static class StringMembers
                 str.AsSpan(sourceIndex));
         }
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod GetByte = new((state, self) =>
+    [RubyDef("(Integer) -> Integer?")]
+    public static MRubyValue GetByte(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var pos = (int)state.GetArgumentAsIntegerAt(0);
@@ -838,10 +845,10 @@ static class StringMembers
         }
 
         return str.AsSpan()[pos];
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 2)]
-    public static MRubyMethod SetByte = new((state, self) =>
+    [RubyDef("(Integer, Integer) -> Integer")]
+    public static MRubyValue SetByte(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
 
@@ -857,10 +864,10 @@ static class StringMembers
         }
         str.AsSpan()[pos] = (byte)(value & 0xff);
         return self;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 3)]
-    public static MRubyMethod InternalSubReplace = new((state, self) =>
+    [RubyDef("(String, MatchData) -> String")]
+    public static MRubyValue InternalSubReplace(MRubyState state, MRubyValue self)
     {
         var str = self.As<RString>();
         var pattern = state.GetArgumentAsStringAt(0);
@@ -910,7 +917,7 @@ static class StringMembers
             }
         }
         return result;
-    });
+    }
 
 }
 

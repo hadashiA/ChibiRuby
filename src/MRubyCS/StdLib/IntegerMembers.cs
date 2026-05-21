@@ -6,6 +6,7 @@ using Utf8StringInterpolation;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Integer", Superclass = "Numeric")]
 static class IntegerMembers
 {
     [DoesNotReturn]
@@ -62,11 +63,11 @@ static class IntegerMembers
         }
     }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpPow = new((state, self) => IntPow(state, self, state.GetArgumentAt(0)));
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue OpPow(MRubyState state, MRubyValue self) => IntPow(state, self, state.GetArgumentAt(0));
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpAdd = new((state, self) =>
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue OpAdd(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -88,10 +89,10 @@ static class IntegerMembers
         }
         state.Raise(Names.TypeError, "non integer addition"u8);
         return default;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpSub = new((state, self) =>
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue OpSub(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -113,10 +114,10 @@ static class IntegerMembers
         }
         state.Raise(Names.TypeError, "non integer subtraction"u8);
         return default;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpMul = new((state, self) =>
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue OpMul(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -138,10 +139,10 @@ static class IntegerMembers
         }
         state.Raise(Names.TypeError, Utf8String.Format($"can't convert {state.TypeNameOf(other)} into Integer"));
         return default;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpDiv = new((state, self) =>
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue OpDiv(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -165,10 +166,10 @@ static class IntegerMembers
         }
         RaiseIntegerNoConversionError(state, other);
         return default;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Quo = new((state, self) =>
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue Quo(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         var f = state.AsFloat(other);
@@ -178,10 +179,10 @@ static class IntegerMembers
             return default;
         }
         return state.AsInteger(self) / f;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod IntDiv = new((state, self) =>
+    [RubyDef("(Numeric) -> Integer")]
+    public static MRubyValue IntDiv(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -192,10 +193,10 @@ static class IntegerMembers
             return default;
         }
         return a / b;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod FDiv = new((state, self) =>
+    [RubyDef("(Numeric) -> Float")]
+    public static MRubyValue FDiv(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -206,37 +207,37 @@ static class IntegerMembers
             return default;
         }
         return a / b;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpAnd = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue OpAnd(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
         var b = state.AsInteger(other);
         return a & b;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpOr = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue OpOr(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
         var b = state.AsInteger(other);
         return a | b;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpXor = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue OpXor(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
         var b = state.AsInteger(other);
         return a ^ b;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpLShift = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue OpLShift(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -248,10 +249,10 @@ static class IntegerMembers
         }
         RaiseIntegerOverflowError(state, "bit  shift"u8);
         return default;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod OpRShift = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue OpRShift(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -263,10 +264,13 @@ static class IntegerMembers
         }
         RaiseIntegerOverflowError(state, "bit  shift"u8);
         return default;
-    });
+    }
 
 
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("(?Integer) -> String")]
+
+
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var basis = 10;
         if (state.GetArgumentCount() > 0)
@@ -275,16 +279,20 @@ static class IntegerMembers
         }
 
         return state.StringifyInteger(self, basis);
-    });
+    }
 
-    public static MRubyMethod OpPlus = new((state, self) => { return +self.IntegerValue; });
+    [RubyDef("() -> Integer")]
 
-    public static MRubyMethod OpMinus = new((state, self) => { return -self.IntegerValue; });
+    public static MRubyValue OpPlus(MRubyState state, MRubyValue self) => +self.IntegerValue;
 
-    public static MRubyMethod Abs = new((state, self) => { return Math.Abs(self.IntegerValue); });
+    [RubyDef("() -> Integer")]
+    public static MRubyValue OpMinus(MRubyState state, MRubyValue self) => -self.IntegerValue;
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Mod = new((state, self) =>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Abs(MRubyState state, MRubyValue self) => Math.Abs(self.IntegerValue);
+
+    [RubyDef("(Numeric) -> Numeric")]
+    public static MRubyValue Mod(MRubyState state, MRubyValue self)
     {
         var a = state.AsInteger(self);
         if (a == 0) return self;
@@ -305,10 +313,12 @@ static class IntegerMembers
             }
             return mod;
         }
-        return FloatMembers.Mod.Invoke(state, self);
-    });
+        return FloatMembers.Mod(state, self);
+    }
 
-    public static MRubyMethod Ceil = new((state, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+
+    public static MRubyValue Ceil(MRubyState state, MRubyValue self)
     {
         var f = PrepareIntRounding(state, self);
         if (f.IsUndef)
@@ -337,9 +347,11 @@ static class IntegerMembers
             }
         }
         return a;
-    });
+    }
 
-    public static MRubyMethod Floor = new((state, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+
+    public static MRubyValue Floor(MRubyState state, MRubyValue self)
     {
         var f = PrepareIntRounding(state, self);
         if (f.IsUndef)
@@ -368,9 +380,11 @@ static class IntegerMembers
             }
         }
         return a;
-    });
+    }
 
-    public static MRubyMethod Round = new((state, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+
+    public static MRubyValue Round(MRubyState state, MRubyValue self)
     {
         var f = PrepareIntRounding(state, self);
         if (f.IsUndef)
@@ -413,10 +427,13 @@ static class IntegerMembers
             RaiseIntegerOverflowError(state, "round"u8);
             return default;
         }
-    });
+    }
 
 
-    public static MRubyMethod Next = new((state, self) =>
+    [RubyDef("() -> Integer")]
+
+
+    public static MRubyValue Next(MRubyState state, MRubyValue self)
     {
         try
         {
@@ -427,9 +444,11 @@ static class IntegerMembers
             RaiseIntegerOverflowError(state, "next"u8);
             return default;
         }
-    });
+    }
 
-    public static MRubyMethod Truncate = new((state, self) =>
+    [RubyDef("(?Integer) -> Integer")]
+
+    public static MRubyValue Truncate(MRubyState state, MRubyValue self)
     {
         var f = PrepareIntRounding(state, self);
         if (f.IsUndef)
@@ -443,15 +462,19 @@ static class IntegerMembers
         var a = state.AsInteger(self);
         var b = state.AsInteger(f);
         return a - (a % b);
-    });
+    }
 
-    public static MRubyMethod Hash = new((state, self) =>
+    [RubyDef("() -> Integer")]
+
+    public static MRubyValue Hash(MRubyState state, MRubyValue self)
     {
         var n = state.AsInteger(self);
         return RString.GetHashCode(MemoryMarshal.CreateSpan(ref Unsafe.As<long, byte>(ref n), sizeof(long)));
-    });
+    }
 
-    public static MRubyMethod DivMod = new((state, self) =>
+    [RubyDef("(Numeric) -> Array[Numeric]")]
+
+    public static MRubyValue DivMod(MRubyState state, MRubyValue self)
     {
         var n = state.AsInteger(self);
         var other = state.GetArgumentAt(0);
@@ -460,13 +483,15 @@ static class IntegerMembers
             IntDivMod(state, n, other.IntegerValue, out var div, out var mod);
             return state.NewArray(div, mod);
         }
-        return FloatMembers.DivMod.Invoke(state, self);
-    });
+        return FloatMembers.DivMod(state, self);
+    }
 
-    public static MRubyMethod ToF = new((state, self) => (double)state.AsInteger(self));
+    [RubyDef("() -> Float")]
 
-    [MRubyMethod]
-    public static MRubyMethod BitLength = new((state, self) =>
+    public static MRubyValue ToF(MRubyState state, MRubyValue self) => (double)state.AsInteger(self);
+
+    [RubyDef("() -> Integer")]
+    public static MRubyValue BitLength(MRubyState state, MRubyValue self)
     {
         var v = state.AsInteger(self);
         // Two's-complement bit_length: negatives use ~v.
@@ -478,10 +503,10 @@ static class IntegerMembers
             x >>= 1;
         }
         return bits;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Gcd = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue Gcd(MRubyState state, MRubyValue self)
     {
         var a = Math.Abs(state.AsInteger(self));
         var b = Math.Abs(state.GetArgumentAsIntegerAt(0));
@@ -490,10 +515,10 @@ static class IntegerMembers
             (a, b) = (b, a % b);
         }
         return a;
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Lcm = new((state, self) =>
+    [RubyDef("(Integer) -> Integer")]
+    public static MRubyValue Lcm(MRubyState state, MRubyValue self)
     {
         var a = Math.Abs(state.AsInteger(self));
         var b = Math.Abs(state.GetArgumentAsIntegerAt(0));
@@ -513,7 +538,7 @@ static class IntegerMembers
             RaiseIntegerOverflowError(state, "lcm"u8);
             return default;
         }
-    });
+    }
 
     internal static bool NumShift(MRubyState state, long val, long width, out long num)
     {

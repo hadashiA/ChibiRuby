@@ -3,20 +3,24 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+[RubyClass("Symbol")]
 static class SymbolMembers
 {
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var name = state.NameOf(self.SymbolValue);
         return new MRubyValue(state.NewString(name.AsSpan()));
-    });
+    }
 
-    public static MRubyMethod Name = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Name(MRubyState state, MRubyValue self)
     {
         return new MRubyValue(state.NameOf(self.SymbolValue));
-    });
+    }
 
-    public static MRubyMethod Inspect = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
         var name = state.NameOf(self.SymbolValue);
         if (NamingRule.IsSymbolName(name))
@@ -38,10 +42,10 @@ static class SymbolMembers
 #pragma warning restore CA2014
         }
         return new MRubyValue(state.NewString(escapeBuffer[..(escapedSize + 1)]));
-    });
+    }
 
-    [MRubyMethod(RequiredArguments = 1)]
-    public static MRubyMethod Cmp = new((state, self) =>
+    [RubyDef("(untyped) -> Integer?")]
+    public static MRubyValue Cmp(MRubyState state, MRubyValue self)
     {
         var other = state.GetArgumentAt(0);
         if (!other.IsSymbol) return MRubyValue.Nil;
@@ -57,7 +61,7 @@ static class SymbolMembers
         var str2 = state.NameOf(sym2);
         var result = str1.AsSpan().SequenceCompareTo(str2.AsSpan());
         return new MRubyValue(result);
-    });
+    }
 
 
 }

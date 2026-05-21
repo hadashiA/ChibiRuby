@@ -1,28 +1,30 @@
 namespace MRubyCS.StdLib;
 
+[RubyClass("FalseClass")]
 static class FalseClassMembers
 {
     static readonly byte[] FalseString = "false"u8.ToArray();
 
-    [MRubyMethod]
-    public static MRubyMethod And = new((state, self) => MRubyValue.False);
+    [RubyDef("(untyped) -> false")]
+    public static MRubyValue And(MRubyState state, MRubyValue self) => MRubyValue.False;
 
-    [MRubyMethod]
-    public static MRubyMethod Or = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Or(MRubyState state, MRubyValue self)
     {
         return new MRubyValue(state.GetArgumentAt(0).Truthy);
-    });
+    }
 
-    [MRubyMethod]
-    public static MRubyMethod Xor = new((state, self) =>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Xor(MRubyState state, MRubyValue self)
     {
         return new MRubyValue(state.GetArgumentAt(0).Truthy);
-    });
+    }
 
-    public static MRubyMethod ToS = new((state, self) =>
+    [RubyDef("() -> String")]
+    public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
         var result = state.NewStringOwned(FalseString);
         result.MarkAsFrozen();
         return new MRubyValue(result);
-    });
+    }
 }
