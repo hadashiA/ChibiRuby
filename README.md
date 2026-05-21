@@ -925,10 +925,10 @@ mrb.DefineMethod(yourClass, mrb.Intern("foo_method"u8), (s, self) =>
 
 Some bundled classes are **not** registered by `MRubyState.Create()` so that embedding hosts only pay for the surface area they actually need. Enable them explicitly per `MRubyState` instance:
 
-| Class | Enable with | Adds |
-|---|---|---|
-| `Regexp` | `mrb.DefineRegexp()` | `Regexp`, `MatchData`, and `String#=~` / `#match` / `#sub` / `#gsub` / `#scan` / `#index` |
-| `IO` / `File` | `mrb.DefineIO()` | `IO`, `File`, `IOError` |
+| Enable with | Adds |
+|---|---|
+| `mrb.DefineRegexp()` | [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs), [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs), and regexp-related `String` methods (`=~` / `match` / `sub` / `gsub` / `scan` / `index`) |
+| `mrb.DefineIO()` | [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs), [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs), `IOError` |
 
 Both calls are idempotent and must be made **before** compiling/running Ruby code that references the classes.
 
