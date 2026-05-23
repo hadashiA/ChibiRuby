@@ -94,10 +94,10 @@ static class AsciiCode
     public static bool IsAscii(byte c) => c <= 0x7f;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsUpper(byte c) => c - (byte)'A' < 26;
+    public static bool IsUpper(byte c) => (byte)(c - (byte)'A') < 26;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsLower(byte c) => c - (byte)'a' < 26;
+    public static bool IsLower(byte c) => (byte)(c - (byte)'a') < 26;
 
     public static bool IsIdentifier(byte c) => IsAlphabet(c) ||
                                                IsDigit(c) ||
@@ -122,10 +122,10 @@ static class AsciiCode
                                                (c - (byte)'\t' < 5);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ToUpper(byte b) => (byte)(b & 0xDF); // 0xDF = ~0x20
+    public static byte ToUpper(byte b) => IsLower(b) ? (byte)(b - 0x20) : b;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ToLower(byte b) => (byte)(b | 0x20);
+    public static byte ToLower(byte b) => IsUpper(b) ? (byte)(b + 0x20) : b;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToUpper(Span<byte> span)
