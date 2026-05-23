@@ -341,7 +341,7 @@ dotnet add package MRubyCS.Compiler
 If you also want the Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, additionally install the Unity package. Open Window > Package Manager, click [+] > Add package from git URL, and enter:
 
 ```
-https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity#0.106.0
+https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity#0.107.0
 ```
 
 See [Unity AssetImporter](#unity-assetimporter) for details.
@@ -1466,7 +1466,7 @@ By introducing the following packages, serialization of Unity-specific types wil
 Open the Package Manager window by selecting Window > Package Manager, then click on [+] > Add package from git URL and enter the following URL:
 
 ```
-https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity#0.106.0
+https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity#0.107.0
 ```
 
 | mruby                                | C#  |

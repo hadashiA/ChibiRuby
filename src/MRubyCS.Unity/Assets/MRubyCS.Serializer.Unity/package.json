@@ -1,7 +1,7 @@
 {
   "name": "jp.hadashikick.mrubycs-serializer",
   "displayName": "MRubyCS.Serializer",
-  "version": "0.106.1",
+  "version": "0.107.0",
   "unity": "2021.3",
   "description": "MRubyCS serializer extensions for unity",
   "keywords": ["mruby", "ruby"],
