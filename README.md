@@ -139,24 +139,11 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 > [!IMPORTANT]
 > **macOS Editor users** — NuGetForUnity v4.3.0's default `NativeRuntimeSettings` ships broken Editor settings for the `osx-arm64` / `osx-x64` runtimes (the Apple Silicon variant has no Editor target, and the Intel variant defaults to "Any CPU"), so `libmruby.dylib` may fail to load in the Editor.
 >
-> A fix has been submitted upstream — [NuGetForUnity#755](https://github.com/GlitchEnzo/NuGetForUnity/pull/755). Once that is merged and released, this workaround will no longer be needed. In the meantime, open `ProjectSettings/Packages/com.github-glitchenzo.nugetforunity/NativeRuntimeSettings.json` and make sure the two `osx-*` entries look like this, then reimport the dylibs under `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-*/native/`:
+> A fix has been submitted upstream — [NuGetForUnity#755](https://github.com/GlitchEnzo/NuGetForUnity/pull/755). Once that is merged and released, this workaround will no longer be needed. In the meantime, fix the two dylibs from Unity's Inspector:
 >
-> ```json
-> {
->   "cpuArchitecture": "x86_64",
->   "editorCpuArchitecture": "x86_64",
->   "editorOperatingSystem": "OSX",
->   "runtime": "osx-x64",
->   "supportedPlatformTargets": ["StandaloneOSX"]
-> },
-> {
->   "cpuArchitecture": "ARM64",
->   "editorCpuArchitecture": "ARM64",
->   "editorOperatingSystem": "OSX",
->   "runtime": "osx-arm64",
->   "supportedPlatformTargets": ["StandaloneOSX"]
-> }
-> ```
+> 1. In the Project window, select `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-arm64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, check **Include Platforms → Editor**, set **CPU** to `ARM64`, set **OS** to `OSX`, then click **Apply**.
+> 2. Select `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-x64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, **uncheck** Editor (or set **CPU** to `x86_64` and **OS** to `OSX` if you want it kept for Intel Editors), then click **Apply**.
+> 3. Right-click each of the two `libmruby.dylib` files in the Project window and choose **Reimport**. NuGetForUnity skips reprocessing assets that already have its label, so the explicit reimport is required to apply the corrected Editor/CPU settings.
 
 ## Basic Usage
 
