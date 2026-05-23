@@ -1,11 +1,11 @@
 {
   "dependencies": {
     "com.github-glitchenzo.nugetforunity": {
-      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity#v4.3.0",
+      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity#v4.5.0",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "36d3260fdca03bf6feb105c67022d1fd7629dd2f"
+      "hash": "a7c6b49a0141a5bff9b1983e38137522ef61977d"
     },
     "com.unity.burst": {
       "version": "1.8.25",
@@ -190,12 +190,6 @@
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
       }
-    },
-    "jp.hadashikick.mrubycs.internal": {
-      "version": "file:../../MRubyCS/bin/Debug/netstandard2.1",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {}
     },
     "com.unity.modules.assetbundle": {
       "version": "1.0.0",

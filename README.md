@@ -128,12 +128,35 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 > [!NOTE]
 > Requirements: Unity 2021.3 or later.
 
-1. Install [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity).
-2. Install following packages via NugetForUnity
+1. Install [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (v4.3.0 or later — required for native plugin support).
+2. Install following packages via NuGetForUnity
     - Utf8StringInterpolation
     - MRubyCS
+    - (Optional) MRubyCS.Compiler — runtime Ruby compiler. Native binaries (macOS / Linux / Windows) ship inside the NuGet package.
     - (Optional) MRubyCS.Serializer
-3. (Optional) To install utilities for generating mrb bytecode, refer to the [Compiling and Executing Ruby Code](#compiling-and-executing-ruby-code) section.
+3. (Optional) For an Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, install `MRubyCS.Compiler` Unity package as well — see [Unity AssetImporter](#unity-assetimporter).
+
+> [!IMPORTANT]
+> **macOS Editor users** — NuGetForUnity v4.3.0's default `NativeRuntimeSettings` ships broken Editor settings for the `osx-arm64` / `osx-x64` runtimes (the Apple Silicon variant has no Editor target, and the Intel variant defaults to "Any CPU"), so `libmruby.dylib` may fail to load in the Editor.
+>
+> Open `ProjectSettings/Packages/com.github-glitchenzo.nugetforunity/NativeRuntimeSettings.json` and make sure the two `osx-*` entries look like this, then reimport the dylibs under `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-*/native/`:
+>
+> ```json
+> {
+>   "cpuArchitecture": "x86_64",
+>   "editorCpuArchitecture": "x86_64",
+>   "editorOperatingSystem": "OSX",
+>   "runtime": "osx-x64",
+>   "supportedPlatformTargets": ["StandaloneOSX"]
+> },
+> {
+>   "cpuArchitecture": "ARM64",
+>   "editorCpuArchitecture": "ARM64",
+>   "editorOperatingSystem": "OSX",
+>   "runtime": "osx-arm64",
+>   "supportedPlatformTargets": ["StandaloneOSX"]
+> }
+> ```
 
 ## Basic Usage
 
@@ -313,11 +336,15 @@ NOTE: This is a wrapper for native compilers. Currently, only the following plat
 dotnet add package MRubyCS.Compiler
 ```
 
-**Unity**: Open the Package Manager window by selecting Window > Package Manager, then click on [+] > Add package from git URL and enter the following URL:
+**Unity**: install `MRubyCS.Compiler` via [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (v4.3.0 or later). The native compiler binaries (`libmruby.dylib` / `.so` / `.dll`) are bundled in the NuGet package and resolved automatically.
+
+If you also want the Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, additionally install the Unity package. Open Window > Package Manager, click [+] > Add package from git URL, and enter:
 
 ```
-https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity#0.50.3
+https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity#0.106.0
 ```
+
+See [Unity AssetImporter](#unity-assetimporter) for details.
 
 ```cs
 using MRubyCS.Compiler;
@@ -1439,7 +1466,7 @@ By introducing the following packages, serialization of Unity-specific types wil
 Open the Package Manager window by selecting Window > Package Manager, then click on [+] > Add package from git URL and enter the following URL:
 
 ```
-https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity#0.18.1
+https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity#0.106.0
 ```
 
 | mruby                                | C#  |
