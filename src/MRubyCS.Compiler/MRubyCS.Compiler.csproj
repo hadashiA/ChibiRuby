@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0;netstandard2.1</TargetFrameworks>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RuntimeIdentifiers>osx-arm64</RuntimeIdentifiers>
-        <LangVersion>9</LangVersion>
+        <LangVersion>13</LangVersion>
         <Description>Native binding for the mruby compiler for use from C# and MRubyCS</Description>
     </PropertyGroup>
 
@@ -17,37 +17,30 @@
       <ProjectReference Include="..\MRubyCS\MRubyCS.csproj" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+      <PackageReference Include="PolySharp" Version="1.15.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
     <ItemGroup>
-        <NativeLibs Include="runtimes\**\*.dll" />
-        <NativeLibs Include="runtimes\**\*.so" />
-        <NativeLibs Include="runtimes\**\*.a" />
-        <NativeLibs Include="runtimes\**\*.dylib" />
-        <None Include="@(NativeLibs)">
-            <Pack>true</Pack>
-            <PackageCopyToOutput>true</PackageCopyToOutput>
+      <None Include="runtimes\**\*.dll;runtimes\**\*.so;runtimes\**\*.dylib;runtimes\**\*.a">
+        <Pack>true</Pack>
+        <PackagePath>%(Identity)</PackagePath>
+      </None>
+    </ItemGroup>    
+
+    <PropertyGroup>
+        <_MRubyCompilerHostRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_MRubyCompilerHostRid>
+        <_MRubyCompilerHostRid Condition="'$(_MRubyCompilerHostRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</_MRubyCompilerHostRid>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(_MRubyCompilerHostRid)' != '' And Exists('runtimes\$(_MRubyCompilerHostRid)\native')">
+        <None Update="runtimes\$(_MRubyCompilerHostRid)\native\libmruby.*">
+            <Link>%(Filename)%(Extension)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
         </None>
     </ItemGroup>
-
-    <!-- Copy files for Unity -->
-    <PropertyGroup>
-        <UnityAssetsRoot>$(MSBuildProjectDirectory)\..\MRubyCS.Unity\Assets\MRubyCS.Compiler.Unity\Runtime</UnityAssetsRoot>
-    </PropertyGroup>
-    <ItemGroup>
-        <UnityAssets Include="**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*" />
-        <UnityAssetsPlugins Include="runtimes\**\*.dll" Exclude="**\bin\**\*.*;**\obj\**\*.*" />
-        <UnityAssetsPlugins Include="runtimes\**\*.so" Exclude="**\bin\**\*.*;**\obj\**\*.*" />
-        <UnityAssetsPlugins Include="runtimes\**\*.a" Exclude="**\bin\**\*.*;**\obj\**\*.*" />
-        <UnityAssetsPlugins Include="runtimes\**\*.dylib" Exclude="**\bin\**\*.*;**\obj\**\*.*" />
-    </ItemGroup>
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Copy SourceFiles="@(UnityAssets)"
-              DestinationFiles="$(UnityAssetsRoot)\%(RecursiveDir)%(Filename)%(Extension)"
-              SkipUnchangedFiles="true" />
-        <Copy SourceFiles="@(UnityAssetsPlugins)"
-              DestinationFiles="$(UnityAssetsRoot)\Plugins\%(RecursiveDir)%(Filename)%(Extension)"
-              SkipUnchangedFiles="true" />
-
-    </Target>
 
 </Project>

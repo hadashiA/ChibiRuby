@@ -56,54 +56,6 @@ unsafe class NativeMethods
     public const int Ok = 0;
     public const int Failed = 11;
 
-#if !UNITY_2021_3_OR_NEWER
-    static NativeMethods()
-    {
-        NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly, DllImportResolver);
-    }
-
-    static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
-    {
-        if (libraryName == DllName)
-        {
-            var path = "runtimes";
-            string extname;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                path = Path.Join(path, "win");
-                extname = ".dll";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                path = Path.Join(path, "osx");
-                extname = ".dylib";
-            }
-            else
-            {
-                path = Path.Join(path, "linux");
-                extname = ".so";
-            }
-
-            switch (RuntimeInformation.ProcessArchitecture)
-            {
-                case Architecture.X86:
-                    path += "-x86";
-                    break;
-                case Architecture.X64:
-                    path += "-x64";
-                    break;
-                case Architecture.Arm64:
-                    path += "-arm64";
-                    break;
-            }
-
-            path = Path.Join(path, "native", $"{DllName}{extname}");
-            return NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, path), assembly, searchPath);
-        }
-        return IntPtr.Zero;
-    }
-#endif
     [DllImport(DllName, EntryPoint = "mrb_open", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern MrbState* MrbOpen();
 
