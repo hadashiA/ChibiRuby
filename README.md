@@ -139,7 +139,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 > [!IMPORTANT]
 > **macOS Editor users** — NuGetForUnity v4.3.0's default `NativeRuntimeSettings` ships broken Editor settings for the `osx-arm64` / `osx-x64` runtimes (the Apple Silicon variant has no Editor target, and the Intel variant defaults to "Any CPU"), so `libmruby.dylib` may fail to load in the Editor.
 >
-> Open `ProjectSettings/Packages/com.github-glitchenzo.nugetforunity/NativeRuntimeSettings.json` and make sure the two `osx-*` entries look like this, then reimport the dylibs under `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-*/native/`:
+> A fix has been submitted upstream — [NuGetForUnity#755](https://github.com/GlitchEnzo/NuGetForUnity/pull/755). Once that is merged and released, this workaround will no longer be needed. In the meantime, open `ProjectSettings/Packages/com.github-glitchenzo.nugetforunity/NativeRuntimeSettings.json` and make sure the two `osx-*` entries look like this, then reimport the dylibs under `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-*/native/`:
 >
 > ```json
 > {
