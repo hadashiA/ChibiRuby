@@ -3,6 +3,8 @@
 
 # An interval between two values, written as begin..end (inclusive) or begin...end (exclusive of end). Used for iteration ((1..10).each), membership tests ((1..10).include?(x)), and array slicing. Includes Enumerable when the endpoints support succ.
 class Range[Elem] < Object
+  include Enumerable
+
   # Returns the begin value of the range.
   #
   #   (1..5).begin    # => 1
@@ -80,11 +82,6 @@ class Range[Elem] < Object
   def __num_to_a: () -> Array[Elem]?
 
   # --- from lib.rb ---
-  #
-  # Range is enumerable
-  #
-  # ISO 15.2.14.3
-  include Enumerable
 
   #
   # Calls the given block for each element of +self+

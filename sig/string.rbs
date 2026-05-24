@@ -3,6 +3,8 @@
 
 # Mutable sequence of bytes, usually interpreted as UTF-8 text. Indexing returns substrings or single characters; many methods come in pairs of pure (upcase) and in-place (upcase!) variants. Includes Comparable. String literals are frozen by some host configurations but mutable by default.
 class String < Object
+  include Comparable
+
   # Initializes a new String, optionally copying the contents of the given string.
   #
   #   String.new            # => ""
@@ -253,8 +255,6 @@ class String < Object
   def __sub_replace: (String, MatchData) -> String
 
   # --- from lib.rb ---
-  # ISO 15.2.10.3
-  include Comparable
 
   #
   # Calls the given block for each line
