@@ -7,6 +7,8 @@
 # A class which allows both internal and external iteration.
 # (from mruby-enumerator)
 class Enumerator
+  include Enumerable
+
   @obj: untyped
 
   @meth: untyped
@@ -24,8 +26,6 @@ class Enumerator
   @feedvalue: untyped
 
   @stop_exc: untyped
-
-  include Enumerable
 
   #
   # call-seq:
@@ -160,8 +160,6 @@ class Enumerator
   # Enumerable, so it can drive +each+-based iteration directly.
   class Generator
     @proc: untyped
-
-    include Enumerable
 
     #
     # Creates a Generator wrapping the given block. The block is

@@ -3,6 +3,8 @@
 
 # Ordered, integer-indexed collection of objects. The base concrete container in Ruby -- supports indexing, slicing, iteration via each, and conversion via to_a. Mutable; many in-place methods end in !.
 class Array[Elem] < Object
+  include Enumerable
+
   # Equality ==. Returns true when both arrays have the same length and corresponding elements compare equal with ==.
   #
   #   [1, 2] == [1, 2]    # => true
@@ -308,11 +310,6 @@ class Array[Elem] < Object
   def to_a: () -> self
 
   alias entries to_a
-
-  #
-  # Array is enumerable
-  # ISO 15.2.12.3
-  include Enumerable
   # --- from lib.rb ---
   #
   # call-seq:

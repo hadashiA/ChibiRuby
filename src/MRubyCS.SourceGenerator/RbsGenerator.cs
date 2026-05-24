@@ -401,24 +401,51 @@ internal static class RbsGenerator
                 header = $"class {type.RubyName}{typeParams} < {type.Superclass}";
             sb.AppendLine(header);
 
-            // include modules wired via Init.cs IncludeModule(klass, module)
-            var includedModules = candidates.SelectMany(c => includesByClass[c])
-                .Select(b => b.ModuleRubyName)
-                .Distinct()
-                .ToList();
+            // Pre-process lib.rb blocks: hoist `include X` / `extend X` to the
+            // top, dropping the include line and any immediately preceding
+            // comment block from the body. This keeps the layout consistent
+            // with C#-side `IncludeModule(...)` includes (which already emit
+            // at the top).
+            var libBlocks = blocksByName.TryGetValue(type.RubyName, out var rawBlocks) ? rawBlocks : null;
+            var hoistedIncludes = new List<string>();
+            var hoistedExtends = new List<string>();
+            List<RbsBlock>? processedBlocks = null;
+            if (libBlocks is not null)
+            {
+                processedBlocks = new List<RbsBlock>(libBlocks.Count);
+                foreach (var b in libBlocks)
+                {
+                    var filtered = StripAndCollectIncludes(b.BodyLines, hoistedIncludes, hoistedExtends);
+                    processedBlocks.Add(new RbsBlock(b.Name, b.IsModule, b.Superclass, new(filtered.ToImmutableArray()), b.HeaderComments));
+                }
+            }
+
+            // include modules wired via Init.cs IncludeModule(klass, module),
+            // plus anything hoisted from lib.rb. Dedup, preserve order.
+            var includedModules = new List<string>();
+            var seenIncludes = new HashSet<string>();
+            foreach (var name in candidates.SelectMany(c => includesByClass[c]).Select(b => b.ModuleRubyName)
+                         .Concat(hoistedIncludes))
+            {
+                if (seenIncludes.Add(name)) includedModules.Add(name);
+            }
             foreach (var mod in includedModules)
             {
                 sb.AppendLine($"  include {mod}");
             }
-            if (includedModules.Count > 0) sb.AppendLine();
+            foreach (var ext in hoistedExtends.Distinct())
+            {
+                sb.AppendLine($"  extend {ext}");
+            }
+            if (includedModules.Count > 0 || hoistedExtends.Count > 0) sb.AppendLine();
 
             EmitMembers(sb, type, relevant, isClassMethodSection: false);
             EmitMembers(sb, type, relevant, isClassMethodSection: true);
 
-            // Append lib.rbs blocks for this class
-            if (blocksByName.TryGetValue(type.RubyName, out var blocks))
+            // Append lib.rbs blocks for this class (with includes already stripped).
+            if (processedBlocks is not null)
             {
-                foreach (var b in blocks)
+                foreach (var b in processedBlocks)
                 {
                     sb.AppendLine("  # --- from lib.rb ---");
                     foreach (var line in b.BodyLines) sb.AppendLine(line);
@@ -454,7 +481,19 @@ internal static class RbsGenerator
             sb.Append(first.IsModule ? "module " : "class ").Append(first.Name);
             if (!string.IsNullOrEmpty(first.Superclass)) sb.Append(" < ").Append(first.Superclass);
             sb.AppendLine();
-            foreach (var b in kv.Value)
+
+            // Hoist `include X` / `extend X` to the top, before the rest of the body.
+            var libIncludes = new List<string>();
+            var libExtends = new List<string>();
+            var filteredBlocks = kv.Value.Select(b =>
+                new RbsBlock(b.Name, b.IsModule, b.Superclass,
+                    new(StripAndCollectIncludes(b.BodyLines, libIncludes, libExtends).ToImmutableArray()),
+                    b.HeaderComments)).ToList();
+            foreach (var mod in libIncludes.Distinct()) sb.AppendLine($"  include {mod}");
+            foreach (var ext in libExtends.Distinct()) sb.AppendLine($"  extend {ext}");
+            if (libIncludes.Count > 0 || libExtends.Count > 0) sb.AppendLine();
+
+            foreach (var b in filteredBlocks)
             {
                 foreach (var line in b.BodyLines) sb.AppendLine(line);
             }
@@ -866,6 +905,63 @@ internal static class RbsGenerator
             if (n.Length > 0 && (char.IsLetter(n[0]) || n[0] == '_')) return n;
         }
         return names[0];
+    }
+
+    /// <summary>
+    /// Walks lib.rb-derived body lines and pulls out `include X` / `extend X`
+    /// declarations (with their immediately preceding contiguous `#` comment
+    /// block, since those comments belong to the directive). Adds module names
+    /// into <paramref name="includes"/> / <paramref name="extends"/> and returns
+    /// the remaining lines.
+    /// </summary>
+    static List<string> StripAndCollectIncludes(EquatableArray<string> bodyLines, List<string> includes, List<string> extends)
+    {
+        var result = new List<string>(bodyLines.Length);
+        foreach (var line in bodyLines)
+        {
+            var trimmed = line.TrimStart();
+            string? name = null;
+            bool isExtend = false;
+            if (trimmed.StartsWith("include "))
+            {
+                name = trimmed.Substring(8).Trim();
+            }
+            else if (trimmed.StartsWith("extend "))
+            {
+                name = trimmed.Substring(7).Trim();
+                isExtend = true;
+            }
+            if (name is not null && IsBareModuleRef(name))
+            {
+                if (isExtend) extends.Add(name);
+                else includes.Add(name);
+                // Drop preceding contiguous `#` comments + any single blank line.
+                while (result.Count > 0)
+                {
+                    var prev = result[result.Count - 1].TrimStart();
+                    if (prev.StartsWith("#") || prev.Length == 0)
+                    {
+                        result.RemoveAt(result.Count - 1);
+                        if (prev.Length == 0) break;
+                    }
+                    else break;
+                }
+                continue;
+            }
+            result.Add(line);
+        }
+        return result;
+    }
+
+    /// <summary>True for an unqualified module-name reference like <c>Enumerable</c> or <c>Foo::Bar</c>.</summary>
+    static bool IsBareModuleRef(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return false;
+        foreach (var c in s)
+        {
+            if (!(char.IsLetterOrDigit(c) || c == '_' || c == ':')) return false;
+        }
+        return char.IsUpper(s[0]);
     }
 
     static string ComposeSignature(RubyMemberInfo? member)

@@ -3,6 +3,8 @@
 
 # Unordered mapping from keys to values (insertion order is preserved on iteration, matching CRuby). Keys must implement hash and eql?; lookup is via h[key]. Hash is mutable, includes Enumerable, and supports a default value or default-proc fallback when a key is missing.
 class Hash[K, V] < Object
+  include Enumerable
+
   # Initializes a new Hash. With an argument sets the default value; with a block sets the default proc.
   #
   #   h = Hash.new(0)
@@ -156,11 +158,6 @@ class Hash[K, V] < Object
   def slice!: (*K) -> Hash[K, V]?
 
   # --- from lib.rb ---
-  #
-  # Hash is enumerable
-  #
-  # ISO 15.2.13.3
-  include Enumerable
 
   #
   # call-seq:
