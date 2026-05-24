@@ -223,6 +223,7 @@ end
 # ISO 15.3.2
 module Enumerable
 
+  # @!visibility private
   NONE = Object.new
 
   ##
