@@ -29,11 +29,6 @@
         <Pack>true</Pack>
         <PackagePath>%(Identity)</PackagePath>
       </None>
-      <!-- iOS xcframework: includes Info.plist and per-slice .a / dSYM files -->
-      <None Include="runtimes\ios\native\libmruby.xcframework\**\*">
-        <Pack>true</Pack>
-        <PackagePath>%(Identity)</PackagePath>
-      </None>
     </ItemGroup>
 
     <PropertyGroup>

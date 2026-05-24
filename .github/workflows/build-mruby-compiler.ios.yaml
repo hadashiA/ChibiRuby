@@ -28,15 +28,6 @@ jobs:
       run: |
         MRUBY_CONFIG=${{ env.CONFIG_DIR }}/build_config.iOS.rb rake
 
-    - name: Create libmruby.xcframework
-      working-directory: ${{ env.MRUBY_DIR }}
-      run: |
-        mkdir -p build/ios-xcframework
-        xcodebuild -create-xcframework \
-          -library build/ios-arm64/lib/libmruby.a \
-          -library build/iossimulator-arm64/lib/libmruby.a \
-          -output build/ios-xcframework/libmruby.xcframework
-
     - uses: actions/upload-artifact@v4
       id: upload-build
       with:
