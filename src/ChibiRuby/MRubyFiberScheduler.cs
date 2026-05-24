@@ -233,25 +233,39 @@ public class MRubyFiberScheduler : IDisposable
     // via another Suspend. The slot must already be free by then or
     // re-park hits "already parked".
 
-    internal void SetResult(RFiber fiber, MRubyValue value)
+    /// <summary>
+    /// Dispatch a successful resume on <paramref name="fiber"/>. Default
+    /// implementation routes through the built-in <see cref="TaskCompletionSource{T}"/>
+    /// entry; subclasses that use an alternative completion mechanism
+    /// (e.g. <c>AwaitableCompletionSource</c> on Unity) override this.
+    /// </summary>
+    protected internal virtual void SetResult(RFiber fiber, MRubyValue value)
     {
         if (blockedFibers.TryRemove(fiber, out var entry))
             entry.TrySetResult(value);
     }
 
-    internal void SetCancelled(RFiber fiber, CancellationToken cancellationToken)
+    /// <summary>
+    /// Dispatch a cancellation on <paramref name="fiber"/>. Resumes the fiber
+    /// with <c>nil</c> (CRuby fiber-scheduler convention).
+    /// </summary>
+    protected internal virtual void SetCancelled(RFiber fiber, CancellationToken cancellationToken)
     {
         if (blockedFibers.TryRemove(fiber, out var entry))
             entry.TrySetCanceled(cancellationToken);
     }
 
-    internal void SetException(RFiber fiber, Exception exception)
+    /// <summary>
+    /// Dispatch an exception on <paramref name="fiber"/>. The exception is
+    /// re-raised inside the fiber and is catchable by Ruby <c>rescue</c>.
+    /// </summary>
+    protected internal virtual void SetException(RFiber fiber, Exception exception)
     {
         if (blockedFibers.TryRemove(fiber, out var entry))
             entry.TrySetException(exception);
     }
 
-    static void TryResume(RFiber fiber, MRubyValue value)
+    protected static void TryResume(RFiber fiber, MRubyValue value)
     {
         if (!fiber.IsAlive) return;
         // Exceptions are routed via resumeSource for WaitForTerminate observers;
@@ -260,7 +274,7 @@ public class MRubyFiberScheduler : IDisposable
         catch { }
     }
 
-    static void TryResumeWithException(RFiber fiber, Exception ex)
+    protected static void TryResumeWithException(RFiber fiber, Exception ex)
     {
         if (!fiber.IsAlive) return;
         try
@@ -276,7 +290,7 @@ public class MRubyFiberScheduler : IDisposable
     }
 
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    static void ThrowAlreadyParked(RFiber fiber, string op) =>
+    protected static void ThrowAlreadyParked(RFiber fiber, string op) =>
         throw new InvalidOperationException(
             $"{op}: fiber is already parked under this scheduler. Each park must be matched by Resume/SetCancelled/SetException/cancel before another can be issued.");
 
