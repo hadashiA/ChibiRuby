@@ -4,7 +4,7 @@
         <TargetFrameworks>net8.0;net9.0;net10.0;netstandard2.1</TargetFrameworks>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RuntimeIdentifiers>osx-arm64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>osx-arm64;osx-x64;linux-x64;linux-arm64;win-x64;android-arm64;android-x64;ios-arm64;iossimulator-arm64;browser-wasm</RuntimeIdentifiers>
         <LangVersion>13</LangVersion>
         <Description>Native binding for the mruby compiler for use from C# and MRubyCS</Description>
     </PropertyGroup>
@@ -29,7 +29,12 @@
         <Pack>true</Pack>
         <PackagePath>%(Identity)</PackagePath>
       </None>
-    </ItemGroup>    
+      <!-- iOS xcframework: includes Info.plist and per-slice .a / dSYM files -->
+      <None Include="runtimes\ios\native\libmruby.xcframework\**\*">
+        <Pack>true</Pack>
+        <PackagePath>%(Identity)</PackagePath>
+      </None>
+    </ItemGroup>
 
     <PropertyGroup>
         <_MRubyCompilerHostRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_MRubyCompilerHostRid>

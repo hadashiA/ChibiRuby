@@ -10,7 +10,8 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "MRubyCS.dll",
-        "MRubyCS.Compiler.dll"
+        "MRubyCS.Compiler.dll",
+        "Mono.Cecil.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

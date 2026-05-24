@@ -10,3 +10,9 @@ jobs:
     uses: ./.github/workflows/build-mruby-compiler.linux.yaml
   build-macOS:
     uses: ./.github/workflows/build-mruby-compiler.macOS.yaml
+  build-android:
+    uses: ./.github/workflows/build-mruby-compiler.android.yaml
+  build-iOS:
+    uses: ./.github/workflows/build-mruby-compiler.ios.yaml
+  build-wasm:
+    uses: ./.github/workflows/build-mruby-compiler.wasm.yaml

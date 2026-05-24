@@ -82,6 +82,15 @@
             ]
         },
         {
+            "cpuArchitecture": "x86_64",
+            "editorCpuArchitecture": "",
+            "editorOperatingSystem": "",
+            "runtime": "android-x64",
+            "supportedPlatformTargets": [
+                "Android"
+            ]
+        },
+        {
             "cpuArchitecture": "",
             "editorCpuArchitecture": "",
             "editorOperatingSystem": "",
@@ -115,6 +124,15 @@
             "runtime": "osx-arm64",
             "supportedPlatformTargets": [
                 "StandaloneOSX"
+            ]
+        },
+        {
+            "cpuArchitecture": "",
+            "editorCpuArchitecture": "",
+            "editorOperatingSystem": "",
+            "runtime": "browser-wasm",
+            "supportedPlatformTargets": [
+                "WebGL"
             ]
         }
     ]
