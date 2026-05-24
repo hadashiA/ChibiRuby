@@ -5,11 +5,17 @@ using System.Text;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Filesystem I/O -- a subclass of <c>IO</c> for reading and writing files on
+/// disk. Opened via <c>File.open(path, mode)</c>; the block form
+/// (<c>File.open(path) { |f| ... }</c>) auto-closes the handle. In MRubyCS,
+/// path/mode handling is delegated to the host runtime via .NET file APIs.
+/// </summary>
 [RubyClass("File", Superclass = "IO")]
 static class FileMembers
 {
     /// <summary>
-    /// <c>File.open(path, mode = "r")</c> — open the file, return an
+    /// <c>File.open(path, mode = "r")</c> -- open the file, return an
     /// <see cref="RFile"/>. The <b>block form</b>
     /// (<c>File.open(path) { |f| ... }</c> with auto-close) is implemented
     /// in Ruby on top of this method (see <c>StdLib/lib.rb</c>) so the
@@ -39,7 +45,7 @@ static class FileMembers
     }
 
     /// <summary>
-    /// <c>File.read(path)</c> — convenience: read whole file as a String.
+    /// <c>File.read(path)</c> -- convenience: read whole file as a String.
     /// </summary>
     [RubyDef("(String) -> String")]
     public static MRubyValue Read(MRubyState state, MRubyValue self)
@@ -73,7 +79,7 @@ static class FileMembers
     }
 
     /// <summary>
-    /// <c>File.write(path, content)</c> — convenience: replace file content.
+    /// <c>File.write(path, content)</c> -- convenience: replace file content.
     /// Returns the number of bytes written.
     /// </summary>
     [RubyDef("(String, String) -> Integer")]
@@ -103,6 +109,15 @@ static class FileMembers
         return new MRubyValue((long)data.Length);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if a file exists at the given path.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// File.exist?("config.rb")   # => true
+    /// File.exist?("missing.rb")  # => false
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> bool")]
     public static MRubyValue ExistQ(MRubyState state, MRubyValue self)
     {
@@ -121,7 +136,7 @@ static class FileMembers
 
     static (FileMode, FileAccess) ResolveMode(MRubyState state, string mode)
     {
-        // Ignore the "b" binary marker — all I/O here is byte-oriented.
+        // Ignore the "b" binary marker -- all I/O here is byte-oriented.
         var m = mode.Replace("b", "");
         return m switch
         {

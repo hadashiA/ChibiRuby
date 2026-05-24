@@ -116,27 +116,70 @@ class MRubyRandomData
     }
 }
 
+/// <summary>
+/// Seeded pseudo-random number generator. <c>Random.new(seed)</c> creates an
+/// independent stream; <c>Kernel#rand</c> and <c>Kernel#srand</c> delegate to
+/// a shared default instance. Backed by .NET's <see cref="System.Random"/>
+/// in MRubyCS, so the sequence is not bit-compatible with CRuby.
+/// </summary>
 [RubyClass("Random")]
 static class RandomMembers
 {
+    /// <summary>
+    /// Returns a pseudo-random number using the default <c>Random</c> instance.
+    /// With no argument returns a Float in [0.0, 1.0); with an Integer <c>n</c>
+    /// returns an Integer in [0, n); with a Range returns a value in that range.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Random.rand         # => Float
+    /// Random.rand(10)     # => Integer in 0..9
+    /// </code>
+    /// </example>
     [RubyDef("(?(Integer | Float | Range[Numeric])) -> (Integer | Float)")]
     public static MRubyValue DefaultRand(MRubyState mrb, MRubyValue self)
     {
         return DefaultInstanceOf(mrb).Rand(mrb);
     }
 
+    /// <summary>
+    /// Seeds the default <c>Random</c> instance and returns the previous seed.
+    /// With no argument re-seeds from the system clock.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Random.srand(42)    # => previous seed
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Integer")]
     public static MRubyValue DefaultSRand(MRubyState mrb, MRubyValue self)
     {
         return DefaultInstanceOf(mrb).SRand(mrb);
     }
 
+    /// <summary>
+    /// Returns a String of <c>n</c> random bytes using the default <c>Random</c> instance.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Random.bytes(4)     # => 4-byte random String
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> String")]
     public static MRubyValue DefaultBytes(MRubyState mrb, MRubyValue self)
     {
         return DefaultInstanceOf(mrb).Bytes(mrb);
     }
 
+    /// <summary>
+    /// Initializes a new <c>Random</c> instance, optionally with a fixed seed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// r = Random.new(42)
+    /// r.rand(100)         # => Integer in 0..99
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> void")]
     public static MRubyValue Initialize(MRubyState mrb, MRubyValue self)
     {
@@ -153,24 +196,60 @@ static class RandomMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns a pseudo-random number using this <c>Random</c> instance.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// r = Random.new(1)
+    /// r.rand(10)          # => Integer in 0..9
+    /// </code>
+    /// </example>
     [RubyDef("(?(Integer | Float | Range[Numeric])) -> (Integer | Float)")]
     public static MRubyValue Rand(MRubyState mrb, MRubyValue self)
     {
         return InstanceOf(mrb, self).Rand(mrb);
     }
 
+    /// <summary>
+    /// Seeds this <c>Random</c> instance and returns the previous seed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// r = Random.new
+    /// r.srand(42)         # => previous seed
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Integer")]
     public static MRubyValue SRand(MRubyState mrb, MRubyValue self)
     {
         return InstanceOf(mrb, self).SRand(mrb);
     }
 
+    /// <summary>
+    /// Returns a String of <c>n</c> random bytes from this <c>Random</c> instance.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// r = Random.new(1)
+    /// r.bytes(4)          # => 4-byte random String
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> String")]
     public static MRubyValue Bytes(MRubyState mrb, MRubyValue self)
     {
         return InstanceOf(mrb, self).Bytes(mrb);
     }
 
+    /// <summary>
+    /// Returns a new array whose elements are the elements of <c>self</c>
+    /// in random order.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].shuffle   # => [2, 1, 3]
+    /// </code>
+    /// </example>
     [RubyDef("(?random: Random) -> Array[untyped]")]
     public static MRubyValue ArrayShuffle(MRubyState mrb, MRubyValue self)
     {
@@ -180,6 +259,15 @@ static class RandomMembers
         return result;
     }
 
+    /// <summary>
+    /// Shuffles the elements of <c>self</c> in place and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.shuffle!          # => a (now shuffled)
+    /// </code>
+    /// </example>
     [RubyDef("(?random: Random) -> self")]
     public static MRubyValue ArrayShuffleBang(MRubyState mrb, MRubyValue self)
     {
@@ -206,6 +294,16 @@ static class RandomMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns a random element of <c>self</c>, or an Array of <c>n</c>
+    /// random elements when <c>n</c> is given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].sample    # => one of 1, 2, 3
+    /// [1, 2, 3].sample(2) # => Array of 2 random elements
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer, ?random: Random) -> untyped")]
     public static MRubyValue ArraySample(MRubyState mrb, MRubyValue self)
     {

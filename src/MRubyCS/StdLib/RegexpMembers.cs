@@ -64,6 +64,13 @@ class MRubyRegexpData(string pattern, int rubyOptions = 0) : IEquatable<MRubyReg
     }
 }
 
+/// <summary>
+/// Regular expression literal -- written as <c>/pattern/flags</c>. Matching
+/// against a <c>String</c> via <c>=~</c> or <c>match</c> returns a
+/// <c>MatchData</c> (or <c>nil</c> on no match). In MRubyCS, the pattern is
+/// translated to and executed by .NET's <see cref="System.Text.RegularExpressions.Regex"/>,
+/// so some Ruby-specific syntax may differ.
+/// </summary>
 [RubyClass("Regexp")]
 static class RegexpMembers
 {
@@ -164,7 +171,15 @@ static class RegexpMembers
         }
     }
 
-    // Regexp.new(pattern, options = 0)
+    /// <summary>
+    /// Constructs a new <c>Regexp</c> from the given pattern string and option flags. When the first argument is itself a <c>Regexp</c>, returns a copy.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// r = Regexp.new("hello", Regexp::IGNORECASE)
+    /// r.match?("Hello")   # => true
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?(Integer | bool)) -> Regexp")]
     public static MRubyValue New(MRubyState mrb, MRubyValue self)
     {
@@ -212,14 +227,28 @@ static class RegexpMembers
         }
     }
 
-    // Regexp.compile(pattern, options = 0) - alias for new
+    /// <summary>
+    /// Alias for <c>Regexp.new</c>. Compiles the pattern string into a <c>Regexp</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Regexp.compile("\\d+").match?("abc 42")   # => true
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?(Integer | bool)) -> Regexp")]
     public static MRubyValue Compile(MRubyState mrb, MRubyValue self)
     {
         return New(mrb, self);
     }
 
-    // Regexp.escape(str) - Escapes metacharacters
+    /// <summary>
+    /// Returns a copy of the given string with regular-expression metacharacters escaped, so that the result matches the original literally.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Regexp.escape("a.b*c")   # => "a\\.b\\*c"
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> String")]
     public static MRubyValue Escape(MRubyState mrb, MRubyValue self)
     {
@@ -273,14 +302,29 @@ static class RegexpMembers
         return sb.ToString();
     }
 
-    // Regexp.quote(str) - alias for escape
+    /// <summary>
+    /// Alias for <c>Regexp.escape</c>. Returns a string with regex metacharacters escaped.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Regexp.quote("1+1")   # => "1\\+1"
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> String")]
     public static MRubyValue Quote(MRubyState mrb, MRubyValue self)
     {
         return Escape(mrb, self);
     }
 
-    // Regexp.union(*patterns)
+    /// <summary>
+    /// Returns a <c>Regexp</c> that matches any of the given patterns, joined with alternation. Strings are escaped automatically; <c>Regexp</c> arguments preserve their options.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// r = Regexp.union("foo", "bar")
+    /// r.match?("bar")   # => true
+    /// </code>
+    /// </example>
     [RubyDef("(*untyped) -> Regexp")]
     public static MRubyValue Union(MRubyState mrb, MRubyValue self)
     {
@@ -361,7 +405,15 @@ static class RegexpMembers
         return "";
     }
 
-    // Regexp.try_convert(obj)
+    /// <summary>
+    /// Returns the argument if it is a <c>Regexp</c>, otherwise <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Regexp.try_convert(/x/)   # => /x/
+    /// Regexp.try_convert("x")   # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Regexp?")]
     public static MRubyValue TryConvert(MRubyState mrb, MRubyValue self)
     {
@@ -373,7 +425,15 @@ static class RegexpMembers
         return MRubyValue.Nil;
     }
 
-    // Regexp.last_match(n = nil)
+    /// <summary>
+    /// Returns the <c>MatchData</c> from the last successful pattern match in the current scope, or the nth capture when an index is given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /(\w+)/ =~ "hello"
+    /// Regexp.last_match[0]   # => "hello"
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> untyped")]
     public static MRubyValue LastMatch(MRubyState mrb, MRubyValue self)
     {
@@ -393,7 +453,15 @@ static class RegexpMembers
         return MatchDataMembers.OpAref(mrb, matchValue);
     }
 
-    // Regexp#match(str, pos = 0)
+    /// <summary>
+    /// Matches <c>self</c> against the given string starting at the optional character position. Returns a <c>MatchData</c> object on success, or <c>nil</c> on failure.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /(\w+)/.match("hello world")[0]   # => "hello"
+    /// /xyz/.match("hello")              # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> MatchData?")]
     public static MRubyValue Match(MRubyState mrb, MRubyValue self)
     {
@@ -430,7 +498,15 @@ static class RegexpMembers
         return MatchDataMembers.CreateRDataFromMatchData(mrb, matchData);
     }
 
-    // Regexp#match?(str, pos = 0) - boolean match without setting global variables
+    /// <summary>
+    /// Returns <c>true</c> if the pattern matches the given string. Does not allocate a <c>MatchData</c> or update match-related global variables.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /\d+/.match?("abc 42")   # => true
+    /// /xyz/.match?("abc")      # => false
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> bool")]
     public static MRubyValue QMatch(MRubyState mrb, MRubyValue self)
     {
@@ -457,7 +533,15 @@ static class RegexpMembers
         return match.Success ? MRubyValue.True : MRubyValue.False;
     }
 
-    // Regexp#=~(str)
+    /// <summary>
+    /// Matches the pattern against the given string and returns the character index of the first match, or <c>nil</c> when there is no match.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /world/ =~ "hello world"   # => 6
+    /// /xyz/   =~ "hello"         # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(String?) -> Integer?")]
     public static MRubyValue OpMatch(MRubyState mrb, MRubyValue self)
     {
@@ -485,7 +569,16 @@ static class RegexpMembers
         return match.Index;
     }
 
-    // Regexp#===(str)
+    /// <summary>
+    /// Case-equality operator. Returns <c>true</c> if the pattern matches the argument. Used by <c>case</c>/<c>when</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// case "hello"
+    /// when /^h/ then "starts with h"
+    /// end                            # => "starts with h"
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue Eqq(MRubyState mrb, MRubyValue self)
     {
@@ -526,7 +619,14 @@ static class RegexpMembers
         return MRubyValue.False;
     }
 
-    // Regexp#source
+    /// <summary>
+    /// Returns the original pattern string of <c>self</c>, without surrounding slashes or option flags.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /hello/i.source   # => "hello"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Source(MRubyState mrb, MRubyValue self)
     {
@@ -534,7 +634,14 @@ static class RegexpMembers
         return mrb.NewString(regexpData.Pattern);
     }
 
-    // Regexp#options
+    /// <summary>
+    /// Returns the set of options flags used to create <c>self</c> as an integer bitmask (IGNORECASE=1, EXTENDED=2, MULTILINE=4).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /hello/i.options   # => 1
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Options(MRubyState mrb, MRubyValue self)
     {
@@ -542,7 +649,15 @@ static class RegexpMembers
         return regexpData.RubyOptions;
     }
 
-    // Regexp#casefold?
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> was compiled with the case-insensitive option.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /hello/i.casefold?   # => true
+    /// /hello/.casefold?    # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue QCasefold(MRubyState mrb, MRubyValue self)
     {
@@ -550,7 +665,14 @@ static class RegexpMembers
         return (regexpData.RubyOptions & MRubyRegexpData.RubyIgnoreCase) != 0;
     }
 
-    // Regexp#to_s
+    /// <summary>
+    /// Returns a string in the "(?opts-opts:pattern)" form that, when compiled again, reproduces the same pattern and options.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /hello/i.to_s   # => "(?i-mx:hello)"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue ToS(MRubyState mrb, MRubyValue self)
     {
@@ -593,7 +715,14 @@ static class RegexpMembers
         return mrb.NewString(sb.ToString());
     }
 
-    // Regexp#inspect
+    /// <summary>
+    /// Returns a literal-style representation of <c>self</c>, like <c>"/pattern/flags"</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /hello/i.inspect   # => "/hello/i"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Inspect(MRubyState mrb, MRubyValue self)
     {
@@ -618,7 +747,15 @@ static class RegexpMembers
         return mrb.NewString(sb.ToString());
     }
 
-    // Regexp#==
+    /// <summary>
+    /// Returns <c>true</c> when the argument is a <c>Regexp</c> with the same pattern and options as <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /hello/i == /hello/i   # => true
+    /// /hello/i == /hello/    # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue OpEq(MRubyState mrb, MRubyValue self)
     {
@@ -631,14 +768,28 @@ static class RegexpMembers
         return selfData.Equals(otherData);
     }
 
-    // Regexp#eql?
+    /// <summary>
+    /// Returns <c>true</c> when the argument is an equal <c>Regexp</c>. Equivalent to <c>==</c> for <c>Regexp</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /a/.eql?(/a/)   # => true
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue QEql(MRubyState mrb, MRubyValue self)
     {
         return OpEq(mrb, self);
     }
 
-    // Regexp#hash
+    /// <summary>
+    /// Returns a hash code computed from the pattern and options of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /a/.hash.class   # => Integer
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Hash(MRubyState mrb, MRubyValue self)
     {
@@ -646,7 +797,14 @@ static class RegexpMembers
         return regexpData.GetHashCode();
     }
 
-    // Regexp#named_captures
+    /// <summary>
+    /// Returns a hash mapping each named capture group in <c>self</c> to an array containing its group index.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /(?&lt;year&gt;\d{4})/.named_captures   # => {"year" => [1]}
+    /// </code>
+    /// </example>
     [RubyDef("() -> Hash[String, Array[Integer]]")]
     public static MRubyValue NamedCaptures(MRubyState mrb, MRubyValue self)
     {
@@ -668,7 +826,14 @@ static class RegexpMembers
         return hash;
     }
 
-    // Regexp#names
+    /// <summary>
+    /// Returns the list of named capture group names defined in <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// /(?&lt;y&gt;\d+)-(?&lt;m&gt;\d+)/.names   # => ["y", "m"]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[String]")]
     public static MRubyValue NamesMethod(MRubyState mrb, MRubyValue self)
     {
@@ -699,7 +864,15 @@ static class RegexpMembers
 /// </summary>
 static class StringRegexpMembers
 {
-    // String#=~ (regexp)
+    /// <summary>
+    /// Matches <c>self</c> against the given <c>Regexp</c> and returns the index of the first match, or <c>nil</c> if there is no match.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello world" =~ /world/   # => 6
+    /// "hello" =~ /xyz/           # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(String?) -> Integer?")]
     public static MRubyValue OpMatch(MRubyState state, MRubyValue self)
     {
@@ -731,7 +904,15 @@ static class StringRegexpMembers
         return match.Index;
     }
 
-    // String#match(regexp, pos = 0)
+    /// <summary>
+    /// Matches <c>self</c> against the given <c>Regexp</c> or pattern string starting at the optional character position. Returns <c>MatchData</c> or <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello world".match(/(\w+)/)[1]   # => "hello"
+    /// "abc".match(/x/)                  # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> MatchData?")]
     public static MRubyValue Match(MRubyState state, MRubyValue self)
     {
@@ -790,7 +971,15 @@ static class StringRegexpMembers
         return MatchDataMembers.CreateRDataFromMatchData(state, matchData);
     }
 
-    // String#match?(regexp, pos = 0)
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> matches the given <c>Regexp</c> or pattern string. Does not allocate <c>MatchData</c> or update match globals.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc 42".match?(/\d+/)   # => true
+    /// "abc".match?(/\d+/)      # => false
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> bool")]
     public static MRubyValue QMatch(MRubyState state, MRubyValue self)
     {
@@ -840,7 +1029,15 @@ static class StringRegexpMembers
         return match.Success ? MRubyValue.True : MRubyValue.False;
     }
 
-    // String#sub(pattern, replacement) or String#sub(pattern) { |match| block }
+    /// <summary>
+    /// Returns a new string with the first match of <c>pattern</c> replaced by <c>replacement</c>, or by the block's return value when a block is given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello world".sub("world", "there")   # => "hello there"
+    /// "hello".sub(/l/) { |m| m.upcase }     # => "heLlo"
+    /// </code>
+    /// </example>
     [RubyDef("(Regexp | String, ?String) ?{ (String) -> String } -> String")]
     public static MRubyValue Sub(MRubyState state, MRubyValue self)
     {
@@ -848,7 +1045,16 @@ static class StringRegexpMembers
         return SubImpl(state, str, false);
     }
 
-    // String#sub!(pattern, replacement) or String#sub!(pattern) { |match| block }
+    /// <summary>
+    /// Replaces the first match of <c>pattern</c> in <c>self</c> in place. Returns <c>self</c> when a substitution was made, otherwise <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s.sub!("ll", "LL")   # => "heLLo"
+    /// s                    # => "heLLo"
+    /// </code>
+    /// </example>
     [RubyDef("(Regexp | String, ?String) ?{ (String) -> String } -> self?")]
     public static MRubyValue SubBang(MRubyState state, MRubyValue self)
     {
@@ -942,7 +1148,15 @@ static class StringRegexpMembers
         return MRubyValue.Nil;
     }
 
-    // String#gsub(pattern, replacement) or String#gsub(pattern) { |match| block } or String#gsub(pattern, hash)
+    /// <summary>
+    /// Returns a new string with all matches of <c>pattern</c> replaced. Accepts a replacement string, a hash, or a block returning the replacement.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc abc".gsub("a", "A")          # => "Abc Abc"
+    /// "hello".gsub(/l/) { |m| m * 2 }   # => "hellllo"
+    /// </code>
+    /// </example>
     [RubyDef("(Regexp | String, ?(String | Hash[String, String])) ?{ (String) -> String } -> String")]
     public static MRubyValue Gsub(MRubyState state, MRubyValue self)
     {
@@ -950,7 +1164,16 @@ static class StringRegexpMembers
         return GsubImpl(state, str, false);
     }
 
-    // String#gsub!(pattern, replacement) or String#gsub!(pattern) { |match| block } or String#gsub!(pattern, hash)
+    /// <summary>
+    /// Replaces all matches of <c>pattern</c> in <c>self</c> in place. Returns <c>self</c> when any substitution was made, otherwise <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "abc abc"
+    /// s.gsub!("a", "A")    # => "Abc Abc"
+    /// s                    # => "Abc Abc"
+    /// </code>
+    /// </example>
     [RubyDef("(Regexp | String, ?(String | Hash[String, String])) ?{ (String) -> String } -> self?")]
     public static MRubyValue GsubBang(MRubyState state, MRubyValue self)
     {
@@ -1280,7 +1503,15 @@ static class StringRegexpMembers
         return sb.ToString();
     }
 
-    // String#scan(pattern) or String#scan(pattern) { |match| block }
+    /// <summary>
+    /// Returns an array of all non-overlapping matches of <c>pattern</c> in <c>self</c>. If the pattern has capture groups, each element is an array of captures. With a block, yields each match and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc 123 def 456".scan(/\d+/)          # => ["123", "456"]
+    /// "a1b2".scan(/(\w)(\d)/)                # => [["a","1"], ["b","2"]]
+    /// </code>
+    /// </example>
     [RubyDef("(Regexp | String) ?{ (untyped) -> void } -> Array[untyped] | self")]
     public static MRubyValue Scan(MRubyState state, MRubyValue self)
     {
@@ -1357,7 +1588,15 @@ static class StringRegexpMembers
         return block != null ? self : (MRubyValue)result;
     }
 
-    // String#index with Regexp support
+    /// <summary>
+    /// Returns the index of the first occurrence of the given <c>Regexp</c> or substring in <c>self</c>, or <c>nil</c> when not found. Searches start at the optional offset.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello world".index(/world/)   # => 6
+    /// "hello".index(/xyz/)           # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(Regexp | String, ?Integer) -> Integer?")]
     public static MRubyValue Index(MRubyState state, MRubyValue self)
     {

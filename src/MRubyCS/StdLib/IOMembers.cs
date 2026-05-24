@@ -4,9 +4,26 @@ using System.IO;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Base class for byte streams -- files, sockets, pipes, and the like. Provides
+/// <c>read</c>, <c>write</c>, <c>gets</c>, <c>puts</c>, and friends. Subclassed
+/// by <c>File</c> for filesystem access. In MRubyCS, instances wrap a .NET
+/// <c>Stream</c>.
+/// </summary>
 [RubyClass("IO")]
 static class IOMembers
 {
+    /// <summary>
+    /// Reads up to the given number of bytes from <c>self</c>; with no
+    /// argument, reads to end-of-stream. Returns <c>nil</c> at EOF.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// f = File.open("data.txt")
+    /// f.read(4)         # => "1234"
+    /// f.read            # => "rest of file"
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer?) -> String?")]
     public static MRubyValue Read(MRubyState state, MRubyValue self)
     {
@@ -66,6 +83,15 @@ static class IOMembers
             : state.NewString(buf.AsSpan(0, rd));
     }
 
+    /// <summary>
+    /// Writes the given string to <c>self</c> and returns the number of bytes written.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// f = File.open("out.txt", "w")
+    /// f.write("hello")    # => 5
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> Integer")]
     public static MRubyValue Write(MRubyState state, MRubyValue self)
     {
@@ -93,6 +119,15 @@ static class IOMembers
         return new MRubyValue((long)bytes.Length);
     }
 
+    /// <summary>
+    /// Closes the underlying stream. Subsequent reads or writes raise <c>IOError</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// f = File.open("data.txt")
+    /// f.close           # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> nil")]
     public static MRubyValue Close(MRubyState state, MRubyValue self)
     {
@@ -100,6 +135,17 @@ static class IOMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> has been closed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// f = File.open("data.txt")
+    /// f.closed?         # => false
+    /// f.close
+    /// f.closed?         # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue ClosedQ(MRubyState state, MRubyValue self)
     {
