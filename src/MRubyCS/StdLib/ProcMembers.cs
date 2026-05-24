@@ -7,9 +7,24 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// A first-class callable created from a block. Capture a block as a
+/// <c>Proc</c> with <c>Proc.new</c>, <c>proc { ... }</c>, or the <c>&amp;block</c>
+/// parameter form; invoke with <c>call</c>, <c>[]</c>, or <c>.()</c>. Lambdas
+/// (<c>-&gt;</c>) are <c>Proc</c>s with stricter arity and <c>return</c> semantics.
+/// </summary>
 [RubyClass("Proc")]
 static class ProcMembers
 {
+    /// <summary>
+    /// Creates a new <c>Proc</c> from the given block.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// pr = Proc.new { |x| x + 1 }
+    /// pr.call(5)        # => 6
+    /// </code>
+    /// </example>
     [RubyDef("() { (*untyped) -> untyped } -> Proc")]
     public static MRubyValue New(MRubyState state, MRubyValue self)
     {
@@ -25,6 +40,16 @@ static class ProcMembers
         return procValue;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> and the given value refer to the same Proc.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// pr = proc { |x| x }
+    /// pr.eql?(pr)       # => true
+    /// pr.eql?(proc {})  # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
@@ -36,6 +61,16 @@ static class ProcMembers
         return self.As<RProc>() == other.As<RProc>();
     }
 
+    /// <summary>
+    /// Returns the number of mandatory arguments. If the block takes a rest
+    /// argument, returns <c>-(required + 1)</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// proc { |a, b| }.arity      # => 2
+    /// proc { |*a| }.arity        # => -1
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Arity(MRubyState state, MRubyValue self)
     {

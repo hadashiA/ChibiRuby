@@ -61,6 +61,13 @@ class MRubyTimeData(DateTimeOffset dateTimeOffset) :
     }
 }
 
+/// <summary>
+/// A point in time, accurate to sub-second precision. Created with
+/// <c>Time.now</c>, <c>Time.at</c>, or <c>Time.utc</c>/<c>Time.local</c>;
+/// supports arithmetic with <c>Numeric</c> seconds and comparison via
+/// <c>&lt;=&gt;</c>. Backed by .NET's <see cref="System.DateTimeOffset"/>
+/// in MRubyCS.
+/// </summary>
 [RubyClass("Time")]
 static class TimeMembers
 {
@@ -84,12 +91,30 @@ static class TimeMembers
         return false;
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> object representing the current local time.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.now
+    /// t.class    # => Time
+    /// </code>
+    /// </example>
     [RubyDef("() -> Time")]
     public static MRubyValue Now(MRubyState mrb, MRubyValue _)
     {
         return CreateRDataFromDateTime(mrb, DateTimeOffset.Now);
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> object representing the given Unix epoch seconds, with an optional microseconds component.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.at(0).utc           # => 1970-01-01 00:00:00 UTC
+    /// Time.at(1_700_000_000)   # local time at that epoch second
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric, ?Numeric) -> Time")]
     public static MRubyValue CreateAt(MRubyState mrb, MRubyValue _)
     {
@@ -117,6 +142,16 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, dateTimeOffset);
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> object in UTC built from the given year and (optionally) month, day, hour, minute, second, and microsecond.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.utc(2024, 1, 15, 10, 30, 0)
+    /// t.year     # => 2024
+    /// t.utc?     # => true
+    /// </code>
+    /// </example>
     [RubyDef("(Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> Time")]
     public static MRubyValue CreateUtc(MRubyState mrb, MRubyValue _)
     {
@@ -158,6 +193,16 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, dateTime);
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> object in the local timezone built from the given year and (optionally) month, day, hour, minute, second, and microsecond.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.local(2024, 1, 15, 10, 30, 0)
+    /// t.year     # => 2024
+    /// t.utc?     # => false
+    /// </code>
+    /// </example>
     [RubyDef("(Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> Time")]
     public static MRubyValue CreateLocal(MRubyState mrb, MRubyValue _)
     {
@@ -199,6 +244,15 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, dateTime);
     }
 
+    /// <summary>
+    /// Initializes a newly allocated <c>Time</c>. With no arguments returns the current time; otherwise parses year, month, day, hour, minute, second, microsecond as local time.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.new
+    /// t.class    # => Time
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer, ?Integer) -> void")]
     public static MRubyValue Initialize(MRubyState mrb, MRubyValue self)
     {
@@ -254,6 +308,15 @@ static class TimeMembers
         return self;
     }
 
+    /// <summary>
+    /// Copies the state of the given <c>Time</c> into <c>self</c>. Used by <c>dup</c> and <c>clone</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.utc(2024, 1, 15)
+    /// t.dup == t   # => true
+    /// </code>
+    /// </example>
     [RubyDef("(Time) -> self")]
     public static MRubyValue InitializeCopy(MRubyState mrb, MRubyValue self)
     {
@@ -280,12 +343,29 @@ static class TimeMembers
         return copyValue;
     }
 
+    /// <summary>
+    /// Returns a hash code for <c>self</c> derived from its internal tick count.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).hash.class   # => Integer
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Hash(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).Ticks.GetHashCode();
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> and the argument refer to the same instant.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15) == Time.utc(2024, 1, 15)   # => true
+    /// Time.utc(2024, 1, 15) == Time.utc(2024, 1, 16)   # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue OpEq(MRubyState mrb, MRubyValue self)
     {
@@ -297,6 +377,15 @@ static class TimeMembers
         return selfTime.Equals(otherTime);
     }
 
+    /// <summary>
+    /// Compares <c>self</c> with the given <c>Time</c>. Returns -1, 0, 1, or <c>nil</c> if the argument is not a <c>Time</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15) &lt;=&gt; Time.utc(2024, 1, 16)   # => -1
+    /// Time.utc(2024, 1, 15) &lt;=&gt; "foo"                   # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue OpCmp(MRubyState mrb, MRubyValue self)
     {
@@ -308,6 +397,15 @@ static class TimeMembers
         return selfTime.CompareTo(otherTime);
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> shifted forward by the given number of seconds.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.utc(2024, 1, 15, 10, 0, 0)
+    /// (t + 60).min   # => 1
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Time")]
     public static MRubyValue OpAdd(MRubyState mrb, MRubyValue self)
     {
@@ -332,6 +430,16 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, result);
     }
 
+    /// <summary>
+    /// Subtracts seconds or another <c>Time</c> from <c>self</c>. Returns a new <c>Time</c> when given a number, or the difference in seconds when given a <c>Time</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.utc(2024, 1, 15, 10, 0, 0)
+    /// (t - 60).min                          # => 59
+    /// t - Time.utc(2024, 1, 15, 9, 0, 0)    # => 3600
+    /// </code>
+    /// </example>
     [RubyDef("(Time) -> Integer | (Numeric) -> Time")]
     public static MRubyValue OpSub(MRubyState mrb, MRubyValue self)
     {
@@ -372,6 +480,14 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, result);
     }
 
+    /// <summary>
+    /// Returns a canonical representation of <c>self</c> in the form "Day Mon DD HH:MM:SS YYYY".
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15, 10, 30, 0).asctime   # => "Mon Jan 15 10:30:00 2024"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Asctime(MRubyState mrb, MRubyValue self)
     {
@@ -382,6 +498,14 @@ static class TimeMembers
         return mrb.NewString(buffer.WrittenSpan);
     }
 
+    /// <summary>
+    /// Returns a string representation of <c>self</c> in "YYYY-MM-DD HH:MM:SS ZONE" form.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15, 10, 30, 0).to_s   # => "2024-01-15 10:30:00 UTC"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue ToS(MRubyState mrb, MRubyValue self)
     {
@@ -396,6 +520,14 @@ static class TimeMembers
         return mrb.NewString($"{t.Year:0000}-{t.Month:00}-{t.Day:00} {t.Hour:00}:{t.Minute:00}:{t.Second:00} +{t.Offset.Hours:00}00");
     }
 
+    /// <summary>
+    /// Returns the number of seconds since the Unix epoch as a <c>Float</c>, including the fractional part.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(1970, 1, 1, 0, 0, 1).to_f   # => 1.0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Float")]
     public static MRubyValue ToF(MRubyState mrb, MRubyValue self)
     {
@@ -403,42 +535,114 @@ static class TimeMembers
         return (dateTimeOffset - DateTimeOffset.UnixEpoch).TotalSeconds;
     }
 
+    /// <summary>
+    /// Returns the number of whole seconds since the Unix epoch.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(1970, 1, 1, 0, 0, 1).to_i   # => 1
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue ToI(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.ToUnixTimeSeconds();
     }
 
+    /// <summary>
+    /// Returns the offset from UTC of <c>self</c> in seconds.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).utc_offset   # => 0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue UtcOffset(MRubyState mrb, MRubyValue self)
     {
         return (int)GetTimeData(mrb, self).DateTimeOffset.Offset.TotalSeconds;
     }
 
+    /// <summary>
+    /// Returns the four-digit year of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).year   # => 2024
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Year(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.Year;
 
+    /// <summary>
+    /// Returns the month of <c>self</c> (1..12).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).month   # => 1
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Month(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.Month;
 
+    /// <summary>
+    /// Returns the day of the month (1..31) of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).day   # => 15
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Day(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.Day;
 
+    /// <summary>
+    /// Returns the hour of the day (0..23) of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15, 10, 30, 0).hour   # => 10
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Hour(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.Hour;
 
+    /// <summary>
+    /// Returns the minute of the hour (0..59) of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15, 10, 30, 0).min   # => 30
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Minute(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.Minute;
 
+    /// <summary>
+    /// Returns the second of the minute (0..59) of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15, 10, 30, 45).sec   # => 45
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Second(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.Second;
 
+    /// <summary>
+    /// Returns the microsecond component of <c>self</c> (0..999_999).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).usec   # => 0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue MicroSecond(MRubyState mrb, MRubyValue self)
     {
@@ -447,6 +651,14 @@ static class TimeMembers
                (int)((dateTimeOffset.Ticks / TicksPerMicrosecond) % 1000);
     }
 
+    /// <summary>
+    /// Returns the nanosecond component of <c>self</c> (0..999_999_999).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).nsec   # => 0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue NanoSecond(MRubyState mrb, MRubyValue self)
     {
@@ -456,14 +668,38 @@ static class TimeMembers
                (dateTimeOffset.Ticks % TicksPerMicrosecond) * 100;
     }
 
+    /// <summary>
+    /// Returns the day of the week (0..6, where 0 is Sunday) for <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).wday   # => 1  (Monday)
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Wday(MRubyState mrb, MRubyValue self) =>
         (int)GetTimeData(mrb, self).DateTimeOffset.DayOfWeek;
 
+    /// <summary>
+    /// Returns the day of the year (1..366) for <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).yday   # => 15
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Yday(MRubyState mrb, MRubyValue self) =>
         GetTimeData(mrb, self).DateTimeOffset.DayOfYear;
 
+    /// <summary>
+    /// Returns the timezone name of <c>self</c>: "UTC" for UTC, otherwise the signed hour-and-minute offset like "+0900".
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).zone   # => "UTC"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Zone(MRubyState mrb, MRubyValue self)
     {
@@ -481,6 +717,14 @@ static class TimeMembers
         return mrb.NewString(result);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> is in UTC (zero offset).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).utc?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue QUtc(MRubyState mrb, MRubyValue self)
     {
@@ -488,48 +732,113 @@ static class TimeMembers
         return dateTimeOffset.Offset == TimeSpan.Zero;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Sunday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 14).sunday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue QSunday(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Sunday;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Monday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 15).monday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue QMonday(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Monday;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Tuesday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 16).tuesday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyMethod QTuesday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Tuesday;
     });
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Wednesday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 17).wednesday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyMethod QWednesday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Wednesday;
     });
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Thursday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 18).thursday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyMethod QThursday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Thursday;
     });
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Friday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 19).friday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyMethod QFriday  = new((mrb, self) =>
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Friday;
     });
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> falls on a Saturday.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Time.utc(2024, 1, 20).saturday?   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue QSaturday(MRubyState mrb, MRubyValue self)
     {
         return GetTimeData(mrb, self).DateTimeOffset.DayOfWeek == DayOfWeek.Saturday;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> is in a daylight-saving-time period for the local timezone.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.local(2024, 7, 15)
+    /// t.dst?    # => true or false depending on the local timezone
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue QDaylightSavintTime(MRubyState mrb, MRubyValue self)
     {
@@ -537,6 +846,15 @@ static class TimeMembers
         return TimeZoneInfo.Local.IsDaylightSavingTime(dateTimeOffset);
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> representing the same instant converted to UTC. Does not mutate <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.local(2024, 1, 15)
+    /// t.getutc.utc?    # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> Time")]
     public static MRubyValue GetUtc(MRubyState mrb, MRubyValue self)
     {
@@ -544,6 +862,15 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, t.DateTimeOffset.ToUniversalTime());
     }
 
+    /// <summary>
+    /// Returns a new <c>Time</c> representing the same instant converted to local time. Does not mutate <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.utc(2024, 1, 15)
+    /// t.getlocal.utc?  # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> Time")]
     public static MRubyValue GetLocal(MRubyState mrb, MRubyValue self)
     {
@@ -551,6 +878,15 @@ static class TimeMembers
         return CreateRDataFromDateTime(mrb, t.DateTimeOffset.ToLocalTime());
     }
 
+    /// <summary>
+    /// Converts <c>self</c> in place to UTC and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.local(2024, 1, 15)
+    /// t.utc.utc?       # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue ConvertToUtc(MRubyState mrb, MRubyValue self)
     {
@@ -559,6 +895,15 @@ static class TimeMembers
         return self;
     }
 
+    /// <summary>
+    /// Converts <c>self</c> in place to local time and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// t = Time.utc(2024, 1, 15)
+    /// t.localtime.utc?  # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue ConvertToLocal(MRubyState mrb, MRubyValue self)
     {

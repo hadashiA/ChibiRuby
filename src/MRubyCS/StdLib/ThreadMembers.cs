@@ -9,11 +9,16 @@ namespace MRubyCS.StdLib;
 static class ThreadMembers
 {
     /// <summary>
-    /// <c>Thread.pass</c> — CRuby-compatible cooperative yield. Hands
+    /// <c>Thread.pass</c> -- CRuby-compatible cooperative yield. Hands
     /// control back to the <see cref="MRubyFiberScheduler"/> so other
     /// in-flight fibers and host async work can run before this fiber is
     /// resumed. No-op at the root fiber or when no scheduler is installed.
     /// </summary>
+    /// <example>
+    /// <code>
+    /// Thread.pass    # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> nil")]
     public static MRubyValue Pass(MRubyState state, MRubyValue _)
     {

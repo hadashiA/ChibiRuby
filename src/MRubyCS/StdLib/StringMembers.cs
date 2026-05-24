@@ -8,9 +8,25 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Mutable sequence of bytes, usually interpreted as UTF-8 text. Indexing
+/// returns substrings or single characters; many methods come in pairs of
+/// pure (<c>upcase</c>) and in-place (<c>upcase!</c>) variants. Includes
+/// <c>Comparable</c>. String literals are frozen by some host configurations
+/// but mutable by default.
+/// </summary>
 [RubyClass("String")]
 static class StringMembers
 {
+    /// <summary>
+    /// Initializes a new <c>String</c>, optionally copying the contents of the given string.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// String.new            # => ""
+    /// String.new("hello")   # => "hello"
+    /// </code>
+    /// </example>
     [RubyDef("(?String) -> void")]
     public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
@@ -29,6 +45,14 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>
+    /// Replaces the contents of <c>self</c> with a copy of the given string. Called by <c>dup</c> and <c>clone</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc".dup   # => "abc"
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> self")]
     public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
@@ -38,6 +62,14 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns the <c>Symbol</c> corresponding to <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "foo".intern    # => :foo
+    /// </code>
+    /// </example>
     [RubyDef("() -> Symbol")]
     public static MRubyValue Intern(MRubyState state, MRubyValue self)
     {
@@ -45,6 +77,15 @@ static class StringMembers
         return state.Intern(str);
     }
 
+    /// <summary>
+    /// Replaces the contents of <c>self</c> with the contents of the given string and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s.replace("world")   # => "world"
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> self")]
     public static MRubyValue Replace(MRubyState state, MRubyValue self)
     {
@@ -54,6 +95,14 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns a quoted, escaped representation of <c>self</c> suitable for debugging output.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hi\n".inspect    # => "\"hi\\n\""
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
@@ -71,6 +120,16 @@ static class StringMembers
         return state.NewString(output.AsSpan(0, written));
     }
 
+    /// <summary>
+    /// Equality <c>==</c>. Returns <c>true</c> when the argument is a <c>String</c> with the same byte content.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc" == "abc"   # => true
+    /// "abc" == "abd"   # => false
+    /// "abc" == :abc    # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
@@ -82,6 +141,16 @@ static class StringMembers
         return MRubyValue.False;
     }
 
+    /// <summary>
+    /// Comparison <c>&lt;=&gt;</c>. Returns -1, 0, or 1 by comparing byte content with the given string, or <c>nil</c> for non-strings.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc" &lt;=&gt; "abd"    # => -1
+    /// "abc" &lt;=&gt; "abc"    # => 0
+    /// "abc" &lt;=&gt; 42       # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue OpCmp(MRubyState state, MRubyValue self)
     {
@@ -94,6 +163,16 @@ static class StringMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Element reference <c>[]</c>. Returns the substring at the given index, range, or <c>(start, length)</c>, or <c>nil</c> when out of range.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello"[0]      # => "h"
+    /// "hello"[1, 3]   # => "ell"
+    /// "hello"[1..3]   # => "ell"
+    /// </code>
+    /// </example>
     [RubyDef("(Integer | Range[Integer]) -> String? | (Integer, Integer) -> String?")]
     public static MRubyValue OpAref(MRubyState state, MRubyValue self)
     {
@@ -110,6 +189,16 @@ static class StringMembers
         return result != null ? new MRubyValue(result) : MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Element assignment <c>[]=</c>. Replaces the substring at the given index, range, or <c>(start, length)</c> with the given string.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s[0] = "H"        # s == "Hello"
+    /// s[1, 3] = "i!"    # s == "Hi!o"
+    /// </code>
+    /// </example>
     [RubyDef("(Integer, String) -> String | (Integer, Integer, String) -> String | (Range[Integer], String) -> String")]
     public static MRubyValue OpAset(MRubyState state, MRubyValue self)
     {
@@ -138,6 +227,14 @@ static class StringMembers
         return value;
     }
 
+    /// <summary>
+    /// Returns the <c>Symbol</c> corresponding to <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "foo".to_sym    # => :foo
+    /// </code>
+    /// </example>
     [RubyDef("() -> Symbol")]
     public static MRubyValue ToSym(MRubyState state, MRubyValue self)
     {
@@ -145,6 +242,14 @@ static class StringMembers
         return state.Intern(str.AsSpan());
     }
 
+    /// <summary>
+    /// Returns <c>self</c> (or a duplicate of <c>self</c> when called on a plain <c>String</c>).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".to_s     # => "hello"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
@@ -155,6 +260,17 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>
+    /// Parses the leading integer in <c>self</c> using the given radix (2, 8, 10, or 16; default 10). Returns 0 when no number can be parsed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "42abc".to_i      # => 42
+    /// "ff".to_i(16)     # => 255
+    /// "1010".to_i(2)    # => 10
+    /// "abc".to_i        # => 0
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Integer")]
     public static MRubyValue ToI(MRubyState state, MRubyValue self)
     {
@@ -207,6 +323,16 @@ static class StringMembers
         return result ? value : 0;
     }
 
+    /// <summary>
+    /// Parses the leading floating-point number in <c>self</c> and returns it. Returns <c>0.0</c> when no number can be parsed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "3.14".to_f      # => 3.14
+    /// "1e2".to_f       # => 100.0
+    /// "abc".to_f       # => 0.0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Float")]
     public static MRubyValue ToF(MRubyState state, MRubyValue self)
     {
@@ -231,6 +357,15 @@ static class StringMembers
         return result ? value : 0;
     }
 
+    /// <summary>
+    /// Returns the number of characters (UTF-8 code points) in <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".size     # => 5
+    /// "".size          # => 0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Size(MRubyState state, MRubyValue self)
     {
@@ -238,12 +373,30 @@ static class StringMembers
         return Encoding.UTF8.GetCharCount(str.AsSpan());
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> has zero length, <c>false</c> otherwise.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "".empty?       # => true
+    /// "x".empty?      # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue Empty(MRubyState state, MRubyValue self)
     {
         return self.As<RString>().Length <= 0;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> contains the given substring.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".include?("ell")   # => true
+    /// "hello".include?("xyz")   # => false
+    /// </code>
+    /// </example>
     [RubyDef("(String) -> bool")]
     public static MRubyValue Include(MRubyState state, MRubyValue self)
     {
@@ -253,6 +406,16 @@ static class StringMembers
         return i >= 0;
     }
 
+    /// <summary>
+    /// Returns the index of the first occurrence of the given substring (optionally starting at the given offset), or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".index("l")        # => 2
+    /// "hello".index("l", 3)     # => 3
+    /// "hello".index("x")        # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> Integer?")]
     public static MRubyValue Index(MRubyState state, MRubyValue self)
     {
@@ -278,6 +441,15 @@ static class StringMembers
         return result < 0 ? MRubyValue.Nil : new MRubyValue(result);
     }
 
+    /// <summary>
+    /// Returns the index of the last occurrence of the given substring (optionally ending at the given offset), or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".rindex("l")       # => 3
+    /// "hello".rindex("x")       # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> Integer?")]
     public static MRubyValue RIndex(MRubyState state, MRubyValue self)
     {
@@ -303,6 +475,15 @@ static class StringMembers
         return result < 0 ? MRubyValue.Nil : result;
     }
 
+    /// <summary>
+    /// Repetition <c>*</c>. Returns a new string built by concatenating <c>self</c> the given number of times.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "ab" * 3      # => "ababab"
+    /// "x" * 0       # => ""
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> String")]
 
     public static MRubyValue Times(MRubyState state, MRubyValue self)
@@ -328,6 +509,15 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns a copy of <c>self</c> with the first character converted to uppercase and the rest to lowercase.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".capitalize    # => "Hello"
+    /// "HELLO".capitalize    # => "Hello"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
 
     public static MRubyValue Capitalize(MRubyState state, MRubyValue self)
@@ -338,6 +528,16 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Capitalizes <c>self</c> in place. Returns <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s.capitalize!   # => nil
+    /// s               # => "Hello"
+    /// </code>
+    /// </example>
     [RubyDef("() -> self?")]
 
     public static MRubyValue CapitalizeBang(MRubyState state, MRubyValue self)
@@ -349,6 +549,16 @@ static class StringMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns a copy of <c>self</c> with the trailing record separator (default <c>"\n"</c> or <c>"\r\n"</c>) removed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello\n".chomp        # => "hello"
+    /// "hello\r\n".chomp      # => "hello"
+    /// "hello".chomp("lo")    # => "hel"
+    /// </code>
+    /// </example>
     [RubyDef("(?String) -> String")]
     public static MRubyValue Chomp(MRubyState state, MRubyValue self)
     {
@@ -367,6 +577,16 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Removes the trailing record separator from <c>self</c> in place. Returns <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello\n"
+    /// s.chomp!     # => nil
+    /// s            # => "hello"
+    /// </code>
+    /// </example>
     [RubyDef("(?String) -> self?")]
     public static MRubyValue ChompBang(MRubyState state, MRubyValue self)
     {
@@ -386,6 +606,15 @@ static class StringMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns a copy of <c>self</c> with the last character removed (<c>"\r\n"</c> counts as one character).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".chop       # => "hell"
+    /// "hi\r\n".chop      # => "hi"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Chop(MRubyState state, MRubyValue self)
     {
@@ -395,6 +624,16 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Removes the last character of <c>self</c> in place. Returns <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s.chop!     # => nil
+    /// s           # => "hell"
+    /// </code>
+    /// </example>
     [RubyDef("() -> self?")]
     public static MRubyValue ChopBang(MRubyState state, MRubyValue self)
     {
@@ -404,6 +643,15 @@ static class StringMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns a copy of <c>self</c> with all uppercase ASCII letters converted to lowercase.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "Hello".downcase     # => "hello"
+    /// "ABC".downcase       # => "abc"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Downcase(MRubyState state, MRubyValue self)
     {
@@ -413,6 +661,16 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Downcases <c>self</c> in place. Returns <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "Hello"
+    /// s.downcase!    # => nil
+    /// s              # => "hello"
+    /// </code>
+    /// </example>
     [RubyDef("() -> self?")]
     public static MRubyValue DowncaseBang(MRubyState state, MRubyValue self)
     {
@@ -422,6 +680,14 @@ static class StringMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns a copy of <c>self</c> with all lowercase ASCII letters converted to uppercase.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "Hello".upcase     # => "HELLO"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Upcase(MRubyState state, MRubyValue self)
     {
@@ -431,6 +697,16 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Upcases <c>self</c> in place. Returns <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "Hello"
+    /// s.upcase!     # => nil
+    /// s             # => "HELLO"
+    /// </code>
+    /// </example>
     [RubyDef("() -> self?")]
     public static MRubyValue UpcaseBang(MRubyState state, MRubyValue self)
     {
@@ -440,6 +716,14 @@ static class StringMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns a new string with the characters of <c>self</c> reversed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".reverse    # => "olleh"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Reverse(MRubyState state, MRubyValue self)
     {
@@ -448,6 +732,15 @@ static class StringMembers
         return state.NewStringOwned(buf);
     }
 
+    /// <summary>
+    /// Reverses the characters of <c>self</c> in place and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s.reverse!    # => "olleh"
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue ReverseBang(MRubyState state, MRubyValue self)
     {
@@ -460,6 +753,16 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>
+    /// Splits <c>self</c> into an array of substrings using the given delimiter (string or <c>Regexp</c>). With no delimiter splits on whitespace.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "a,b,c".split(",")        # => ["a", "b", "c"]
+    /// "a b  c".split            # => ["a", "b", "c"]
+    /// "a,b,c".split(",", 2)     # => ["a", "b,c"]
+    /// </code>
+    /// </example>
     [RubyDef("(?(String | Regexp), ?Integer) -> Array[String]")]
     public static MRubyValue Split(MRubyState state, MRubyValue self)
     {
@@ -626,6 +929,15 @@ static class StringMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns the number of bytes in <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".bytesize     # => 5
+    /// "日本".bytesize      # => 6
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue ByteCount(MRubyState state, MRubyValue self)
     {
@@ -633,6 +945,14 @@ static class StringMembers
         return str.AsSpan().Length;
     }
 
+    /// <summary>
+    /// Returns an array of the bytes that make up <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc".bytes      # => [97, 98, 99]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[Integer]")]
     public static MRubyValue Bytes(MRubyState state, MRubyValue self)
     {
@@ -645,6 +965,15 @@ static class StringMembers
         return array;
     }
 
+    /// <summary>
+    /// Returns the byte offset of the first occurrence of the given substring (optionally starting at the given byte offset), or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".byteindex("l")        # => 2
+    /// "hello".byteindex("l", 3)     # => 3
+    /// </code>
+    /// </example>
     [RubyDef("(String, ?Integer) -> Integer?")]
     public static MRubyValue ByteIndex(MRubyState state, MRubyValue self)
     {
@@ -661,6 +990,16 @@ static class StringMembers
         return index < 0 ? MRubyValue.Nil : index;
     }
 
+    /// <summary>
+    /// Returns the substring at the given byte index, byte range, or <c>(start, length)</c> in bytes. Returns <c>nil</c> when out of range.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hello".byteslice(1)         # => "e"
+    /// "hello".byteslice(1, 3)      # => "ell"
+    /// "hello".byteslice(1..3)      # => "ell"
+    /// </code>
+    /// </example>
     [RubyDef("(Integer, ?Integer) -> String?")]
     public static MRubyValue BytesSlice(MRubyState state, MRubyValue self)
     {
@@ -707,6 +1046,15 @@ static class StringMembers
         return result != null ? result : MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Replaces the bytes at the given byte index, byte range, or <c>(start, length)</c> in <c>self</c> with the given string. Returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hello"
+    /// s.bytesplice(1, 3, "i")    # s == "hio"
+    /// </code>
+    /// </example>
     [RubyDef("(*untyped) -> String")]
     public static MRubyValue ByteSplice(MRubyState state, MRubyValue self)
     {
@@ -830,6 +1178,16 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns the byte at the given byte index, or <c>nil</c> when out of range. Negative indices count from the end.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "abc".getbyte(0)    # => 97
+    /// "abc".getbyte(-1)   # => 99
+    /// "abc".getbyte(10)   # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer?")]
     public static MRubyValue GetByte(MRubyState state, MRubyValue self)
     {
@@ -847,6 +1205,15 @@ static class StringMembers
         return str.AsSpan()[pos];
     }
 
+    /// <summary>
+    /// Sets the byte at the given byte index to the low 8 bits of the given integer. Returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "abc"
+    /// s.setbyte(0, 65)    # s == "Abc"
+    /// </code>
+    /// </example>
     [RubyDef("(Integer, Integer) -> Integer")]
     public static MRubyValue SetByte(MRubyState state, MRubyValue self)
     {
@@ -866,6 +1233,7 @@ static class StringMembers
         return self;
     }
 
+    /// <summary>Internal helper used by <c>String#sub</c> to expand backreferences in a replacement pattern.</summary>
     [RubyDef("(String, MatchData) -> String")]
     public static MRubyValue InternalSubReplace(MRubyState state, MRubyValue self)
     {

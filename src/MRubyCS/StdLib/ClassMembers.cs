@@ -2,9 +2,27 @@ using System;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// A Ruby class object -- a <c>Module</c> that can be instantiated via
+/// <c>new</c>. Every object has a class (reachable via <c>obj.class</c>), and
+/// classes themselves are first-class objects. <c>Class.new</c> creates an
+/// anonymous class; subclassing is done with <c>class Foo &lt; Bar</c>.
+/// </summary>
 [RubyClass("Class", Superclass = "Module")]
 static class ClassMembers
 {
+    /// <summary>
+    /// Creates a new anonymous class, optionally inheriting from <c>superclass</c> (defaults to <c>Object</c>).
+    /// If a block is given, it is evaluated in the context of the new class.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// c = Class.new                # => #&lt;Class:...&gt;
+    /// c = Class.new(Array)         # subclass of Array
+    /// c = Class.new { def hi; "hi"; end }
+    /// c.new.hi                     # => "hi"
+    /// </code>
+    /// </example>
     [RubyDef("(?Class) ?{ (Class) -> void } -> Class")]
     public static MRubyValue NewClass(MRubyState state, MRubyValue self)
     {
@@ -38,6 +56,15 @@ static class ClassMembers
         return newClassValue;
     }
 
+    /// <summary>
+    /// Allocates a new instance of <c>self</c> and calls <c>initialize</c> on it with the given arguments and block.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// String.new("hello")    # => "hello"
+    /// Array.new(3, 0)        # => [0, 0, 0]
+    /// </code>
+    /// </example>
     [RubyDef("(*untyped) -> instance")]
 
     public static MRubyValue New(MRubyState state, MRubyValue self)
@@ -81,6 +108,16 @@ static class ClassMembers
 
     }
 
+    /// <summary>
+    /// Returns the superclass of <c>self</c>, or <c>nil</c> if there is none.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// String.superclass        # => Object
+    /// Object.superclass        # => BasicObject
+    /// BasicObject.superclass   # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> Class?")]
     public static MRubyValue Superclass(MRubyState state, MRubyValue self)
     {
@@ -93,6 +130,18 @@ static class ClassMembers
     }
 
 
+    /// <summary>
+    /// Initializes a newly-created class. If a block is given, it is evaluated in the class context.
+    /// Called automatically by <c>Class.new</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// c = Class.new(Object) do
+    ///   def greet; "hi"; end
+    /// end
+    /// c.new.greet    # => "hi"
+    /// </code>
+    /// </example>
     [RubyDef("(?Class) ?{ (Class) -> void } -> void")]
     public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {

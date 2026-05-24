@@ -3,9 +3,23 @@ using MRubyCS.Internals;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Interned, immutable identifier -- written <c>:name</c>. Two symbols with
+/// the same name are the same object, which makes them efficient as hash keys,
+/// method names, and tag values. Convert to and from strings with <c>to_s</c>
+/// and <c>String#to_sym</c>.
+/// </summary>
 [RubyClass("Symbol")]
 static class SymbolMembers
 {
+    /// <summary>
+    /// Returns the string representation of <c>self</c> (without the leading colon).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// :foo.to_s        # => "foo"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
@@ -13,12 +27,28 @@ static class SymbolMembers
         return new MRubyValue(state.NewString(name.AsSpan()));
     }
 
+    /// <summary>
+    /// Returns the name of <c>self</c> as a frozen String.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// :foo.name        # => "foo"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Name(MRubyState state, MRubyValue self)
     {
         return new MRubyValue(state.NameOf(self.SymbolValue));
     }
 
+    /// <summary>
+    /// Returns a printable representation of <c>self</c>, prefixed with a colon.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// :foo.inspect     # => ":foo"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
@@ -44,6 +74,16 @@ static class SymbolMembers
         return new MRubyValue(state.NewString(escapeBuffer[..(escapedSize + 1)]));
     }
 
+    /// <summary>
+    /// Compares <c>self</c> with another symbol. Returns -1, 0, or 1, or <c>nil</c>
+    /// when the other value is not a Symbol.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// :foo &lt;=&gt; :foo   # => 0
+    /// :bar &lt;=&gt; :foo   # => -1
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue Cmp(MRubyState state, MRubyValue self)
     {

@@ -3,9 +3,23 @@ using System.Collections.Generic;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Ordered, integer-indexed collection of objects. The base concrete container
+/// in Ruby -- supports indexing, slicing, iteration via <c>each</c>, and
+/// conversion via <c>to_a</c>. Mutable; many in-place methods end in <c>!</c>.
+/// </summary>
 [RubyClass("Array", TypeParameters = "Elem")]
 static class ArrayMembers
 {
+    /// <summary>
+    /// Creates a new <c>Array</c> from the given elements.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Array.new           # => []
+    /// Array[1, 2, 3]      # => [1, 2, 3]
+    /// </code>
+    /// </example>
     [RubyDef("(*Elem) -> Array[Elem]")]
     public static MRubyValue Create(MRubyState state, MRubyValue self)
     {
@@ -15,6 +29,18 @@ static class ArrayMembers
         return array;
     }
 
+    /// <summary>
+    /// Element reference <c>[]</c>. Returns the element at the given index, a subarray for <c>(start, length)</c> or a range, or <c>nil</c> when out of range.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3, 4]
+    /// a[0]        # => 1
+    /// a[-1]       # => 4
+    /// a[1, 2]     # => [2, 3]
+    /// a[0..1]     # => [1, 2]
+    /// </code>
+    /// </example>
     [RubyDef("(int) -> Elem | (int, int) -> Array[Elem]? | (Range[int]) -> Array[Elem]?")]
     public static MRubyValue OpAref(MRubyState state, MRubyValue self)
     {
@@ -58,6 +84,17 @@ static class ArrayMembers
         }
     }
 
+    /// <summary>
+    /// Element assignment <c>[]=</c>. Sets the element at the given index, or replaces a range of elements.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a[0] = 9        # => 9, a == [9, 2, 3]
+    /// a[1, 2] = [0]   # a == [9, 0]
+    /// a[0..1] = [:x]  # a == [:x]
+    /// </code>
+    /// </example>
     [RubyDef("(int, Elem) -> Elem | (int, int, Elem) -> Elem | (Range[int], Elem) -> Elem")]
     public static MRubyValue OpAset(MRubyState state, MRubyValue self)
     {
@@ -105,6 +142,15 @@ static class ArrayMembers
         }
     }
 
+    /// <summary>
+    /// Replaces the contents of <c>self</c> with the contents of the given array and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.replace([10, 20])   # => [10, 20]
+    /// </code>
+    /// </example>
     [RubyDef("(Array[Elem]) -> self")]
     public static MRubyValue Replace(MRubyState state, MRubyValue self)
     {
@@ -115,6 +161,16 @@ static class ArrayMembers
         return self;
     }
 
+    /// <summary>
+    /// Appends the given element(s) to <c>self</c> and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2]
+    /// a.push(3)        # => [1, 2, 3]
+    /// a.push(4, 5)     # => [1, 2, 3, 4, 5]
+    /// </code>
+    /// </example>
     [RubyDef("(*Elem) -> self")]
     public static MRubyValue Push(MRubyState state, MRubyValue self)
     {
@@ -131,6 +187,17 @@ static class ArrayMembers
         return self;
     }
 
+    /// <summary>
+    /// Removes and returns the last element of <c>self</c>, or <c>nil</c> when empty.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.pop        # => 3
+    /// a            # => [1, 2]
+    /// [].pop       # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> Elem")]
     public static MRubyValue Pop(MRubyState state, MRubyValue self)
     {
@@ -141,6 +208,14 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns a new array built by concatenating <c>self</c> with the given array.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2].plus([3, 4])    # => [1, 2, 3, 4]
+    /// </code>
+    /// </example>
     [RubyDef("(Array[Elem]) -> Array[Elem]")]
     public static MRubyValue Plus(MRubyState state, MRubyValue self)
     {
@@ -155,6 +230,15 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns the number of elements in <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].size       # => 3
+    /// [].size              # => 0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Size(MRubyState state, MRubyValue self)
     {
@@ -162,6 +246,15 @@ static class ArrayMembers
         return array.Length;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> contains no elements, <c>false</c> otherwise.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [].empty?        # => true
+    /// [1].empty?       # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue Empty(MRubyState state, MRubyValue self)
     {
@@ -169,6 +262,16 @@ static class ArrayMembers
         return array.Length <= 0;
     }
 
+    /// <summary>
+    /// Returns the first element of <c>self</c>, or the first <c>n</c> elements when an argument is given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].first       # => 1
+    /// [1, 2, 3].first(2)    # => [1, 2]
+    /// [].first              # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> Elem | (int) -> Array[Elem]")]
     public static MRubyValue First(MRubyState state, MRubyValue self)
     {
@@ -193,6 +296,16 @@ static class ArrayMembers
         return subSequence;
     }
 
+    /// <summary>
+    /// Returns the last element of <c>self</c>, or the last <c>n</c> elements when an argument is given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].last        # => 3
+    /// [1, 2, 3].last(2)     # => [2, 3]
+    /// [].last               # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> Elem | (int) -> Array[Elem]")]
     public static MRubyValue Last(MRubyState state, MRubyValue self)
     {
@@ -216,6 +329,15 @@ static class ArrayMembers
         return subSequence;
     }
 
+    /// <summary>
+    /// Equality <c>==</c>. Returns <c>true</c> when both arrays have the same length and corresponding elements compare equal with <c>==</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2] == [1, 2]    # => true
+    /// [1, 2] == [1, 2, 3] # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
@@ -245,6 +367,15 @@ static class ArrayMembers
         return MRubyValue.True;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when both arrays have the same length and corresponding elements are <c>eql?</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2].eql?([1, 2])     # => true
+    /// [1, 2].eql?([1.0, 2.0]) # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
@@ -274,6 +405,14 @@ static class ArrayMembers
         return MRubyValue.True;
     }
 
+    /// <summary>
+    /// Concatenation <c>+</c>. Returns a new array built by concatenating <c>self</c> with the given array.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2] + [3, 4]     # => [1, 2, 3, 4]
+    /// </code>
+    /// </example>
     [RubyDef("(Array[Elem]) -> Array[Elem]")]
     public static MRubyValue OpAdd(MRubyState state, MRubyValue self)
     {
@@ -293,6 +432,15 @@ static class ArrayMembers
         return newArray;
     }
 
+    /// <summary>
+    /// Repetition <c>*</c>. With an integer returns a new array with the contents of <c>self</c> repeated; with a string joins the elements using it as the separator.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2] * 3        # => [1, 2, 1, 2, 1, 2]
+    /// [1, 2, 3] * ","   # => "1,2,3"
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Array[Elem] | (String) -> String")]
     public static MRubyValue Times(MRubyState state, MRubyValue self)
     {
@@ -329,6 +477,14 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns a new array containing the elements of <c>self</c> in reverse order.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].reverse    # => [3, 2, 1]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[Elem]")]
     public static MRubyValue Reverse(MRubyState state, MRubyValue self)
     {
@@ -339,6 +495,16 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>
+    /// Reverses the elements of <c>self</c> in place and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.reverse!     # => [3, 2, 1]
+    /// a              # => [3, 2, 1]
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue ReverseBang(MRubyState state, MRubyValue self)
     {
@@ -356,6 +522,16 @@ static class ArrayMembers
         return self;
     }
 
+    /// <summary>
+    /// Removes and returns the element at the given index, or <c>nil</c> when the index is out of range.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.delete_at(1)   # => 2
+    /// a                # => [1, 3]
+    /// </code>
+    /// </example>
     [RubyDef("(int) -> Elem")]
     public static MRubyValue DeleteAt(MRubyState state, MRubyValue self)
     {
@@ -365,6 +541,14 @@ static class ArrayMembers
         return array.DeleteAt((int)index);
     }
 
+    /// <summary>
+    /// Returns a string by concatenating the <c>to_s</c> of each element, formatted like <c>"[a, b, c]"</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].to_s     # => "[1, 2, 3]"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue ToS(MRubyState state, MRubyValue self)
     {
@@ -394,6 +578,14 @@ static class ArrayMembers
     }
 
 
+    /// <summary>
+    /// Returns a human-readable string by concatenating the <c>inspect</c> of each element, formatted like <c>"[a, b, c]"</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, "x"].inspect     # => "[1, \"x\"]"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Inspect(MRubyState state, MRubyValue self)
     {
@@ -422,6 +614,15 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns the index of the first element equal to the given value, or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3, 2].index(2)    # => 1
+    /// [1, 2, 3].index(9)       # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue Index(MRubyState state, MRubyValue self)
     {
@@ -438,6 +639,15 @@ static class ArrayMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns the index of the last element equal to the given value, or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3, 2].rindex(2)   # => 3
+    /// [1, 2, 3].rindex(9)      # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue RIndex(MRubyState state, MRubyValue self)
     {
@@ -454,6 +664,15 @@ static class ArrayMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns a string created by converting each element to a string and joining them with the given separator (default empty).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].join          # => "123"
+    /// [1, 2, 3].join("-")     # => "1-2-3"
+    /// </code>
+    /// </example>
     [RubyDef("(?String) -> String")]
     public static MRubyValue Join(MRubyState state, MRubyValue self)
     {
@@ -469,6 +688,15 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>
+    /// Removes all elements from <c>self</c> and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.clear      # => []
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue Clear(MRubyState state, MRubyValue self)
     {
@@ -476,6 +704,15 @@ static class ArrayMembers
         return self;
     }
 
+    /// <summary>
+    /// Appends the elements of each given array to <c>self</c> and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2]
+    /// a.concat([3, 4], [5])   # => [1, 2, 3, 4, 5]
+    /// </code>
+    /// </example>
     [RubyDef("(*Array[Elem]) -> self")]
     public static MRubyValue Concat(MRubyState state, MRubyValue self)
     {
@@ -492,6 +729,17 @@ static class ArrayMembers
         return self;
     }
 
+    /// <summary>
+    /// Removes and returns the first element of <c>self</c>, or the first <c>n</c> elements when an argument is given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// a.shift     # => 1
+    /// a           # => [2, 3]
+    /// a.shift(2)  # => [2, 3]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Elem | (Integer) -> Array[Elem]")]
     public static MRubyValue Shift(MRubyState state, MRubyValue self)
     {
@@ -505,6 +753,15 @@ static class ArrayMembers
         return array.Shift();
     }
 
+    /// <summary>
+    /// Prepends the given element(s) to the front of <c>self</c> and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [3, 4]
+    /// a.unshift(1, 2)   # => [1, 2, 3, 4]
+    /// </code>
+    /// </example>
     [RubyDef("(*Elem) -> self")]
     public static MRubyValue Unshift(MRubyState state, MRubyValue self)
     {
@@ -569,6 +826,7 @@ static class ArrayMembers
         return result;
     }
 
+    /// <summary>Internal helper used by <c>Array#==</c> to short-circuit common cases.</summary>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue InternalEq(MRubyState state, MRubyValue self)
     {
@@ -591,6 +849,7 @@ static class ArrayMembers
         return arg;
     }
 
+    /// <summary>Internal helper used by <c>Array#&lt;=&gt;</c> to short-circuit common cases.</summary>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue InternalCmp(MRubyState state, MRubyValue self)
     {
@@ -604,6 +863,7 @@ static class ArrayMembers
     }
 
     // internal method to convert multi-value to single value
+    /// <summary>Internal helper used to convert a multi-value array into a single value (used by destructuring assignment).</summary>
     [RubyDef("() -> Elem")]
     public static MRubyValue InternalSValue(MRubyState state, MRubyValue self)
     {
@@ -616,6 +876,16 @@ static class ArrayMembers
         };
     }
 
+    /// <summary>
+    /// Returns <c>self</c>. Used by pattern matching to deconstruct an array.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// case [1, 2, 3]
+    /// in [a, b, c] then [a, b, c]   # => [1, 2, 3]
+    /// end
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[Elem]")]
     public static MRubyValue Deconstruct(MRubyState state, MRubyValue self) => self;
 }

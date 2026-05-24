@@ -2,9 +2,27 @@ using System.Collections.Generic;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Unordered mapping from keys to values (insertion order is preserved on
+/// iteration, matching CRuby). Keys must implement <c>hash</c> and
+/// <c>eql?</c>; lookup is via <c>h[key]</c>. <c>Hash</c> is mutable, includes
+/// <c>Enumerable</c>, and supports a default value or default-proc fallback
+/// when a key is missing.
+/// </summary>
 [RubyClass("Hash", TypeParameters = "K, V")]
 static class HashMembers
 {
+    /// <summary>
+    /// Initializes a new <c>Hash</c>. With an argument sets the default value; with a block sets the default proc.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = Hash.new(0)
+    /// h[:a] += 1            # => 1
+    /// h2 = Hash.new { |hash, k| hash[k] = [] }
+    /// h2[:xs] &lt;&lt; 1          # => [1]
+    /// </code>
+    /// </example>
     [RubyDef("(?V) ?{ (Hash[K, V], K) -> V } -> void")]
     public static MRubyValue Initialize(MRubyState state, MRubyValue self)
     {
@@ -27,6 +45,14 @@ static class HashMembers
         return self;
     }
 
+    /// <summary>
+    /// Replaces the contents of <c>self</c> with a copy of the given hash. Called by <c>dup</c> and <c>clone</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1}.dup     # => {a: 1}
+    /// </code>
+    /// </example>
     [RubyDef("(Hash[K, V]) -> self")]
     public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
@@ -43,6 +69,14 @@ static class HashMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns a human-readable string representation of <c>self</c>, like <c>"{key=&gt;value, ...}"</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2}.inspect    # => "{a: 1, b: 2}"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
 
     public static MRubyValue Inspect(MRubyState state, MRubyValue self)
@@ -91,6 +125,16 @@ static class HashMembers
         return result;
     }
 
+    /// <summary>
+    /// Element reference <c>[]</c>. Returns the value for the given key, or the default value when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {a: 1, b: 2}
+    /// h[:a]        # => 1
+    /// h[:z]        # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(K) -> V?")]
     public static MRubyValue OpAref(MRubyState state, MRubyValue self)
     {
@@ -104,6 +148,16 @@ static class HashMembers
         return state.Send(self, Names.Default, key);
     }
 
+    /// <summary>
+    /// Element assignment <c>[]=</c>. Stores the value under the given key and returns the value. String keys are frozen.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {}
+    /// h[:a] = 1     # => 1
+    /// h             # => {a: 1}
+    /// </code>
+    /// </example>
     [RubyDef("(K, V) -> V")]
     public static MRubyValue OpAset(MRubyState state, MRubyValue self)
     {
@@ -122,6 +176,15 @@ static class HashMembers
         return value;
     }
 
+    /// <summary>
+    /// Returns the number of key-value pairs in <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2}.size    # => 2
+    /// {}.size              # => 0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Size(MRubyState state, MRubyValue self)
     {
@@ -129,6 +192,14 @@ static class HashMembers
         return h.Length;
     }
 
+    /// <summary>
+    /// Returns a new array containing the keys of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2}.keys    # => [:a, :b]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[K]")]
     public static MRubyValue Keys(MRubyState state, MRubyValue self)
     {
@@ -142,6 +213,14 @@ static class HashMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns a new array containing the values of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2}.values    # => [1, 2]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[V]")]
     public static MRubyValue Values(MRubyState state, MRubyValue self)
     {
@@ -155,6 +234,15 @@ static class HashMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> contains the given key.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1}.has_key?(:a)    # => true
+    /// {a: 1}.has_key?(:z)    # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue HasKey(MRubyState state, MRubyValue self)
     {
@@ -163,6 +251,15 @@ static class HashMembers
         return h.ContainsKey(key);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> contains the given value.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1}.has_value?(1)    # => true
+    /// {a: 1}.has_value?(9)    # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue HasValue(MRubyState state, MRubyValue self)
     {
@@ -171,6 +268,15 @@ static class HashMembers
         return h.ContainsValue(value);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> contains no key-value pairs.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {}.empty?         # => true
+    /// {a: 1}.empty?     # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
     public static MRubyValue Empty(MRubyState state, MRubyValue self)
     {
@@ -178,6 +284,16 @@ static class HashMembers
         return h.Length <= 0;
     }
 
+    /// <summary>
+    /// Returns the default value of <c>self</c>. When a default proc is set and a key is given, calls the proc with <c>self</c> and the key.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = Hash.new(0)
+    /// h.default       # => 0
+    /// {}.default      # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(?K) -> V?")]
     public static MRubyValue Default(MRubyState state, MRubyValue self)
     {
@@ -197,6 +313,16 @@ static class HashMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns the default proc of <c>self</c>, or <c>nil</c> when none is set.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = Hash.new { |hash, k| 0 }
+    /// h.default_proc.class    # => Proc
+    /// {}.default_proc         # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> Proc?")]
     public static MRubyValue DefaultProc(MRubyState state, MRubyValue self)
     {
@@ -209,6 +335,16 @@ static class HashMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Sets the default value of <c>self</c> and returns the given value.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {}
+    /// h.default = 0
+    /// h[:missing]     # => 0
+    /// </code>
+    /// </example>
     [RubyDef("(V) -> V")]
     public static MRubyValue SetDefault(MRubyState state, MRubyValue self)
     {
@@ -219,6 +355,15 @@ static class HashMembers
         return value;
     }
 
+    /// <summary>
+    /// Removes all key-value pairs from <c>self</c> and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {a: 1, b: 2}
+    /// h.clear     # => {}
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue Clear(MRubyState state, MRubyValue self)
     {
@@ -229,6 +374,16 @@ static class HashMembers
         return self;
     }
 
+    /// <summary>
+    /// Removes and returns the first <c>[key, value]</c> pair from <c>self</c>, or <c>nil</c> when empty.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {a: 1, b: 2}
+    /// h.shift     # => [:a, 1]
+    /// h           # => {b: 2}
+    /// </code>
+    /// </example>
     [RubyDef("() -> [K, V]?")]
     public static MRubyValue Shift(MRubyState state, MRubyValue self)
     {
@@ -246,6 +401,15 @@ static class HashMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Searches <c>self</c> for the given key and returns the matching <c>[key, value]</c> pair, or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2}.assoc(:a)    # => [:a, 1]
+    /// {a: 1}.assoc(:z)          # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(K) -> [K, V]?")]
     public static MRubyValue Assoc(MRubyState state, MRubyValue self)
     {
@@ -264,6 +428,15 @@ static class HashMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Searches <c>self</c> for the given value and returns the first matching <c>[key, value]</c> pair, or <c>nil</c> when not found.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2}.rassoc(2)    # => [:b, 2]
+    /// {a: 1}.rassoc(9)          # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(V) -> [K, V]?")]
     public static MRubyValue RAssoc(MRubyState state, MRubyValue self)
     {
@@ -283,6 +456,17 @@ static class HashMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Rebuilds the hash table based on the current hash values of each key. Call after mutating keys in place.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// k = [1]
+    /// h = {k => :v}
+    /// k &lt;&lt; 2
+    /// h.rehash      # => h
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
     public static MRubyValue Rehash(MRubyState state, MRubyValue self)
     {
@@ -291,6 +475,7 @@ static class HashMembers
         return self;
     }
 
+    /// <summary>Internal helper used by <c>Hash#delete</c> to remove and return the value for a key.</summary>
     [RubyDef("(K) -> V?")]
     public static MRubyValue InternalDelete(MRubyState state, MRubyValue self)
     {
@@ -304,6 +489,7 @@ static class HashMembers
         return value;
     }
 
+    /// <summary>Internal helper used by <c>Hash#merge!</c> to copy entries from other hashes into <c>self</c>.</summary>
     [RubyDef("(Hash[K, V]) -> Hash[K, V]")]
     public static MRubyValue InternalMerge(MRubyState state, MRubyValue self)
     {
@@ -322,7 +508,15 @@ static class HashMembers
         return self;
     }
 
-    // Hash#slice(*keys) — returns a new hash containing only entries whose key matches an arg.
+    // Hash#slice(*keys) -- returns a new hash containing only entries whose key matches an arg.
+    /// <summary>
+    /// Returns a new hash containing only the entries for the given keys that exist in <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// {a: 1, b: 2, c: 3}.slice(:a, :c)    # => {a: 1, c: 3}
+    /// </code>
+    /// </example>
     [RubyDef("(*K) -> Hash[K, V]")]
     public static MRubyValue Slice(MRubyState state, MRubyValue self)
     {
@@ -339,7 +533,17 @@ static class HashMembers
         return result;
     }
 
-    // Hash#slice!(*keys) — keeps only the listed keys in self, returns the removed entries.
+    // Hash#slice!(*keys) -- keeps only the listed keys in self, returns the removed entries.
+    /// <summary>
+    /// Removes from <c>self</c> all entries whose key is not in the given list, and returns a new hash containing the removed entries.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {a: 1, b: 2, c: 3}
+    /// h.slice!(:a, :c)     # => {b: 2}
+    /// h                    # => {a: 1, c: 3}
+    /// </code>
+    /// </example>
     [RubyDef("(*K) -> Hash[K, V]?")]
     public static MRubyValue SliceBang(MRubyState state, MRubyValue self)
     {
@@ -371,7 +575,8 @@ static class HashMembers
         return removed;
     }
 
-    // Hash#__except(*keys) — pattern matching support for **rest binding.
+    // Hash#__except(*keys) -- pattern matching support for **rest binding.
+    /// <summary>Internal helper used by hash pattern matching to bind <c>**rest</c> by excluding matched keys.</summary>
     [RubyDef("(*K) -> Hash[K, V]")]
     public static MRubyValue InternalExcept(MRubyState state, MRubyValue self)
     {
@@ -397,8 +602,9 @@ static class HashMembers
         return result;
     }
 
-    // Hash#__pat_values(keys) — used by case/in for hash patterns. Returns the
+    // Hash#__pat_values(keys) -- used by case/in for hash patterns. Returns the
     // values array when every key is present, or false otherwise.
+    /// <summary>Internal helper used by <c>case/in</c> hash patterns to fetch the values for a list of keys, or <c>false</c> when any key is missing.</summary>
     [RubyDef("(*K) -> Array[V]?")]
     public static MRubyValue InternalPatValues(MRubyState state, MRubyValue self)
     {

@@ -1,6 +1,17 @@
 # NOTE: Methods containing loop must be implemented in .rb(bytecode) to support jumps by break.
 
+##
+# Root of the Ruby class hierarchy. Has no superclass and an intentionally
+# minimal API -- used as a base for proxy objects that must avoid inheriting
+# Object/Kernel methods. Most code should subclass Object instead.
 class BasicObject
+  ##
+  # call-seq:
+  #   obj != other -> true or false
+  #
+  # Returns true if +self+ is not equal to +other+. Defined as the
+  # negation of <code>==</code>; subclasses typically only need to
+  # override <code>==</code>.
   def !=(other)
     if self == other
       false
@@ -10,6 +21,11 @@ class BasicObject
   end
 end
 
+##
+# Mixin included by Object that provides the methods available on every
+# object -- puts, raise, require, send, respond_to?, and so on. Top-level
+# def's become private Kernel methods, which is why they can be called
+# anywhere without an explicit receiver.
 module Kernel
   ##
   # call-seq:
@@ -114,20 +130,45 @@ module Kernel
   end
 end
 
+##
+# Raised when a name (constant, variable, or method) cannot be resolved.
+# The offending +name+ is available via the +#name+ accessor.
+#
 # ISO 15.2.31
 class NameError < StandardError
+  ##
+  # The undefined name that triggered the error, as a Symbol.
   attr_accessor :name
 
+  ##
+  # call-seq:
+  #   NameError.new(message=nil, name=nil) -> name_error
+  #
+  # Constructs a new NameError with the optional +message+ and the
+  # offending +name+ stored for later retrieval via #name.
   def initialize(message=nil, name=nil)
     @name = name
     super(message)
   end
 end
 
+##
+# Raised when a method is called on a receiver that does not respond to it.
+# Subclass of NameError; adds the +#args+ accessor for the arguments that
+# were passed to the missing method.
+#
 # ISO 15.2.32
 class NoMethodError < NameError
+  ##
+  # The arguments passed to the undefined method, as an Array.
   attr_reader :args
 
+  ##
+  # call-seq:
+  #   NoMethodError.new(message=nil, name=nil, args=nil) -> no_method_error
+  #
+  # Constructs a new NoMethodError with the optional +message+, the
+  # offending method +name+, and the +args+ array passed to the call.
   def initialize(message=nil, name=nil, args=nil)
     @args = args
     super message, name
@@ -149,6 +190,13 @@ class Module
     self
   end
 
+  ##
+  # call-seq:
+  #   prepend(module, ...) -> self
+  #
+  # Invokes Module.prepend_features on each parameter in reverse order
+  # so that the prepended modules take priority over methods defined
+  # in +self+.
   def prepend(*args)
     args.reverse!
     mod = self
@@ -516,6 +564,14 @@ end
 
 # Enumerable extensions (from mruby-enum-ext)
 module Enumerable
+  ##
+  # call-seq:
+  #   enum.drop(n) -> array
+  #
+  # Drops the first +n+ elements from +enum+ and returns the remaining
+  # elements as an array.
+  #
+  #   [1, 2, 3, 4, 5].drop(2)   #=> [3, 4, 5]
   def drop(n)
     n = n.__to_int
     raise ArgumentError, "attempt to drop negative size" if n < 0
@@ -525,6 +581,14 @@ module Enumerable
     ary
   end
 
+  ##
+  # call-seq:
+  #   enum.drop_while {|element| ... } -> array
+  #   enum.drop_while                  -> enumerator
+  #
+  # Drops elements up to, but not including, the first element for which
+  # the block returns a falsy value and returns an array containing the
+  # remaining elements.
   def drop_while(&block)
     return to_enum :drop_while unless block
 
@@ -536,6 +600,13 @@ module Enumerable
     ary
   end
 
+  ##
+  # call-seq:
+  #   enum.take(n) -> array
+  #
+  # Returns the first +n+ elements from +enum+ as an array.
+  #
+  #   [1, 2, 3, 4, 5].take(3)   #=> [1, 2, 3]
   def take(n)
     n = n.__to_int
     i = n.to_i
@@ -550,6 +621,13 @@ module Enumerable
     ary
   end
 
+  ##
+  # call-seq:
+  #   enum.take_while {|element| ... } -> array
+  #   enum.take_while                  -> enumerator
+  #
+  # Passes elements to the block until the block returns a falsy value,
+  # then stops iterating and returns an array of all prior elements.
   def take_while(&block)
     return to_enum :take_while unless block
 
@@ -561,6 +639,18 @@ module Enumerable
     ary
   end
 
+  ##
+  # call-seq:
+  #   enum.each_cons(n) {|array| ... } -> nil
+  #   enum.each_cons(n)                -> enumerator
+  #
+  # Iterates over the elements in consecutive groups of +n+ items,
+  # passing each group as an array to the block.
+  #
+  #   (1..5).each_cons(3) {|a| p a }
+  #   # [1, 2, 3]
+  #   # [2, 3, 4]
+  #   # [3, 4, 5]
   def each_cons(n, &block)
     n = n.__to_int
     raise ArgumentError, "invalid size" if n <= 0
@@ -576,6 +666,19 @@ module Enumerable
     nil
   end
 
+  ##
+  # call-seq:
+  #   enum.each_slice(n) {|array| ... } -> nil
+  #   enum.each_slice(n)                -> enumerator
+  #
+  # Splits the enumerable into chunks of +n+ elements and yields each
+  # chunk as an array to the block. The final chunk may have fewer
+  # elements.
+  #
+  #   (1..7).each_slice(3) {|a| p a }
+  #   # [1, 2, 3]
+  #   # [4, 5, 6]
+  #   # [7]
   def each_slice(n, &block)
     n = n.__to_int
     raise ArgumentError, "invalid slice size" if n <= 0
@@ -594,6 +697,14 @@ module Enumerable
     nil
   end
 
+  ##
+  # call-seq:
+  #   enum.group_by {|element| ... } -> hash
+  #   enum.group_by                  -> enumerator
+  #
+  # Groups elements by the value returned from the block and returns a
+  # hash whose keys are the block's results and whose values are arrays
+  # of corresponding elements.
   def group_by(&block)
     return to_enum :group_by unless block
 
@@ -606,11 +717,25 @@ module Enumerable
     h
   end
 
+  ##
+  # call-seq:
+  #   enum.sort_by {|element| ... } -> array
+  #   enum.sort_by                  -> enumerator
+  #
+  # Returns an array of elements sorted by mapping each through the
+  # block and ordering by the block's result.
   def sort_by(&block)
     return to_enum :sort_by unless block
     self.to_a.sort_by(&block)
   end
 
+  ##
+  # call-seq:
+  #   enum.first       -> object or nil
+  #   enum.first(n)    -> array
+  #
+  # With no argument, returns the first element. With argument +n+,
+  # returns an array of the first +n+ elements.
   def first(*args)
     case args.length
     when 0
@@ -634,6 +759,15 @@ module Enumerable
     end
   end
 
+  ##
+  # call-seq:
+  #   enum.count                    -> integer
+  #   enum.count(item)              -> integer
+  #   enum.count {|element| ... }   -> integer
+  #
+  # Returns the number of elements. With argument +item+, returns the
+  # count of elements equal to +item+. With a block, returns the count
+  # of elements for which the block returns a truthy value.
   def count(v=NONE, &block)
     count = 0
     if block
@@ -652,6 +786,15 @@ module Enumerable
     count
   end
 
+  ##
+  # call-seq:
+  #   enum.flat_map {|element| ... }       -> array
+  #   enum.flat_map                        -> enumerator
+  #   enum.collect_concat {|element| ... } -> array
+  #
+  # Returns a new array with the concatenated results of running the
+  # block once for every element. One level of array nesting in the
+  # block's return value is flattened.
   def flat_map(&block)
     return to_enum :flat_map unless block
 
@@ -668,6 +811,13 @@ module Enumerable
   end
   alias collect_concat flat_map
 
+  ##
+  # call-seq:
+  #   enum.max_by {|element| ... } -> object
+  #   enum.max_by                  -> enumerator
+  #
+  # Returns the element whose block return value is greatest. Returns
+  # nil if the enumerable is empty.
   def max_by(&block)
     return to_enum :max_by unless block
 
@@ -690,6 +840,13 @@ module Enumerable
     max
   end
 
+  ##
+  # call-seq:
+  #   enum.min_by {|element| ... } -> object
+  #   enum.min_by                  -> enumerator
+  #
+  # Returns the element whose block return value is smallest. Returns
+  # nil if the enumerable is empty.
   def min_by(&block)
     return to_enum :min_by unless block
 
@@ -712,6 +869,13 @@ module Enumerable
     min
   end
 
+  ##
+  # call-seq:
+  #   enum.minmax                  -> [min, max]
+  #   enum.minmax {|a, b| ... }    -> [min, max]
+  #
+  # Returns a two-element array containing the minimum and maximum
+  # elements. Uses +<=>+ by default, or the given block for comparison.
   def minmax(&block)
     max = nil
     min = nil
@@ -737,6 +901,13 @@ module Enumerable
     [min, max]
   end
 
+  ##
+  # call-seq:
+  #   enum.minmax_by {|element| ... } -> [min, max]
+  #   enum.minmax_by                  -> enumerator
+  #
+  # Returns a two-element array containing the elements with the
+  # smallest and greatest block return values, respectively.
   def minmax_by(&block)
     return to_enum :minmax_by unless block
 
@@ -765,6 +936,15 @@ module Enumerable
     [min, max]
   end
 
+  ##
+  # call-seq:
+  #   enum.none?                    -> true or false
+  #   enum.none?(pattern)           -> true or false
+  #   enum.none? {|element| ... }   -> true or false
+  #
+  # Returns true if no element is truthy (or matches +pattern+ via
+  # <code>===</code>, or yields truthy from the block). Returns false
+  # otherwise.
   def none?(pat=NONE, &block)
     if !NONE.equal?(pat)
       self.each do |*val|
@@ -782,6 +962,14 @@ module Enumerable
     true
   end
 
+  ##
+  # call-seq:
+  #   enum.one?                    -> true or false
+  #   enum.one?(pattern)           -> true or false
+  #   enum.one? {|element| ... }   -> true or false
+  #
+  # Returns true if exactly one element is truthy (or matches the given
+  # +pattern+ / block). Returns false otherwise.
   def one?(pat=NONE, &block)
     count = 0
     if !NONE.equal?(pat)
@@ -804,6 +992,15 @@ module Enumerable
     count == 1 ? true : false
   end
 
+  ##
+  # call-seq:
+  #   enum.all?(pattern)           -> true or false
+  #   enum.all? {|element| ... }   -> true or false
+  #
+  # Overrides the earlier <code>all?</code> definition to add the
+  # +pattern+ argument: returns true only if every element matches
+  # +pattern+ via <code>===</code>. Without +pattern+, behavior matches
+  # the earlier block/truthy form.
   def all?(pat=NONE, &block)
     if !NONE.equal?(pat)
       self.each{|*val| return false unless pat === val.__svalue}
@@ -815,6 +1012,15 @@ module Enumerable
     true
   end
 
+  ##
+  # call-seq:
+  #   enum.any?(pattern)           -> true or false
+  #   enum.any? {|element| ... }   -> true or false
+  #
+  # Overrides the earlier <code>any?</code> definition to add the
+  # +pattern+ argument: returns true if any element matches +pattern+
+  # via <code>===</code>. Without +pattern+, behavior matches the
+  # earlier block/truthy form.
   def any?(pat=NONE, &block)
     if !NONE.equal?(pat)
       self.each{|*val| return true if pat === val.__svalue}
@@ -826,6 +1032,13 @@ module Enumerable
     false
   end
 
+  ##
+  # call-seq:
+  #   enum.each_with_object(obj) {|element, obj| ... } -> obj
+  #   enum.each_with_object(obj)                       -> enumerator
+  #
+  # Iterates the block with each element and the given +obj+, returning
+  # +obj+ after iteration. Useful for building up a result object.
   def each_with_object(obj, &block)
     return to_enum(:each_with_object, obj) unless block
 
@@ -833,6 +1046,13 @@ module Enumerable
     obj
   end
 
+  ##
+  # call-seq:
+  #   enum.reverse_each {|element| ... } -> self
+  #   enum.reverse_each                  -> enumerator
+  #
+  # Iterates the block over each element in reverse order. Internally
+  # builds an array of all elements first.
   def reverse_each(&block)
     return to_enum :reverse_each unless block
 
@@ -845,6 +1065,14 @@ module Enumerable
     self
   end
 
+  ##
+  # call-seq:
+  #   enum.cycle(n=nil) {|element| ... } -> nil
+  #   enum.cycle(n=nil)                  -> enumerator
+  #
+  # Calls the block for each element repeatedly +n+ times, or forever
+  # if +n+ is nil. Returns nil after iteration completes (only when +n+
+  # is finite).
   def cycle(nv = nil, &block)
     return to_enum(:cycle, nv) unless block
 
@@ -873,6 +1101,15 @@ module Enumerable
     nil
   end
 
+  ##
+  # call-seq:
+  #   enum.find_index(value)            -> integer or nil
+  #   enum.find_index {|element| ... }  -> integer or nil
+  #   enum.find_index                   -> enumerator
+  #
+  # Returns the zero-based index of the first element equal to +value+
+  # or for which the block returns a truthy value. Returns nil if no
+  # such element is found.
   def find_index(val=NONE, &block)
     return to_enum(:find_index, val) if !block && NONE.equal?(val)
 
@@ -891,6 +1128,14 @@ module Enumerable
     nil
   end
 
+  ##
+  # call-seq:
+  #   enum.zip(other, ...)                  -> array
+  #   enum.zip(other, ...) {|array| ... }   -> nil
+  #
+  # Combines +enum+ with +other+ enumerables, producing arrays of
+  # corresponding elements. With a block, yields each combined array
+  # and returns nil.
   def zip(*arg, &block)
     result = block ? nil : []
     arg = arg.map do |a|
@@ -919,6 +1164,14 @@ module Enumerable
     result
   end
 
+  ##
+  # call-seq:
+  #   enum.to_h                     -> hash
+  #   enum.to_h {|element| ... }    -> hash
+  #
+  # Returns a hash built from the enumerable's elements. Each element
+  # must be a two-element array <code>[key, value]</code>. With a block,
+  # the block is called with each element and must return such a pair.
   def to_h(&blk)
     h = {}
     if blk
@@ -939,6 +1192,14 @@ module Enumerable
     h
   end
 
+  ##
+  # call-seq:
+  #   enum.uniq                     -> array
+  #   enum.uniq {|element| ... }    -> array
+  #
+  # Returns an array containing only the unique elements of +enum+.
+  # With a block, two elements are considered equal when they produce
+  # the same block return value.
   def uniq(&block)
     hash = {}
     if block
@@ -955,6 +1216,13 @@ module Enumerable
     hash.values
   end
 
+  ##
+  # call-seq:
+  #   enum.filter_map {|element| ... } -> array
+  #   enum.filter_map                  -> enumerator
+  #
+  # Returns an array of truthy block return values. Equivalent to
+  # <code>map {...}.select {|x| x }</code> but in a single pass.
   def filter_map(&blk)
     return to_enum(:filter_map) unless blk
 
@@ -968,6 +1236,13 @@ module Enumerable
 
   alias filter select
 
+  ##
+  # call-seq:
+  #   enum.grep_v(pattern)                  -> array
+  #   enum.grep_v(pattern) {|element| ... } -> array
+  #
+  # Returns an array of elements for which <code>pattern === element</code>
+  # is false. With a block, returns the block results for those elements.
   def grep_v(pattern, &block)
     ary = []
     self.each{|*val|
@@ -979,6 +1254,14 @@ module Enumerable
     ary
   end
 
+  ##
+  # call-seq:
+  #   enum.tally -> hash
+  #
+  # Counts occurrences of each element and returns a hash mapping each
+  # element to its count.
+  #
+  #   %w(a b c b a a).tally   #=> {"a"=>3, "b"=>2, "c"=>1}
   def tally
     hash = {}
     self.each do |x|
@@ -987,6 +1270,13 @@ module Enumerable
     hash
   end
 
+  ##
+  # call-seq:
+  #   enum.sum(init=0)                   -> number
+  #   enum.sum(init=0) {|element| ... }  -> number
+  #
+  # Returns the sum of elements (or block return values) added to
+  # +init+. Uses the <code>+</code> operator.
   def sum(init=0,&block)
     result=init
     if block
@@ -1001,6 +1291,14 @@ module Enumerable
     result
   end
 
+  ##
+  # call-seq:
+  #   enum.each_entry {|element| ... } -> self
+  #   enum.each_entry                  -> enumerator
+  #
+  # Calls the block once for each element of +self+, converting
+  # multiple values from <code>each</code> into a single value via
+  # <code>__svalue</code>.
   def each_entry(*args, &blk)
     return to_enum(:each_entry) unless blk
     self.each do |*a|
@@ -1012,6 +1310,10 @@ end
 
 ##
 # Array
+#
+# Ordered, integer-indexed collection of objects -- the base concrete
+# container in Ruby. Supports indexing, slicing, iteration via +each+,
+# and conversion via +to_a+. Mutable; many in-place methods end in +!+.
 #
 # ISO 15.2.12
 class Array
@@ -1311,6 +1613,14 @@ end
 
 # Array extensions (from mruby-enum-ext)
 class Array
+  ##
+  # call-seq:
+  #   array.sort_by {|element| ... } -> new_array
+  #   array.sort_by                  -> enumerator
+  #
+  # Returns a new array with elements sorted by the values returned
+  # from the block. Faster than +sort+ for expensive comparison
+  # functions because the block is called only once per element.
   def sort_by(&block)
     return to_enum :sort_by unless block
 
@@ -1324,6 +1634,11 @@ class Array
     ary.collect!{|e,i| self[i]}
   end
 
+  ##
+  # call-seq:
+  #   array.sort_by! {|element| ... } -> self
+  #
+  # Sorts +self+ in place by the values returned from the block.
   def sort_by!(&block)
     self.replace(self.sort_by(&block))
   end
@@ -1331,6 +1646,11 @@ end
 
 ##
 # Hash
+#
+# Unordered mapping from keys to values (insertion order is preserved on
+# iteration, matching CRuby). Keys must implement +hash+ and +eql?+;
+# lookup is via +h[key]+. Includes Enumerable, supports a default value
+# or default-proc fallback when a key is missing.
 #
 # ISO 15.2.13
 class Hash
@@ -1692,6 +2012,11 @@ end
 ##
 # Range
 #
+# An interval between two values, written as <code>begin..end</code>
+# (inclusive) or <code>begin...end</code> (exclusive of end). Used for
+# iteration, membership tests, and array slicing. Includes Enumerable
+# when the endpoints support +succ+.
+#
 # ISO 15.2.14
 class Range
   ##
@@ -1787,7 +2112,20 @@ class Range
   alias entries to_a
 end
 
+##
+# Interned, immutable identifier -- written +:name+. Two symbols with the
+# same name are the same object, which makes them efficient as hash keys,
+# method names, and tag values. Convert to and from strings with +to_s+
+# and +String#to_sym+.
 class Symbol
+  ##
+  # call-seq:
+  #   sym.to_proc -> proc
+  #
+  # Returns a Proc that, when called with an object, invokes the method
+  # named by +sym+ on that object with any additional arguments.
+  #
+  #   [1, 2, 3].map(&:to_s)   #=> ["1", "2", "3"]
   def to_proc
     mid = self
     ->(obj,*args,**opts,&block) do
@@ -1798,6 +2136,11 @@ end
 
 ##
 # Comparable
+#
+# Mixin providing ordering and equality predicates (+<+, +<=+, +==+,
+# +>+, +>=+, +between?+, +clamp+) on top of a host-defined +<=>+
+# operator. Including classes need only implement +<=>+ to get the
+# full comparison API for free.
 #
 # ISO 15.3.3
 module Comparable
@@ -1901,6 +2244,10 @@ end
 
 ##
 # String
+#
+# Mutable sequence of bytes, usually interpreted as UTF-8 text. Indexing
+# returns substrings or single characters; many methods come in pairs of
+# pure (+upcase+) and in-place (+upcase!+) variants. Includes Comparable.
 #
 # ISO 15.2.10
 class String
@@ -2073,8 +2420,16 @@ class String
   #end
 end
 
+##
+# Raised by Enumerator#next when iteration has finished. Internal
+# iterators like +loop+ catch this exception to terminate cleanly.
+# The +#result+ accessor exposes the value the iterator returned.
+#
 # StopIteration#result accessor (from mruby-fiber upstream)
 class StopIteration
+  ##
+  # The value returned by the enumeration's terminating method (e.g. the
+  # block return value of an Enumerator).
   attr_accessor :result
 end
 
@@ -2086,6 +2441,14 @@ end
 class Enumerator
   include Enumerable
 
+  ##
+  # call-seq:
+  #   Enumerator.new(obj, method=:each, *args, **kwd) -> enumerator
+  #   Enumerator.new {|yielder| ... }                  -> enumerator
+  #
+  # Creates a new Enumerator. With an object, iteration is delegated to
+  # +obj.method(*args, **kwd)+. With a block, the block receives a
+  # Yielder and produces values on demand.
   def initialize(obj=Enumerable::NONE, meth=:each, *args, **kwd, &block)
     if block
       obj = Generator.new(&block)
@@ -2104,6 +2467,12 @@ class Enumerator
     @stop_exc = false
   end
 
+  ##
+  # call-seq:
+  #   enum.initialize_copy(other) -> self
+  #
+  # Copies internal state from another Enumerator. Raises TypeError if
+  # +other+ is not an Enumerator or has an active execution context.
   def initialize_copy(obj)
     raise TypeError, "can't copy type #{obj.class}" unless obj.kind_of? Enumerator
     raise TypeError, "can't copy execution context" if obj.instance_eval{@fib}
@@ -2124,6 +2493,13 @@ class Enumerator
     self
   end
 
+  ##
+  # call-seq:
+  #   enum.with_index(offset=0) {|element, index| ... } -> object
+  #   enum.with_index(offset=0)                         -> enumerator
+  #
+  # Iterates the block with each element and an index starting from
+  # +offset+. Returns the value returned by the underlying iteration.
   def with_index(offset=0, &block)
     return to_enum :with_index, offset unless block
 
@@ -2140,10 +2516,24 @@ class Enumerator
     end
   end
 
+  ##
+  # call-seq:
+  #   enum.each_with_index {|element, index| ... } -> object
+  #   enum.each_with_index                         -> enumerator
+  #
+  # Iterates the block with each element and its zero-based index.
+  # Shorthand for <code>with_index(0)</code>.
   def each_with_index(&block)
     with_index(0, &block)
   end
 
+  ##
+  # call-seq:
+  #   enum.with_object(obj) {|element, obj| ... } -> obj
+  #   enum.with_object(obj)                       -> enumerator
+  #
+  # Iterates the block with each element and the given +obj+, returning
+  # +obj+ after iteration completes.
   def with_object(object, &block)
     return to_enum(:with_object, object) unless block
 
@@ -2153,6 +2543,12 @@ class Enumerator
     object
   end
 
+  ##
+  # call-seq:
+  #   enum.inspect -> string
+  #
+  # Returns a string representation including the receiver, the method
+  # name, and any arguments.
   def inspect
     if @args && @args.size > 0
       args = @args.join(", ")
@@ -2162,6 +2558,12 @@ class Enumerator
     end
   end
 
+  ##
+  # call-seq:
+  #   enum.size -> integer or nil
+  #
+  # Returns the size of the enumerator, if known. Otherwise returns
+  # nil. Delegates to <code>@obj.size</code> when available.
   def size
     if @size
       @size
@@ -2170,6 +2572,13 @@ class Enumerator
     end
   end
 
+  ##
+  # call-seq:
+  #   enum.each(*args) {|element| ... } -> object
+  #   enum.each(*args)                  -> enumerator
+  #
+  # Iterates the underlying object's enumerated method, optionally
+  # appending +args+ to the originally bound arguments.
   def each(*argv, &block)
     obj = self
     if 0 < argv.length
@@ -2187,15 +2596,30 @@ class Enumerator
     __enumerator_block_call(&block)
   end
 
+  ##
+  # Internal helper used by Enumerator iteration methods to invoke the
+  # bound method on the wrapped object with stored arguments.
   def __enumerator_block_call(&block)
     @obj.__send__ @meth, *@args, **@kwd, &block
   end
   private :__enumerator_block_call
 
+  ##
+  # call-seq:
+  #   enum.next -> object
+  #
+  # Returns the next element in external iteration. Raises
+  # StopIteration when iteration is complete.
   def next
     next_values.__svalue
   end
 
+  ##
+  # call-seq:
+  #   enum.next_values -> array
+  #
+  # Returns the next element as an array of values yielded by the
+  # underlying iteration. Raises StopIteration at the end.
   def next_values
     if @lookahead
       vs = @lookahead
@@ -2236,10 +2660,21 @@ class Enumerator
     vs
   end
 
+  ##
+  # call-seq:
+  #   enum.peek -> object
+  #
+  # Returns the next element without advancing iteration. Raises
+  # StopIteration at the end.
   def peek
     peek_values.__svalue
   end
 
+  ##
+  # call-seq:
+  #   enum.peek_values -> array
+  #
+  # Returns the next element as an array, without advancing iteration.
   def peek_values
     if @lookahead.nil?
       @lookahead = next_values
@@ -2247,6 +2682,12 @@ class Enumerator
     @lookahead.dup
   end
 
+  ##
+  # call-seq:
+  #   enum.rewind -> self
+  #
+  # Resets external iteration to the beginning. Calls +rewind+ on the
+  # underlying object if it responds to it.
   def rewind
     @obj.rewind if @obj.respond_to? :rewind
     @fib = nil
@@ -2257,45 +2698,86 @@ class Enumerator
     self
   end
 
+  ##
+  # call-seq:
+  #   enum.feed(value) -> nil
+  #
+  # Sets the value that will be returned from the next +yield+ in the
+  # underlying iteration. Raises TypeError if a feed value is already
+  # set.
   def feed(value)
     raise TypeError, "feed value already set" if @feedvalue
     @feedvalue = value
     nil
   end
 
-  # just for internal
+  ##
+  # Internal helper used by Enumerator.new(&block). Wraps a block that
+  # receives a Yielder and produces values for the enumerator. Includes
+  # Enumerable, so it can drive +each+-based iteration directly.
   class Generator
     include Enumerable
+    ##
+    # Creates a Generator wrapping the given block. The block is
+    # invoked with a Yielder when iteration begins.
     def initialize(&block)
       raise TypeError, "wrong argument type #{self.class} (expected Proc)" unless block.kind_of? Proc
 
       @proc = block
     end
 
+    ##
+    # Runs the generator block with a fresh Yielder bound to the given
+    # block, producing values for the consumer.
     def each(*args, &block)
       args.unshift Yielder.new(&block)
       @proc.call(*args)
     end
   end
 
-  # just for internal
+  ##
+  # Internal helper passed to the block of Enumerator.new. Each call to
+  # +yield+ (or +<<+) on a Yielder invokes the consumer block with the
+  # given value, producing one element of the enumeration.
   class Yielder
+    ##
+    # Creates a Yielder wrapping a callback block. The block is invoked
+    # for every yielded value.
     def initialize(&block)
       raise LocalJumpError, "no block given" unless block
 
       @proc = block
     end
 
+    ##
+    # call-seq:
+    #   yielder.yield(*args)
+    #
+    # Yields +args+ to the consumer of this Yielder.
     def yield(*args)
       @proc.call(*args)
     end
 
+    ##
+    # call-seq:
+    #   yielder << value -> self
+    #
+    # Alias-like operator form for #yield; returns +self+ to allow
+    # chaining.
     def << *args
       self.yield(*args)
       self
     end
   end
 
+  ##
+  # call-seq:
+  #   Enumerator.produce(initial=nil) {|prev| ... } -> enumerator
+  #
+  # Creates an infinite enumerator that produces values by repeatedly
+  # calling the block with the previously generated value (or +initial+
+  # the first time). Iteration ends when the block raises
+  # StopIteration.
   def Enumerator.produce(init=Enumerable::NONE, &block)
     raise ArgumentError, "no block given" if block.nil?
     Enumerator.new do |y|
@@ -2317,6 +2799,13 @@ class Enumerator
 end
 
 module Kernel
+  ##
+  # call-seq:
+  #   obj.to_enum(method=:each, *args, **kwd)   -> enumerator
+  #   obj.enum_for(method=:each, *args, **kwd)  -> enumerator
+  #
+  # Returns a new Enumerator that, when iterated, calls +method+ on
+  # +obj+ with the given arguments.
   def to_enum(meth=:each, *args, **kwd)
     Enumerator.new self, meth, *args, **kwd
   end
@@ -2360,6 +2849,15 @@ module Enumerable
     result
   end
 
+  ##
+  # call-seq:
+  #   enum.chunk {|element| ... } -> enumerator
+  #   enum.chunk                  -> enumerator
+  #
+  # Enumerates consecutive elements grouped by the block's return
+  # value, yielding <code>[value, [elements...]]</code> pairs. Returns
+  # +:_alone+ to put an element in its own chunk, or +:_separator+ /
+  # +nil+ to drop it.
   def chunk(&block)
     return to_enum :chunk unless block
 
@@ -2388,6 +2886,13 @@ module Enumerable
     end
   end
 
+  ##
+  # call-seq:
+  #   enum.chunk_while {|i, j| ... } -> enumerator
+  #
+  # Splits +enum+ into chunks where the block returns false for adjacent
+  # element pairs. Returns an enumerator that yields each chunk as an
+  # array.
   def chunk_while(&block)
     enum = self
     Enumerator.new do |y|

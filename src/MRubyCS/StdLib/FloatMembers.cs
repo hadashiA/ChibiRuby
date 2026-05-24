@@ -3,9 +3,24 @@ using System.Buffers.Text;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// IEEE 754 double-precision floating-point number. Created by literals with a
+/// decimal point or exponent (e.g. <c>1.5</c>, <c>2e10</c>), or by mixed
+/// arithmetic with <c>Integer</c>. Values are immutable; <c>Float</c>
+/// implements <c>Comparable</c> and supports the usual arithmetic operators.
+/// </summary>
 [RubyClass("Float", Superclass = "Numeric")]
 static class FloatMembers
 {
+    /// <summary>
+    /// Returns <c>self</c> truncated to an <c>Integer</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 3.7.to_i      # => 3
+    /// (-3.7).to_i   # => -3
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue ToI(MRubyState state, MRubyValue self)
     {
@@ -21,6 +36,16 @@ static class FloatMembers
         return state.NewIntegerFlex((long)f);
     }
 
+    /// <summary>
+    /// Returns the string representation of <c>self</c>.
+    /// Special values are formatted as <c>"Infinity"</c>, <c>"-Infinity"</c>, or <c>"NaN"</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5.to_s         # => "1.5"
+    /// (1.0/0).to_s     # => "Infinity"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
 
     public static MRubyValue ToS(MRubyState state, MRubyValue self)
@@ -29,6 +54,15 @@ static class FloatMembers
         return Format(state, f);
     }
 
+    /// <summary>
+    /// Returns <c>self</c> modulo the argument as a <c>Float</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 6.5 % 2     # => 0.5
+    /// 6.0 % 2.5   # => 1.0
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue Mod(MRubyState state, MRubyValue self)
     {
@@ -52,6 +86,16 @@ static class FloatMembers
         return x % y;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> equals the argument numerically.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.0 == 1       # => true
+    /// 1.0 == 1.0     # => true
+    /// 1.0 == "1"     # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue OpEq(MRubyState state, MRubyValue self)
     {
@@ -72,6 +116,15 @@ static class FloatMembers
         return MRubyValue.False;
     }
 
+    /// <summary>
+    /// Returns the sum of <c>self</c> and the argument as a <c>Float</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5 + 2.5     # => 4.0
+    /// 1.5 + 1       # => 2.5
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue OpAdd(MRubyState state, MRubyValue self)
     {
@@ -85,6 +138,15 @@ static class FloatMembers
         return a + b;
     }
 
+    /// <summary>
+    /// Returns the difference of <c>self</c> minus the argument as a <c>Float</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 2.5 - 1.0     # => 1.5
+    /// 5.0 - 2       # => 3.0
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue OpSub(MRubyState state, MRubyValue self)
     {
@@ -98,6 +160,15 @@ static class FloatMembers
         return a - b;
     }
 
+    /// <summary>
+    /// Returns the product of <c>self</c> and the argument as a <c>Float</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 2.0 * 3.0     # => 6.0
+    /// 1.5 * 2       # => 3.0
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue OpMul(MRubyState state, MRubyValue self)
     {
@@ -111,6 +182,15 @@ static class FloatMembers
         return a * b;
     }
 
+    /// <summary>
+    /// Returns the quotient of <c>self</c> divided by the argument as a <c>Float</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 10.0 / 4      # => 2.5
+    /// 1.0 / 0       # => Infinity
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue OpDiv(MRubyState state, MRubyValue self)
     {
@@ -124,6 +204,15 @@ static class FloatMembers
         return a / b;
     }
 
+    /// <summary>
+    /// Returns <c>self</c> raised to the power of the argument.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 2.0 ** 3      # => 8.0
+    /// 9.0 ** 0.5    # => 3.0
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue OpPow(MRubyState state, MRubyValue self)
     {
@@ -132,6 +221,15 @@ static class FloatMembers
         return Math.Pow(a, b);
     }
 
+    /// <summary>
+    /// Unary minus; returns <c>self</c> negated.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// -1.5    # => -1.5
+    /// -(-2.0) # => 2.0
+    /// </code>
+    /// </example>
     [RubyDef("() -> Float")]
 
     public static MRubyValue OpNeg(MRubyState state, MRubyValue self)
@@ -139,6 +237,14 @@ static class FloatMembers
         return -self.FloatValue;
     }
 
+    /// <summary>
+    /// Returns the bitwise AND of <c>self</c> (converted to <c>Integer</c>) and the argument.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 12.0 &amp; 10    # => 8
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer")]
     public static MRubyValue OpAnd(MRubyState state, MRubyValue self)
     {
@@ -147,6 +253,14 @@ static class FloatMembers
         return Int64Value(state, v1 & v2);
     }
 
+    /// <summary>
+    /// Returns the bitwise OR of <c>self</c> (converted to <c>Integer</c>) and the argument.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 12.0 | 10    # => 14
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer")]
     public static MRubyValue OpOr(MRubyState state, MRubyValue self)
     {
@@ -155,6 +269,14 @@ static class FloatMembers
         return Int64Value(state, v1 | v2);
     }
 
+    /// <summary>
+    /// Returns the bitwise exclusive OR of <c>self</c> (converted to <c>Integer</c>) and the argument.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 12.0 ^ 10    # => 6
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer")]
     public static MRubyValue OpXor(MRubyState state, MRubyValue self)
     {
@@ -163,6 +285,14 @@ static class FloatMembers
         return Int64Value(state, v1 ^ v2);
     }
 
+    /// <summary>
+    /// Returns <c>self</c> shifted left by the given number of bits, converted as needed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.0 &lt;&lt; 3    # => 8
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer")]
     public static MRubyValue OpLshift(MRubyState state, MRubyValue self)
     {
@@ -170,6 +300,14 @@ static class FloatMembers
         return FloShift(state, self, width);
     }
 
+    /// <summary>
+    /// Returns <c>self</c> shifted right by the given number of bits, converted as needed.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 16.0 &gt;&gt; 2    # => 4
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer")]
     public static MRubyValue OpRshift(MRubyState state, MRubyValue self)
     {
@@ -178,6 +316,14 @@ static class FloatMembers
         return FloShift(state, self, -width);
     }
 
+    /// <summary>
+    /// Returns a two-element array containing the floor quotient and the modulus.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 11.5.divmod(3.25)    # => [3, 1.75]
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Array[Numeric]")]
 
     public static MRubyValue DivMod(MRubyState state, MRubyValue self)
@@ -199,6 +345,15 @@ static class FloatMembers
         return state.NewArray(a, b);
     }
 
+    /// <summary>
+    /// Returns the absolute value of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 3.5.abs      # => 3.5
+    /// (-3.5).abs   # => 3.5
+    /// </code>
+    /// </example>
     [RubyDef("() -> Float")]
 
     public static MRubyValue Abs(MRubyState state, MRubyValue self)
@@ -211,6 +366,15 @@ static class FloatMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> is a "Not a Number" value, otherwise <c>false</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// (0.0/0.0).nan?    # => true
+    /// 1.5.nan?          # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
 
     public static MRubyValue QNan(MRubyState state, MRubyValue self)
@@ -218,6 +382,15 @@ static class FloatMembers
         return double.IsNaN(self.FloatValue);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when the argument is also a <c>Float</c> with the same value.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.0.eql?(1.0)    # => true
+    /// 1.0.eql?(1)      # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue QEql(MRubyState state, MRubyValue self)
     {
@@ -231,6 +404,15 @@ static class FloatMembers
         return x.Equals(y);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when <c>self</c> is neither infinite nor NaN.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5.finite?         # => true
+    /// (1.0/0).finite?     # => false
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
 
     public static MRubyValue QFinite(MRubyState state, MRubyValue self)
@@ -239,6 +421,16 @@ static class FloatMembers
         return !double.IsInfinity(f) && !double.IsNaN(f);
     }
 
+    /// <summary>
+    /// Returns <c>1</c> for positive infinity, <c>-1</c> for negative infinity, or <c>nil</c> otherwise.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// (1.0/0).infinite?     # => 1
+    /// (-1.0/0).infinite?    # => -1
+    /// 1.5.infinite?         # => nil
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer?")]
 
     public static MRubyValue QInfinite(MRubyState state, MRubyValue self)
@@ -251,18 +443,46 @@ static class FloatMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns the smallest number greater than or equal to <c>self</c>, with optional precision.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.2.ceil           # => 2
+    /// 1.234.ceil(2)      # => 1.24
+    /// (-1.2).ceil        # => -1
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Numeric")]
     public static MRubyValue Ceil(MRubyState state, MRubyValue self)
     {
         return FloatRounding(state, self, Math.Ceiling);
     }
 
+    /// <summary>
+    /// Returns the largest number less than or equal to <c>self</c>, with optional precision.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.8.floor          # => 1
+    /// 1.234.floor(2)     # => 1.23
+    /// (-1.2).floor       # => -2
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Numeric")]
     public static MRubyValue Floor(MRubyState state, MRubyValue self)
     {
         return FloatRounding(state, self, Math.Floor);
     }
 
+    /// <summary>
+    /// Returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5.to_f    # => 1.5
+    /// </code>
+    /// </example>
     [RubyDef("() -> Float")]
 
     public static MRubyValue ToF(MRubyState state, MRubyValue self)
@@ -270,6 +490,14 @@ static class FloatMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns a hash code for <c>self</c>, suitable for use as a Hash key.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5.hash == 1.5.hash    # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
 
     public static MRubyValue Hash(MRubyState state, MRubyValue self)
@@ -278,6 +506,17 @@ static class FloatMembers
         return f.GetHashCode();
     }
     //
+    /// <summary>
+    /// Returns <c>self</c> rounded to the nearest value, with optional digits of precision.
+    /// Ties round away from zero.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5.round          # => 2
+    /// 1.234.round(2)     # => 1.23
+    /// 1.235.round(2)     # => 1.24
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Numeric")]
     public static MRubyValue Round(MRubyState state, MRubyValue self)
     {
@@ -331,12 +570,30 @@ static class FloatMembers
         }
     }
     //
+    /// <summary>
+    /// Returns <c>self</c> truncated toward zero, with optional digits of precision.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.7.truncate         # => 1
+    /// 1.234.truncate(2)    # => 1.23
+    /// (-1.7).truncate      # => -1
+    /// </code>
+    /// </example>
     [RubyDef("(?Integer) -> Numeric")]
     public static MRubyValue Truncate(MRubyState state, MRubyValue self)
     {
         return FloatRounding(state, self, Math.Truncate);
     }
 
+    /// <summary>
+    /// Returns the floating-point quotient of <c>self</c> divided by the argument.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 5.0.quo(2)     # => 2.5
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Float")]
     public static MRubyValue Quo(MRubyState state, MRubyValue self)
     {
@@ -345,6 +602,15 @@ static class FloatMembers
         return x / y;
     }
 
+    /// <summary>
+    /// Returns the integer floor of <c>self</c> divided by the argument.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 11.5.div(3)    # => 3
+    /// 11.5.div(3.5)  # => 3
+    /// </code>
+    /// </example>
     [RubyDef("(Numeric) -> Integer")]
     public static MRubyValue Div(MRubyState state, MRubyValue self)
     {
@@ -362,6 +628,14 @@ static class FloatMembers
         return new MRubyValue(result);
     }
 
+    /// <summary>
+    /// Returns a string representation of <c>self</c> for debugging.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5.inspect     # => "1.5"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
 
     public static MRubyValue Inspect(MRubyState state, MRubyValue self)
@@ -370,6 +644,14 @@ static class FloatMembers
         return Format(state, f);
     }
 
+    /// <summary>
+    /// Returns the bitwise complement of <c>self</c> after converting it to <c>Integer</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// ~1.0    # => -2
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
 
     public static MRubyValue OpRev(MRubyState state, MRubyValue self)
@@ -378,6 +660,17 @@ static class FloatMembers
         return Int64Value(state, ~v1);
     }
 
+    /// <summary>
+    /// Returns <c>-1</c>, <c>0</c>, or <c>1</c> when <c>self</c> is less than, equal to, or greater than the argument.
+    /// Returns <c>nil</c> if the argument is not comparable or either side is NaN.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.5 &lt;=&gt; 2.0    # => -1
+    /// 1.5 &lt;=&gt; 1.5    # => 0
+    /// 1.5 &lt;=&gt; "x"    # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue OpCmp(MRubyState state, MRubyValue self)
     {

@@ -3,9 +3,19 @@ using System.Threading;
 
 namespace MRubyCS.StdLib;
 
+/// <summary>
+/// Mixin included by <c>Object</c> that provides the methods available on
+/// every object: <c>puts</c>, <c>raise</c>, <c>require</c>, <c>send</c>,
+/// <c>respond_to?</c>, etc. Top-level <c>def</c>s become private
+/// <c>Kernel</c> methods, which is why they can be called anywhere without
+/// an explicit receiver.
+/// </summary>
 [RubyModule("Kernel")]
 static class KernelMembers
 {
+    /// <summary>
+    /// Internal helper used by <c>case</c>/<c>when</c> matching when the pattern is array-like.
+    /// </summary>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue InternalCaseEqq(MRubyState state, MRubyValue self)
     {
@@ -45,12 +55,27 @@ static class KernelMembers
         return MRubyValue.False;
     }
 
+    /// <summary>
+    /// Internal helper used by VM and integer coercion paths to convert a value to an <c>Integer</c>.
+    /// </summary>
     [RubyDef("(untyped) -> Integer")]
     public static MRubyValue InternalToInt(MRubyState state, MRubyValue self)
     {
         return state.AsInteger(self);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when the enclosing method was called with a block.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// def foo
+    ///   block_given?
+    /// end
+    /// foo            # => false
+    /// foo {}         # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
 
     public static MRubyValue BlockGiven(MRubyState state, MRubyValue self)
@@ -58,6 +83,17 @@ static class KernelMembers
         throw new NotSupportedException();
     }
 
+    /// <summary>
+    /// Raises an exception. With no arguments, re-raises or raises <c>RuntimeError</c>.
+    /// With a String, raises <c>RuntimeError</c> with that message. With a class (and optional message),
+    /// raises an instance of that exception class.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// raise "oops"
+    /// raise ArgumentError, "bad value"
+    /// </code>
+    /// </example>
     [RubyDef("(*untyped) -> bot")]
     public static MRubyValue Raise(MRubyState state, MRubyValue self)
     {
@@ -99,6 +135,16 @@ static class KernelMembers
         return MRubyValue.Nil; // not reached
     }
 
+    /// <summary>
+    /// Case-equality (<c>===</c>). For most objects, equivalent to <c>==</c>. Overridden by classes
+    /// like <c>Module</c>, <c>Range</c>, and <c>Regexp</c> for use in <c>case</c>/<c>when</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1 === 1        # => true
+    /// 1 === 2        # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue OpEqq(MRubyState state, MRubyValue self)
     {
@@ -106,6 +152,17 @@ static class KernelMembers
         return state.ValueEquals(self, arg);
     }
 
+    /// <summary>
+    /// Generic three-way comparison. Returns <c>0</c> when <c>self</c> is the same object as
+    /// the argument, otherwise <c>nil</c>. Subclasses override this for ordered comparison.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// obj = Object.new
+    /// obj &lt;=&gt; obj            # => 0
+    /// obj &lt;=&gt; Object.new     # => nil
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> Integer?")]
     public static MRubyValue Cmp(MRubyState state, MRubyValue self)
     {
@@ -121,6 +178,16 @@ static class KernelMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Returns the class of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.class           # => Integer
+    /// "hi".class        # => String
+    /// nil.class         # => NilClass
+    /// </code>
+    /// </example>
     [RubyDef("() -> Class")]
 
     public static MRubyValue Class(MRubyState state, MRubyValue self)
@@ -128,6 +195,17 @@ static class KernelMembers
         return state.ClassOf(self).GetRealClass();
     }
 
+    /// <summary>
+    /// Returns a shallow copy of <c>self</c>, preserving the frozen state and singleton methods.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// b = a.clone
+    /// b.equal?(a)    # => false
+    /// b == a         # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> instance")]
 
     public static MRubyValue Clone(MRubyState state, MRubyValue self)
@@ -135,6 +213,18 @@ static class KernelMembers
         return state.CloneObject(self);
     }
 
+    /// <summary>
+    /// Returns a shallow copy of <c>self</c>. Unlike <c>clone</c>, the copy is not frozen
+    /// and singleton methods are not copied.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3]
+    /// b = a.dup
+    /// b.equal?(a)    # => false
+    /// b == a         # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> instance")]
 
     public static MRubyValue Dup(MRubyState state, MRubyValue self)
@@ -142,12 +232,30 @@ static class KernelMembers
         return state.DupObject(self);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> and the argument refer to the same object (identity by default).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.eql?(1)        # => true
+    /// 1.eql?(1.0)      # => false
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
         return self == state.GetArgumentAt(0);
     }
 
+    /// <summary>
+    /// Marks <c>self</c> as frozen so it can no longer be modified, and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// s = "hi".freeze
+    /// s.frozen?      # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> self")]
 
     public static MRubyValue Freeze(MRubyState state, MRubyValue self)
@@ -166,6 +274,17 @@ static class KernelMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> is frozen, otherwise <c>false</c>.
+    /// Immediate values (numbers, symbols, <c>nil</c>, <c>true</c>, <c>false</c>) are always frozen.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hi".frozen?         # => false
+    /// "hi".freeze.frozen?  # => true
+    /// 1.frozen?            # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> bool")]
 
     public static MRubyValue Frozen(MRubyState state, MRubyValue self)
@@ -177,6 +296,15 @@ static class KernelMembers
         return MRubyValue.True;
     }
 
+    /// <summary>
+    /// Returns a hash code for <c>self</c>, suitable for use as a <c>Hash</c> key.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.hash         # => Integer
+    /// "hi".hash      # => Integer
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
 
     public static MRubyValue Hash(MRubyState state, MRubyValue self)
@@ -184,6 +312,17 @@ static class KernelMembers
         return self.ObjectId;
     }
 
+    /// <summary>
+    /// Initializer for object copies. Invoked by <c>clone</c> and <c>dup</c>. Raises <c>TypeError</c>
+    /// if the source object is of a different class.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// class Foo
+    ///   def initialize_copy(other); super; end
+    /// end
+    /// </code>
+    /// </example>
     [RubyDef("(untyped) -> self")]
     public static MRubyValue InitializeCopy(MRubyState state, MRubyValue self)
     {
@@ -197,6 +336,16 @@ static class KernelMembers
         return self;
     }
 
+    /// <summary>
+    /// Returns a human-readable string representation of <c>self</c>, useful for debugging.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2].inspect      # => "[1, 2]"
+    /// "hi".inspect        # => "\"hi\""
+    /// nil.inspect         # => "nil"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
 
     public static MRubyValue Inspect(MRubyState state, MRubyValue self)
@@ -204,6 +353,15 @@ static class KernelMembers
         return state.InspectObject(self);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if the class of <c>self</c> is exactly <c>klass</c> (not a subclass).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.instance_of?(Integer)   # => true
+    /// 1.instance_of?(Numeric)   # => false
+    /// </code>
+    /// </example>
     [RubyDef("(Class) -> bool")]
     public static MRubyValue InstanceOf(MRubyState state, MRubyValue self)
     {
@@ -211,6 +369,17 @@ static class KernelMembers
         return state.InstanceOf(self, c);
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> is an instance of <c>mod</c> or one of its descendants
+    /// (or includes <c>mod</c> when it is a module). Alias for <c>is_a?</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.kind_of?(Integer)   # => true
+    /// 1.kind_of?(Numeric)   # => true
+    /// 1.is_a?(String)       # => false
+    /// </code>
+    /// </example>
     [RubyDef("(Module) -> bool")]
     public static MRubyValue KindOf(MRubyState state, MRubyValue self)
     {
@@ -218,6 +387,15 @@ static class KernelMembers
         return state.KindOf(self, c);
     }
 
+    /// <summary>
+    /// Returns an integer identifier unique to <c>self</c> for its lifetime.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = "hi"
+    /// a.object_id == a.object_id   # => true
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
 
     public static MRubyValue ObjectId(MRubyState state, MRubyValue self)
@@ -225,6 +403,14 @@ static class KernelMembers
         return self.ObjectId;
     }
 
+    /// <summary>
+    /// Writes each argument to standard output by converting it via <c>to_s</c>. Returns <c>nil</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// print "hello", " ", "world"   # => nil  (writes: hello world)
+    /// </code>
+    /// </example>
     [RubyDef("(*untyped) -> nil")]
     public static MRubyValue Print(MRubyState state, MRubyValue self)
     {
@@ -237,6 +423,16 @@ static class KernelMembers
         return MRubyValue.Nil;
     }
 
+    /// <summary>
+    /// Writes the <c>inspect</c> representation of each argument to standard output, each followed by a newline.
+    /// Returns the single argument, the array of arguments, or <c>nil</c> if no arguments are given.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// p "hi"        # writes: "hi"   => "hi"
+    /// p 1, 2, 3     # writes each line; returns [1, 2, 3]
+    /// </code>
+    /// </example>
     [RubyDef("(*untyped) -> untyped")]
     public static MRubyValue P(MRubyState state, MRubyValue self)
     {
@@ -254,6 +450,18 @@ static class KernelMembers
         return state.NewArray(args);
     }
 
+    /// <summary>
+    /// Removes and returns the value of the instance variable named <c>name</c> from <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// class Foo
+    ///   def initialize; @x = 1; end
+    /// end
+    /// f = Foo.new
+    /// f.remove_instance_variable(:@x)   # => 1
+    /// </code>
+    /// </example>
     [RubyDef("(Symbol | String) -> untyped")]
     public static MRubyValue RemoveInstanceVariable(MRubyState state, MRubyValue self)
     {
@@ -268,6 +476,16 @@ static class KernelMembers
         return MRubyValue.Undef;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> if <c>self</c> responds to the named method.
+    /// Pass <c>true</c> for the second argument to include private methods.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hi".respond_to?(:upcase)    # => true
+    /// 1.respond_to?(:foo)          # => false
+    /// </code>
+    /// </example>
     [RubyDef("(Symbol | String, ?bool) -> bool")]
     public static MRubyValue RespondTo(MRubyState state, MRubyValue self)
     {
@@ -284,6 +502,16 @@ static class KernelMembers
         return result;
     }
 
+    /// <summary>
+    /// Returns a string representation of <c>self</c>. The default form is <c>"#&lt;ClassName:0x...&gt;"</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 1.to_s          # => "1"
+    /// nil.to_s        # => ""
+    /// :sym.to_s       # => "sym"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
 
     public static MRubyValue ToS(MRubyState state, MRubyValue self)
@@ -291,6 +519,16 @@ static class KernelMembers
         return state.StringifyAny(self);
     }
 
+    /// <summary>
+    /// Creates a <c>Proc</c> object from the given block with strict argument checking
+    /// (lambda semantics: wrong-arity raises <c>ArgumentError</c>).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// add = lambda { |a, b| a + b }
+    /// add.call(1, 2)    # => 3
+    /// </code>
+    /// </example>
     [RubyDef("() { (*untyped) -> untyped } -> Proc")]
 
     public static MRubyValue Lambda(MRubyState state, MRubyValue self)
@@ -310,13 +548,23 @@ static class KernelMembers
         return block;
     }
 
+    /// <summary>
+    /// Suspends execution for <c>duration</c> seconds. With no argument or <c>nil</c>, sleeps forever
+    /// (only meaningful when a fiber scheduler can wake it). Returns the number of seconds slept.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// sleep 0.1     # => 0
+    /// sleep 1       # => 1
+    /// </code>
+    /// </example>
     [RubyDef("(?Numeric) -> Integer")]
     public static MRubyValue Sleep(MRubyState state, MRubyValue self)
     {
         double seconds;
         if (state.GetArgumentCount() == 0 || state.GetArgumentAt(0).IsNil)
         {
-            // Sleep forever — only meaningful with a scheduler that can
+            // Sleep forever -- only meaningful with a scheduler that can
             // wake the fiber via Unblock.
             seconds = double.PositiveInfinity;
         }

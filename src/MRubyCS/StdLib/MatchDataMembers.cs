@@ -22,6 +22,12 @@ class MRubyMatchData
     }
 }
 
+/// <summary>
+/// Result of a successful regexp match -- returned by <c>Regexp#match</c> and
+/// available as the <c>$~</c> implicit variable after a match. Indexing
+/// (<c>md[0]</c>, <c>md[1]</c>, ...) returns the matched substring or capture
+/// groups; named captures are accessed by symbol or string.
+/// </summary>
 [RubyClass("MatchData")]
 static class MatchDataMembers
 {
@@ -51,7 +57,17 @@ static class MatchDataMembers
         return default!; // unreachable
     }
 
-    // MatchData#[](index) or MatchData#[](name) or MatchData#[](range)
+    /// <summary>
+    /// Returns a capture group by integer index, name, or range. With two integer arguments returns a sub-array of captures.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m[0]      # => "hello world"
+    /// m[1]      # => "hello"
+    /// m[1, 2]   # => ["hello", "world"]
+    /// </code>
+    /// </example>
     [RubyDef("(Integer | Symbol | String | Range[Integer]) -> String? | (Integer, Integer) -> Array[String?]?")]
     public static MRubyValue OpAref(MRubyState mrb, MRubyValue self)
     {
@@ -187,7 +203,16 @@ static class MatchDataMembers
         return array;
     }
 
-    // MatchData#begin(n)
+    /// <summary>
+    /// Returns the character offset of the start of the nth capture group, or <c>nil</c> when the group did not participate in the match.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+)/.match("hello world")
+    /// m.begin(0)   # => 0
+    /// m.begin(1)   # => 0
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer?")]
     public static MRubyValue Begin(MRubyState mrb, MRubyValue self)
     {
@@ -216,7 +241,15 @@ static class MatchDataMembers
         return group.Index;
     }
 
-    // MatchData#end(n)
+    /// <summary>
+    /// Returns the character offset just past the end of the nth capture group, or <c>nil</c> when the group did not participate in the match.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+)/.match("hello world")
+    /// m.end(1)   # => 5
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Integer?")]
     public static MRubyValue End(MRubyState mrb, MRubyValue self)
     {
@@ -245,7 +278,15 @@ static class MatchDataMembers
         return group.Index + group.Length;
     }
 
-    // MatchData#offset(n)
+    /// <summary>
+    /// Returns a two-element array <c>[begin, end]</c> giving the character offsets of the nth capture group.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.offset(2)   # => [6, 11]
+    /// </code>
+    /// </example>
     [RubyDef("(Integer) -> Array[Integer?]")]
     public static MRubyValue Offset(MRubyState mrb, MRubyValue self)
     {
@@ -281,7 +322,15 @@ static class MatchDataMembers
         return array;
     }
 
-    // MatchData#captures
+    /// <summary>
+    /// Returns the captured groups from <c>self</c> as an array, excluding the whole match at index 0.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.captures   # => ["hello", "world"]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[String?]")]
     public static MRubyValue Captures(MRubyState mrb, MRubyValue self)
     {
@@ -305,7 +354,15 @@ static class MatchDataMembers
         return array;
     }
 
-    // MatchData#to_a
+    /// <summary>
+    /// Returns the whole match followed by every capture as an array.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.to_a   # => ["hello world", "hello", "world"]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[String?]")]
     public static MRubyValue ToA(MRubyState mrb, MRubyValue self)
     {
@@ -328,7 +385,15 @@ static class MatchDataMembers
         return array;
     }
 
-    // MatchData#to_s
+    /// <summary>
+    /// Returns the entire matched substring of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.to_s   # => "hello world"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue ToS(MRubyState mrb, MRubyValue self)
     {
@@ -336,7 +401,15 @@ static class MatchDataMembers
         return mrb.NewString(matchData.Match.Value);
     }
 
-    // MatchData#size
+    /// <summary>
+    /// Returns the number of elements in <c>self</c>, including the whole match plus all capture groups.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.size   # => 3
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Size(MRubyState mrb, MRubyValue self)
     {
@@ -344,14 +417,30 @@ static class MatchDataMembers
         return matchData.Match.Groups.Count;
     }
 
-    // MatchData#length - alias for size
+    /// <summary>
+    /// Alias for <c>size</c>. Returns the number of elements in <c>self</c> (the whole match plus captures).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.length   # => 3
+    /// </code>
+    /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue Length(MRubyState mrb, MRubyValue self)
     {
         return Size(mrb, self);
     }
 
-    // MatchData#pre_match
+    /// <summary>
+    /// Returns the portion of the original string before the match.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /world/.match("hello world!")
+    /// m.pre_match   # => "hello "
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue PreMatch(MRubyState mrb, MRubyValue self)
     {
@@ -360,7 +449,15 @@ static class MatchDataMembers
         return mrb.NewString(matchData.OriginalString.Substring(0, match.Index));
     }
 
-    // MatchData#post_match
+    /// <summary>
+    /// Returns the portion of the original string after the match.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /world/.match("hello world!")
+    /// m.post_match   # => "!"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue PostMatch(MRubyState mrb, MRubyValue self)
     {
@@ -369,7 +466,15 @@ static class MatchDataMembers
         return mrb.NewString(matchData.OriginalString.Substring(match.Index + match.Length));
     }
 
-    // MatchData#regexp
+    /// <summary>
+    /// Returns the <c>Regexp</c> that produced <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+)/.match("hello")
+    /// m.regexp   # => /(\w+)/
+    /// </code>
+    /// </example>
     [RubyDef("() -> Regexp")]
     public static MRubyValue Regexp(MRubyState mrb, MRubyValue self)
     {
@@ -377,7 +482,15 @@ static class MatchDataMembers
         return RegexpMembers.CreateRDataFromRegexp(mrb, matchData.Regexp);
     }
 
-    // MatchData#string
+    /// <summary>
+    /// Returns the frozen copy of the original string that was matched against.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /world/.match("hello world")
+    /// m.string   # => "hello world"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue String(MRubyState mrb, MRubyValue self)
     {
@@ -387,7 +500,15 @@ static class MatchDataMembers
         return str;
     }
 
-    // MatchData#named_captures
+    /// <summary>
+    /// Returns a hash mapping each named capture group to its matched substring, or <c>nil</c> when the group did not participate.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(?&lt;y&gt;\d{4})-(?&lt;m&gt;\d{2})/.match("2024-01")
+    /// m.named_captures   # => {"y" => "2024", "m" => "01"}
+    /// </code>
+    /// </example>
     [RubyDef("() -> Hash[String, String?]")]
     public static MRubyValue NamedCaptures(MRubyState mrb, MRubyValue self)
     {
@@ -414,7 +535,15 @@ static class MatchDataMembers
         return hash;
     }
 
-    // MatchData#names
+    /// <summary>
+    /// Returns the list of named capture group names defined by the regexp that produced <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(?&lt;y&gt;\d{4})-(?&lt;m&gt;\d{2})/.match("2024-01")
+    /// m.names   # => ["y", "m"]
+    /// </code>
+    /// </example>
     [RubyDef("() -> Array[String]")]
     public static MRubyValue NamesMethod(MRubyState mrb, MRubyValue self)
     {
@@ -422,7 +551,15 @@ static class MatchDataMembers
         return RegexpMembers.NamesMethod(mrb, RegexpMembers.CreateRDataFromRegexp(mrb, matchData.Regexp));
     }
 
-    // MatchData#values_at(*indices)
+    /// <summary>
+    /// Returns an array of the elements at the given integer indices into <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+) (\w+)/.match("a b c")
+    /// m.values_at(1, 3)   # => ["a", "c"]
+    /// </code>
+    /// </example>
     [RubyDef("(*Integer) -> Array[String?]")]
     public static MRubyValue ValuesAt(MRubyState mrb, MRubyValue self)
     {
@@ -439,7 +576,15 @@ static class MatchDataMembers
         return array;
     }
 
-    // MatchData#inspect
+    /// <summary>
+    /// Returns a human-readable representation of <c>self</c> showing the whole match and each capture group.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// m = /(\w+) (\w+)/.match("hello world")
+    /// m.inspect   # => "#&lt;MatchData \"hello world\" 1:\"hello\" 2:\"world\"&gt;"
+    /// </code>
+    /// </example>
     [RubyDef("() -> String")]
     public static MRubyValue Inspect(MRubyState mrb, MRubyValue self)
     {
