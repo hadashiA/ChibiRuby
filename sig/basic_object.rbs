@@ -46,7 +46,6 @@ class BasicObject
   def method_missing: (Symbol, *untyped) ?{ (*untyped) -> untyped } -> untyped
 
   # --- from lib.rb ---
-  #
   # call-seq:
   #   obj != other -> true or false
   #

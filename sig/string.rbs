@@ -256,14 +256,12 @@ class String < Object
 
   # --- from lib.rb ---
 
-  #
   # Calls the given block for each line
   # and pass the respective line.
   #
   # ISO 15.2.10.5.15
   def each_line: (?::String separator) ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # Replace all matches of +pattern+ with +replacement+.
   # Call block (if given) for each match and replace
   # +pattern+ with the value of the block. Return the
@@ -272,7 +270,6 @@ class String < Object
   # ISO 15.2.10.5.18
   def gsub: (*untyped args) ?{ (?) -> untyped } -> untyped
 
-  #
   # Replace all matches of +pattern+ with +replacement+.
   # Call block (if given) for each match and replace
   # +pattern+ with the value of the block. Modify
@@ -281,7 +278,6 @@ class String < Object
   # ISO 15.2.10.5.19
   def gsub!: (*untyped args) { (?) -> untyped } -> (untyped | nil)
 
-  #
   # Replace only the first match of +pattern+ with
   # +replacement+. Call block (if given) for each
   # match and replace +pattern+ with the value of the
@@ -290,7 +286,6 @@ class String < Object
   # ISO 15.2.10.5.36
   def sub: (*untyped args) ?{ (?) -> untyped } -> (self | untyped)
 
-  #
   # Replace only the first match of +pattern+ with
   # +replacement+. Call block (if given) for each
   # match and replace +pattern+ with the value of the
@@ -299,7 +294,6 @@ class String < Object
   # ISO 15.2.10.5.37
   def sub!: (*untyped args) { (?) -> untyped } -> (nil | untyped)
 
-  #
   # Call the given block for each byte of +self+.
   def each_byte: () ?{ (?) -> untyped } -> (untyped | self)
 end

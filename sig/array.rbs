@@ -192,7 +192,6 @@ class Array[Elem] < Object
   def self.[]: (*Elem) -> Array[Elem]
 
   # --- from lib.rb ---
-  #
   # call-seq:
   #   array.each {|element| ... } -> self
   #   array.each -> Enumerator
@@ -203,7 +202,6 @@ class Array[Elem] < Object
   # ISO 15.2.12.5.10
   def each: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # call-seq:
   #   array.each_index {|index| ... } -> self
   #   array.each_index -> Enumerator
@@ -214,7 +212,6 @@ class Array[Elem] < Object
   # ISO 15.2.12.5.11
   def each_index: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # call-seq:
   #   array.collect! {|element| ... } -> self
   #   array.collect! -> new_enumerator
@@ -226,7 +223,6 @@ class Array[Elem] < Object
   # ISO 15.2.12.5.7
   def collect!: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # call-seq:
   #   array.map! {|element| ... } -> self
   #   array.map! -> new_enumerator
@@ -236,13 +232,11 @@ class Array[Elem] < Object
   # ISO 15.2.12.5.20
   alias map! collect!
 
-  #
   # Private method for Array creation.
   #
   # ISO 15.2.12.5.15
   def initialize: (?::Integer size, ?untyped? obj) ?{ (?) -> untyped } -> void
 
-  #
   # call-seq:
   #   array == other   -> true or false
   #
@@ -252,7 +246,6 @@ class Array[Elem] < Object
   #
   def ==: (untyped other) -> (false | true | untyped)
 
-  #
   # call-seq:
   #   array.eql? other_array -> true or false
   #
@@ -261,7 +254,6 @@ class Array[Elem] < Object
   #
   def eql?: (untyped other) -> (false | true | untyped)
 
-  #
   # call-seq:
   #   array <=> other_array -> -1, 0, or 1
   #
@@ -277,7 +269,6 @@ class Array[Elem] < Object
   #
   def <=>: (untyped other) -> (0 | nil | untyped)
 
-  #
   # call-seq:
   #   array.delete(obj) -> deleted_object
   #   array.delete(obj) {|nosuch| ... } -> deleted_object or block_return
@@ -285,7 +276,6 @@ class Array[Elem] < Object
   # Delete element with index +key+
   def delete: (untyped key) ?{ (?) -> untyped } -> untyped
 
-  #
   # call-seq:
   #   array.sort! -> self
   #   array.sort! {|a, b| ... } -> self
@@ -294,7 +284,6 @@ class Array[Elem] < Object
   # elements.
   def sort!: () ?{ (?) -> untyped } -> self
 
-  #
   # call-seq:
   #   array.sort -> new_array
   #   array.sort {|a, b| ... } -> new_array
@@ -302,7 +291,6 @@ class Array[Elem] < Object
   # Returns a new Array whose elements are those from +self+, sorted.
   def sort: () { (?) -> untyped } -> untyped
 
-  #
   # call-seq:
   #   array.to_a -> self
   #
@@ -311,7 +299,6 @@ class Array[Elem] < Object
 
   alias entries to_a
   # --- from lib.rb ---
-  #
   # call-seq:
   #   array.sort_by {|element| ... } -> new_array
   #   array.sort_by                  -> enumerator
@@ -321,7 +308,6 @@ class Array[Elem] < Object
   # functions because the block is called only once per element.
   def sort_by: () ?{ (?) -> untyped } -> untyped
 
-  #
   # call-seq:
   #   array.sort_by! {|element| ... } -> self
   #

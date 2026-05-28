@@ -1,17 +1,18 @@
+# rbs_inline: enabled
+
 # NOTE: Methods containing loop must be implemented in .rb(bytecode) to support jumps by break.
 
-##
 # Root of the Ruby class hierarchy. Has no superclass and an intentionally
 # minimal API -- used as a base for proxy objects that must avoid inheriting
 # Object/Kernel methods. Most code should subclass Object instead.
 class BasicObject
-  ##
   # call-seq:
   #   obj != other -> true or false
   #
   # Returns true if +self+ is not equal to +other+. Defined as the
   # negation of <code>==</code>; subclasses typically only need to
   # override <code>==</code>.
+  #: (untyped other) -> (false | true)
   def !=(other)
     if self == other
       false
@@ -21,13 +22,11 @@ class BasicObject
   end
 end
 
-##
 # Mixin included by Object that provides the methods available on every
 # object -- puts, raise, require, send, respond_to?, and so on. Top-level
 # def's become private Kernel methods, which is why they can be called
 # anywhere without an explicit receiver.
 module Kernel
-  ##
   # call-seq:
   #    obj.extend(module, ...)    -> obj
   #
@@ -52,6 +51,7 @@ module Kernel
   #    k.hello         #=> "Hello from Mod.\n"
   #
   # ISO 15.3.1.3.13
+  #: (*untyped args) -> self
   def extend(*args)
     args.reverse!
     obj = self
@@ -65,23 +65,22 @@ module Kernel
   # 15.3.1.2.1 Kernel.`
   # provided by Kernel#`
   # 15.3.1.3.3
+  #: (untyped s) -> untyped
   def `(s)
     raise NotImplementedError.new("backquotes not implemented")
   end
 
-  ##
   # 15.3.1.2.3  Kernel.eval
   # 15.3.1.3.12 Kernel#eval
   # NotImplemented by mruby core; use mruby-eval gem
 
-  ##
   # ISO 15.3.1.2.8 Kernel.loop
   # not provided by mruby
 
-  ##
   # Calls the given block repetitively.
   #
   # ISO 15.3.1.3.29
+  #: () ?{ () -> untyped } -> untyped
   private def loop(&block)
     return to_enum :loop unless block
 
@@ -93,6 +92,7 @@ module Kernel
   end
 
   # 11.4.4 Step c)
+  #: (untyped y) -> untyped
   def !~(y)
     !(self =~ y)
   end
@@ -105,13 +105,13 @@ module Kernel
   #
   #   'my string'.yield_self {|s|s.upcase} #=> "MY STRING"
   #
+  #: () ?{ (?) -> untyped } -> untyped
   def yield_self(&block)
     return to_enum :yield_self unless block
     block.call(self)
   end
   alias then yield_self
 
-  ##
   #  call-seq:
   #     obj.tap{|x|...}    -> obj
   #
@@ -124,51 +124,48 @@ module Kernel
   #    .select {|x| x%2==0} .tap {|x| puts "evens: #{x.inspect}"}
   #    .map { |x| x*x }     .tap {|x| puts "squares: #{x.inspect}"}
   #
+  #: () { (untyped) -> untyped } -> self
   def tap
     yield self
     self
   end
 end
 
-##
 # Raised when a name (constant, variable, or method) cannot be resolved.
 # The offending +name+ is available via the +#name+ accessor.
 #
 # ISO 15.2.31
 class NameError < StandardError
-  ##
   # The undefined name that triggered the error, as a Symbol.
-  attr_accessor :name
+  attr_accessor :name #: untyped
 
-  ##
   # call-seq:
   #   NameError.new(message=nil, name=nil) -> name_error
   #
   # Constructs a new NameError with the optional +message+ and the
   # offending +name+ stored for later retrieval via #name.
+  #: (?untyped? message, ?untyped? name) -> void
   def initialize(message=nil, name=nil)
     @name = name
     super(message)
   end
 end
 
-##
 # Raised when a method is called on a receiver that does not respond to it.
 # Subclass of NameError; adds the +#args+ accessor for the arguments that
 # were passed to the missing method.
 #
 # ISO 15.2.32
 class NoMethodError < NameError
-  ##
   # The arguments passed to the undefined method, as an Array.
-  attr_reader :args
+  attr_reader :args #: untyped
 
-  ##
   # call-seq:
   #   NoMethodError.new(message=nil, name=nil, args=nil) -> no_method_error
   #
   # Constructs a new NoMethodError with the optional +message+, the
   # offending method +name+, and the +args+ array passed to the call.
+  #: (?untyped? message, ?untyped? name, ?untyped? args) -> void
   def initialize(message=nil, name=nil, args=nil)
     @args = args
     super message, name
@@ -180,6 +177,7 @@ class Module
   alias attr attr_reader
 
   # 15.2.2.4.27
+  #: (*untyped args) -> self
   def include(*args)
     args.reverse!
     mod = self
@@ -190,13 +188,13 @@ class Module
     self
   end
 
-  ##
   # call-seq:
   #   prepend(module, ...) -> self
   #
   # Invokes Module.prepend_features on each parameter in reverse order
   # so that the prepended modules take priority over methods defined
   # in +self+.
+  #: (*untyped args) -> self
   def prepend(*args)
     args.reverse!
     mod = self
@@ -208,7 +206,6 @@ class Module
   end
 end
 
-##
 # Enumerable
 #
 # The <code>Enumerable</code> mixin provides collection classes with
@@ -226,7 +223,6 @@ module Enumerable
   # @!visibility private
   NONE = Object.new
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Return false
   # if one block value is false. Otherwise
@@ -234,6 +230,7 @@ module Enumerable
   # +self+ is false return false.
   #
   # ISO 15.3.2.2.1
+  #: () ?{ (?) -> untyped } -> (false | true)
   def all?(&block)
     if block
       self.each{|*val| return false unless block.call(*val)}
@@ -243,7 +240,6 @@ module Enumerable
     true
   end
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Return true
   # if one block value is true. Otherwise
@@ -251,6 +247,7 @@ module Enumerable
   # +self+ is true object return true.
   #
   # ISO 15.3.2.2.2
+  #: () ?{ (?) -> untyped } -> (true | false)
   def any?(&block)
     if block
       self.each{|*val| return true if block.call(*val)}
@@ -260,13 +257,13 @@ module Enumerable
     false
   end
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Append all
   # values of each block together and
   # return this value.
   #
   # ISO 15.3.2.2.3
+  #: () ?{ (?) -> untyped } -> untyped
   def collect(&block)
     return to_enum :collect unless block
 
@@ -275,7 +272,6 @@ module Enumerable
     ary
   end
 
-  ##
   # Return the first element for which
   # value from the block is true. If no
   # object matches, calls +ifnone+ and
@@ -283,6 +279,7 @@ module Enumerable
   # +nil+.
   #
   # ISO 15.3.2.2.4
+  #: (?untyped? ifnone) ?{ (?) -> untyped } -> untyped
   def detect(ifnone=nil, &block)
     return to_enum :detect, ifnone unless block
 
@@ -294,13 +291,13 @@ module Enumerable
     ifnone.call unless ifnone.nil?
   end
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Pass an
   # index to the block which starts at 0
   # and increase by 1 for each element.
   #
   # ISO 15.3.2.2.5
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each_with_index(&block)
     return to_enum :each_with_index unless block
 
@@ -312,11 +309,11 @@ module Enumerable
     self
   end
 
-  ##
   # Return an array of all elements which
   # are yield by +each+.
   #
   # ISO 15.3.2.2.6
+  #: () -> untyped
   def entries
     ary = []
     self.each{|*val|
@@ -326,19 +323,18 @@ module Enumerable
     ary
   end
 
-  ##
   # Alias for find
   #
   # ISO 15.3.2.2.7
   alias find detect
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Return an array
   # which contains all elements whose block
   # value was true.
   #
   # ISO 15.3.2.2.8
+  #: () ?{ (?) -> untyped } -> untyped
   def find_all(&block)
     return to_enum :find_all unless block
 
@@ -349,7 +345,6 @@ module Enumerable
     ary
   end
 
-  ##
   # Call the given block for each element
   # which is yield by +each+ and which return
   # value was true when invoking === with
@@ -357,6 +352,7 @@ module Enumerable
   # elements or the respective block values.
   #
   # ISO 15.3.2.2.9
+  #: (untyped pattern) { (?) -> untyped } -> untyped
   def grep(pattern, &block)
     ary = []
     self.each{|*val|
@@ -368,13 +364,13 @@ module Enumerable
     ary
   end
 
-  ##
   # Return true if at least one element which
   # is yield by +each+ returns a true value
   # by invoking == with +obj+. Otherwise return
   # false.
   #
   # ISO 15.3.2.2.10
+  #: (untyped obj) -> (true | false)
   def include?(obj)
     self.each{|*val|
       return true if val.__svalue == obj
@@ -382,7 +378,6 @@ module Enumerable
     false
   end
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Return value
   # is the sum of all block values. Pass
@@ -390,6 +385,7 @@ module Enumerable
   # current element.
   #
   # ISO 15.3.2.2.11
+  #: (*untyped args) { (?) -> untyped } -> untyped
   def inject(*args, &block)
     raise ArgumentError, "too many arguments" if args.size > 2
     if Symbol === args[-1]
@@ -418,19 +414,18 @@ module Enumerable
   end
   alias reduce inject
 
-  ##
   # Alias for collect
   #
   # ISO 15.3.2.2.12
   alias map collect
 
-  ##
   # Return the maximum value of all elements
   # yield by +each+. If no block is given <=>
   # will be invoked to define this value. If
   # a block is given it will be used instead.
   #
   # ISO 15.3.2.2.13
+  #: () { (?) -> untyped } -> untyped
   def max(&block)
     flag = true  # 1st element?
     result = nil
@@ -451,13 +446,13 @@ module Enumerable
     result
   end
 
-  ##
   # Return the minimum value of all elements
   # yield by +each+. If no block is given <=>
   # will be invoked to define this value. If
   # a block is given it will be used instead.
   #
   # ISO 15.3.2.2.14
+  #: () { (?) -> untyped } -> untyped
   def min(&block)
     flag = true  # 1st element?
     result = nil
@@ -478,13 +473,11 @@ module Enumerable
     result
   end
 
-  ##
   # Alias for include?
   #
   # ISO 15.3.2.2.15
   alias member? include?
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Return an
   # array which contains two arrays. The
@@ -494,6 +487,7 @@ module Enumerable
   # block value was false.
   #
   # ISO 15.3.2.2.16
+  #: () ?{ (?) -> untyped } -> (untyped | ::Array[untyped])
   def partition(&block)
     return to_enum :partition unless block
 
@@ -509,13 +503,13 @@ module Enumerable
     [ary_T, ary_F]
   end
 
-  ##
   # Call the given block for each element
   # which is yield by +each+. Return an
   # array which contains only the elements
   # whose block value was false.
   #
   # ISO 15.3.2.2.17
+  #: () ?{ (?) -> untyped } -> untyped
   def reject(&block)
     return to_enum :reject unless block
 
@@ -526,13 +520,11 @@ module Enumerable
     ary
   end
 
-  ##
   # Alias for find_all.
   #
   # ISO 15.3.2.2.18
   alias select find_all
 
-  ##
   # Return a sorted array of all elements
   # which are yield by +each+. If no block
   # is given <=> will be invoked on each
@@ -541,17 +533,18 @@ module Enumerable
   # sorting.
   #
   # ISO 15.3.2.2.19
+  #: () { (?) -> untyped } -> untyped
   def sort(&block)
     self.map{|*val| val.__svalue}.sort(&block)
   end
 
-  ##
   # Alias for entries.
   #
   # ISO 15.3.2.2.20
   alias to_a entries
 
   # redefine #hash 15.3.1.3.15
+  #: () -> untyped
   def hash
     h = 12347
     i = 0
@@ -565,7 +558,6 @@ end
 
 # Enumerable extensions (from mruby-enum-ext)
 module Enumerable
-  ##
   # call-seq:
   #   enum.drop(n) -> array
   #
@@ -573,6 +565,7 @@ module Enumerable
   # elements as an array.
   #
   #   [1, 2, 3, 4, 5].drop(2)   #=> [3, 4, 5]
+  #: (untyped n) -> untyped
   def drop(n)
     n = n.__to_int
     raise ArgumentError, "attempt to drop negative size" if n < 0
@@ -582,7 +575,6 @@ module Enumerable
     ary
   end
 
-  ##
   # call-seq:
   #   enum.drop_while {|element| ... } -> array
   #   enum.drop_while                  -> enumerator
@@ -590,6 +582,7 @@ module Enumerable
   # Drops elements up to, but not including, the first element for which
   # the block returns a falsy value and returns an array containing the
   # remaining elements.
+  #: () ?{ (?) -> untyped } -> untyped
   def drop_while(&block)
     return to_enum :drop_while unless block
 
@@ -601,13 +594,13 @@ module Enumerable
     ary
   end
 
-  ##
   # call-seq:
   #   enum.take(n) -> array
   #
   # Returns the first +n+ elements from +enum+ as an array.
   #
   #   [1, 2, 3, 4, 5].take(3)   #=> [1, 2, 3]
+  #: (untyped n) -> untyped
   def take(n)
     n = n.__to_int
     i = n.to_i
@@ -622,13 +615,13 @@ module Enumerable
     ary
   end
 
-  ##
   # call-seq:
   #   enum.take_while {|element| ... } -> array
   #   enum.take_while                  -> enumerator
   #
   # Passes elements to the block until the block returns a falsy value,
   # then stops iterating and returns an array of all prior elements.
+  #: () ?{ (?) -> untyped } -> untyped
   def take_while(&block)
     return to_enum :take_while unless block
 
@@ -640,7 +633,6 @@ module Enumerable
     ary
   end
 
-  ##
   # call-seq:
   #   enum.each_cons(n) {|array| ... } -> nil
   #   enum.each_cons(n)                -> enumerator
@@ -652,6 +644,7 @@ module Enumerable
   #   # [1, 2, 3]
   #   # [2, 3, 4]
   #   # [3, 4, 5]
+  #: (untyped n) ?{ (?) -> untyped } -> (untyped | nil)
   def each_cons(n, &block)
     n = n.__to_int
     raise ArgumentError, "invalid size" if n <= 0
@@ -667,7 +660,6 @@ module Enumerable
     nil
   end
 
-  ##
   # call-seq:
   #   enum.each_slice(n) {|array| ... } -> nil
   #   enum.each_slice(n)                -> enumerator
@@ -680,6 +672,7 @@ module Enumerable
   #   # [1, 2, 3]
   #   # [4, 5, 6]
   #   # [7]
+  #: (untyped n) ?{ (?) -> untyped } -> (untyped | nil)
   def each_slice(n, &block)
     n = n.__to_int
     raise ArgumentError, "invalid slice size" if n <= 0
@@ -698,7 +691,6 @@ module Enumerable
     nil
   end
 
-  ##
   # call-seq:
   #   enum.group_by {|element| ... } -> hash
   #   enum.group_by                  -> enumerator
@@ -706,6 +698,7 @@ module Enumerable
   # Groups elements by the value returned from the block and returns a
   # hash whose keys are the block's results and whose values are arrays
   # of corresponding elements.
+  #: () ?{ (?) -> untyped } -> untyped
   def group_by(&block)
     return to_enum :group_by unless block
 
@@ -718,25 +711,25 @@ module Enumerable
     h
   end
 
-  ##
   # call-seq:
   #   enum.sort_by {|element| ... } -> array
   #   enum.sort_by                  -> enumerator
   #
   # Returns an array of elements sorted by mapping each through the
   # block and ordering by the block's result.
+  #: () ?{ (?) -> untyped } -> untyped
   def sort_by(&block)
     return to_enum :sort_by unless block
     self.to_a.sort_by(&block)
   end
 
-  ##
   # call-seq:
   #   enum.first       -> object or nil
   #   enum.first(n)    -> array
   #
   # With no argument, returns the first element. With argument +n+,
   # returns an array of the first +n+ elements.
+  #: (*untyped args) -> untyped
   def first(*args)
     case args.length
     when 0
@@ -760,7 +753,6 @@ module Enumerable
     end
   end
 
-  ##
   # call-seq:
   #   enum.count                    -> integer
   #   enum.count(item)              -> integer
@@ -769,6 +761,7 @@ module Enumerable
   # Returns the number of elements. With argument +item+, returns the
   # count of elements equal to +item+. With a block, returns the count
   # of elements for which the block returns a truthy value.
+  #: (?untyped v) ?{ (?) -> untyped } -> untyped
   def count(v=NONE, &block)
     count = 0
     if block
@@ -787,7 +780,6 @@ module Enumerable
     count
   end
 
-  ##
   # call-seq:
   #   enum.flat_map {|element| ... }       -> array
   #   enum.flat_map                        -> enumerator
@@ -796,6 +788,7 @@ module Enumerable
   # Returns a new array with the concatenated results of running the
   # block once for every element. One level of array nesting in the
   # block's return value is flattened.
+  #: () ?{ (?) -> untyped } -> untyped
   def flat_map(&block)
     return to_enum :flat_map unless block
 
@@ -812,13 +805,13 @@ module Enumerable
   end
   alias collect_concat flat_map
 
-  ##
   # call-seq:
   #   enum.max_by {|element| ... } -> object
   #   enum.max_by                  -> enumerator
   #
   # Returns the element whose block return value is greatest. Returns
   # nil if the enumerable is empty.
+  #: () ?{ (?) -> untyped } -> untyped
   def max_by(&block)
     return to_enum :max_by unless block
 
@@ -841,13 +834,13 @@ module Enumerable
     max
   end
 
-  ##
   # call-seq:
   #   enum.min_by {|element| ... } -> object
   #   enum.min_by                  -> enumerator
   #
   # Returns the element whose block return value is smallest. Returns
   # nil if the enumerable is empty.
+  #: () ?{ (?) -> untyped } -> untyped
   def min_by(&block)
     return to_enum :min_by unless block
 
@@ -870,13 +863,13 @@ module Enumerable
     min
   end
 
-  ##
   # call-seq:
   #   enum.minmax                  -> [min, max]
   #   enum.minmax {|a, b| ... }    -> [min, max]
   #
   # Returns a two-element array containing the minimum and maximum
   # elements. Uses +<=>+ by default, or the given block for comparison.
+  #: () { (?) -> untyped } -> ::Array[untyped]
   def minmax(&block)
     max = nil
     min = nil
@@ -902,13 +895,13 @@ module Enumerable
     [min, max]
   end
 
-  ##
   # call-seq:
   #   enum.minmax_by {|element| ... } -> [min, max]
   #   enum.minmax_by                  -> enumerator
   #
   # Returns a two-element array containing the elements with the
   # smallest and greatest block return values, respectively.
+  #: () ?{ (?) -> untyped } -> (untyped | ::Array[untyped])
   def minmax_by(&block)
     return to_enum :minmax_by unless block
 
@@ -937,7 +930,6 @@ module Enumerable
     [min, max]
   end
 
-  ##
   # call-seq:
   #   enum.none?                    -> true or false
   #   enum.none?(pattern)           -> true or false
@@ -946,6 +938,7 @@ module Enumerable
   # Returns true if no element is truthy (or matches +pattern+ via
   # <code>===</code>, or yields truthy from the block). Returns false
   # otherwise.
+  #: (?untyped pat) ?{ (?) -> untyped } -> (false | true)
   def none?(pat=NONE, &block)
     if !NONE.equal?(pat)
       self.each do |*val|
@@ -963,7 +956,6 @@ module Enumerable
     true
   end
 
-  ##
   # call-seq:
   #   enum.one?                    -> true or false
   #   enum.one?(pattern)           -> true or false
@@ -971,6 +963,7 @@ module Enumerable
   #
   # Returns true if exactly one element is truthy (or matches the given
   # +pattern+ / block). Returns false otherwise.
+  #: (?untyped pat) ?{ (?) -> untyped } -> (false | untyped)
   def one?(pat=NONE, &block)
     count = 0
     if !NONE.equal?(pat)
@@ -993,7 +986,6 @@ module Enumerable
     count == 1 ? true : false
   end
 
-  ##
   # call-seq:
   #   enum.all?(pattern)           -> true or false
   #   enum.all? {|element| ... }   -> true or false
@@ -1002,6 +994,7 @@ module Enumerable
   # +pattern+ argument: returns true only if every element matches
   # +pattern+ via <code>===</code>. Without +pattern+, behavior matches
   # the earlier block/truthy form.
+  #: (?untyped pat) ?{ (?) -> untyped } -> (false | true)
   def all?(pat=NONE, &block)
     if !NONE.equal?(pat)
       self.each{|*val| return false unless pat === val.__svalue}
@@ -1013,7 +1006,6 @@ module Enumerable
     true
   end
 
-  ##
   # call-seq:
   #   enum.any?(pattern)           -> true or false
   #   enum.any? {|element| ... }   -> true or false
@@ -1022,6 +1014,7 @@ module Enumerable
   # +pattern+ argument: returns true if any element matches +pattern+
   # via <code>===</code>. Without +pattern+, behavior matches the
   # earlier block/truthy form.
+  #: (?untyped pat) ?{ (?) -> untyped } -> (true | false)
   def any?(pat=NONE, &block)
     if !NONE.equal?(pat)
       self.each{|*val| return true if pat === val.__svalue}
@@ -1033,13 +1026,13 @@ module Enumerable
     false
   end
 
-  ##
   # call-seq:
   #   enum.each_with_object(obj) {|element, obj| ... } -> obj
   #   enum.each_with_object(obj)                       -> enumerator
   #
   # Iterates the block with each element and the given +obj+, returning
   # +obj+ after iteration. Useful for building up a result object.
+  #: (untyped obj) ?{ (?) -> untyped } -> untyped
   def each_with_object(obj, &block)
     return to_enum(:each_with_object, obj) unless block
 
@@ -1047,13 +1040,13 @@ module Enumerable
     obj
   end
 
-  ##
   # call-seq:
   #   enum.reverse_each {|element| ... } -> self
   #   enum.reverse_each                  -> enumerator
   #
   # Iterates the block over each element in reverse order. Internally
   # builds an array of all elements first.
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def reverse_each(&block)
     return to_enum :reverse_each unless block
 
@@ -1066,7 +1059,6 @@ module Enumerable
     self
   end
 
-  ##
   # call-seq:
   #   enum.cycle(n=nil) {|element| ... } -> nil
   #   enum.cycle(n=nil)                  -> enumerator
@@ -1074,6 +1066,7 @@ module Enumerable
   # Calls the block for each element repeatedly +n+ times, or forever
   # if +n+ is nil. Returns nil after iteration completes (only when +n+
   # is finite).
+  #: (?untyped? nv) ?{ (untyped) -> untyped } -> (untyped | nil)
   def cycle(nv = nil, &block)
     return to_enum(:cycle, nv) unless block
 
@@ -1102,7 +1095,6 @@ module Enumerable
     nil
   end
 
-  ##
   # call-seq:
   #   enum.find_index(value)            -> integer or nil
   #   enum.find_index {|element| ... }  -> integer or nil
@@ -1111,6 +1103,7 @@ module Enumerable
   # Returns the zero-based index of the first element equal to +value+
   # or for which the block returns a truthy value. Returns nil if no
   # such element is found.
+  #: (?untyped val) ?{ (?) -> untyped } -> (untyped | nil)
   def find_index(val=NONE, &block)
     return to_enum(:find_index, val) if !block && NONE.equal?(val)
 
@@ -1129,7 +1122,6 @@ module Enumerable
     nil
   end
 
-  ##
   # call-seq:
   #   enum.zip(other, ...)                  -> array
   #   enum.zip(other, ...) {|array| ... }   -> nil
@@ -1137,6 +1129,7 @@ module Enumerable
   # Combines +enum+ with +other+ enumerables, producing arrays of
   # corresponding elements. With a block, yields each combined array
   # and returns nil.
+  #: (*untyped arg) ?{ (?) -> untyped } -> untyped
   def zip(*arg, &block)
     result = block ? nil : []
     arg = arg.map do |a|
@@ -1165,7 +1158,6 @@ module Enumerable
     result
   end
 
-  ##
   # call-seq:
   #   enum.to_h                     -> hash
   #   enum.to_h {|element| ... }    -> hash
@@ -1173,6 +1165,7 @@ module Enumerable
   # Returns a hash built from the enumerable's elements. Each element
   # must be a two-element array <code>[key, value]</code>. With a block,
   # the block is called with each element and must return such a pair.
+  #: () ?{ (?) -> untyped } -> untyped
   def to_h(&blk)
     h = {}
     if blk
@@ -1193,7 +1186,6 @@ module Enumerable
     h
   end
 
-  ##
   # call-seq:
   #   enum.uniq                     -> array
   #   enum.uniq {|element| ... }    -> array
@@ -1201,6 +1193,7 @@ module Enumerable
   # Returns an array containing only the unique elements of +enum+.
   # With a block, two elements are considered equal when they produce
   # the same block return value.
+  #: () ?{ (?) -> untyped } -> untyped
   def uniq(&block)
     hash = {}
     if block
@@ -1217,13 +1210,13 @@ module Enumerable
     hash.values
   end
 
-  ##
   # call-seq:
   #   enum.filter_map {|element| ... } -> array
   #   enum.filter_map                  -> enumerator
   #
   # Returns an array of truthy block return values. Equivalent to
   # <code>map {...}.select {|x| x }</code> but in a single pass.
+  #: () ?{ (?) -> untyped } -> untyped
   def filter_map(&blk)
     return to_enum(:filter_map) unless blk
 
@@ -1237,13 +1230,13 @@ module Enumerable
 
   alias filter select
 
-  ##
   # call-seq:
   #   enum.grep_v(pattern)                  -> array
   #   enum.grep_v(pattern) {|element| ... } -> array
   #
   # Returns an array of elements for which <code>pattern === element</code>
   # is false. With a block, returns the block results for those elements.
+  #: (untyped pattern) { (?) -> untyped } -> untyped
   def grep_v(pattern, &block)
     ary = []
     self.each{|*val|
@@ -1255,7 +1248,6 @@ module Enumerable
     ary
   end
 
-  ##
   # call-seq:
   #   enum.tally -> hash
   #
@@ -1263,6 +1255,7 @@ module Enumerable
   # element to its count.
   #
   #   %w(a b c b a a).tally   #=> {"a"=>3, "b"=>2, "c"=>1}
+  #: () -> untyped
   def tally
     hash = {}
     self.each do |x|
@@ -1271,13 +1264,13 @@ module Enumerable
     hash
   end
 
-  ##
   # call-seq:
   #   enum.sum(init=0)                   -> number
   #   enum.sum(init=0) {|element| ... }  -> number
   #
   # Returns the sum of elements (or block return values) added to
   # +init+. Uses the <code>+</code> operator.
+  #: (?::Integer init) ?{ (?) -> untyped } -> untyped
   def sum(init=0,&block)
     result=init
     if block
@@ -1292,7 +1285,6 @@ module Enumerable
     result
   end
 
-  ##
   # call-seq:
   #   enum.each_entry {|element| ... } -> self
   #   enum.each_entry                  -> enumerator
@@ -1300,6 +1292,7 @@ module Enumerable
   # Calls the block once for each element of +self+, converting
   # multiple values from <code>each</code> into a single value via
   # <code>__svalue</code>.
+  #: (*untyped args) ?{ (untyped) -> untyped } -> (untyped | self)
   def each_entry(*args, &blk)
     return to_enum(:each_entry) unless blk
     self.each do |*a|
@@ -1309,7 +1302,6 @@ module Enumerable
   end
 end
 
-##
 # Array
 #
 # Ordered, integer-indexed collection of objects -- the base concrete
@@ -1318,7 +1310,6 @@ end
 #
 # ISO 15.2.12
 class Array
-  ##
   # call-seq:
   #   array.each {|element| ... } -> self
   #   array.each -> Enumerator
@@ -1327,6 +1318,7 @@ class Array
   # and pass the respective element.
   #
   # ISO 15.2.12.5.10
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each(&block)
     return to_enum :each unless block
 
@@ -1338,7 +1330,6 @@ class Array
     self
   end
 
-  ##
   # call-seq:
   #   array.each_index {|index| ... } -> self
   #   array.each_index -> Enumerator
@@ -1347,6 +1338,7 @@ class Array
   # and pass the index of the respective element.
   #
   # ISO 15.2.12.5.11
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each_index(&block)
     return to_enum :each_index unless block
 
@@ -1358,7 +1350,6 @@ class Array
     self
   end
 
-  ##
   # call-seq:
   #   array.collect! {|element| ... } -> self
   #   array.collect! -> new_enumerator
@@ -1368,6 +1359,7 @@ class Array
   # be replaced by the resulting values.
   #
   # ISO 15.2.12.5.7
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def collect!(&block)
     return to_enum :collect! unless block
 
@@ -1380,7 +1372,6 @@ class Array
     self
   end
 
-  ##
   # call-seq:
   #   array.map! {|element| ... } -> self
   #   array.map! -> new_enumerator
@@ -1390,10 +1381,10 @@ class Array
   # ISO 15.2.12.5.20
   alias map! collect!
 
-  ##
   # Private method for Array creation.
   #
   # ISO 15.2.12.5.15
+  #: (?::Integer size, ?untyped? obj) ?{ (?) -> untyped } -> void
   def initialize(size=0, obj=nil, &block)
     if size.is_a?(Array) && obj==nil && block == nil
       self.replace(size)
@@ -1416,7 +1407,6 @@ class Array
     self
   end
 
-  ##
   # call-seq:
   #   array == other   -> true or false
   #
@@ -1424,6 +1414,7 @@ class Array
   #  of elements and if each element is equal to (according to
   #  Object.==) the corresponding element in the other array.
   #
+  #: (untyped other) -> (false | true | untyped)
   def ==(other)
     other = self.__ary_eq(other)
     return false if other == false
@@ -1437,13 +1428,13 @@ class Array
     return true
   end
 
-  ##
   # call-seq:
   #   array.eql? other_array -> true or false
   #
   #  Returns <code>true</code> if +self+ and _other_ are the same object,
   #  or are both arrays with the same content.
   #
+  #: (untyped other) -> (false | true | untyped)
   def eql?(other)
     other = self.__ary_eq(other)
     return false if other == false
@@ -1457,7 +1448,6 @@ class Array
     return true
   end
 
-  ##
   # call-seq:
   #   array <=> other_array -> -1, 0, or 1
   #
@@ -1471,6 +1461,7 @@ class Array
   #  the same length and the value of each element is equal to the
   #  value of the corresponding element in the other array.
   #
+  #: (untyped other) -> (0 | nil | untyped)
   def <=>(other)
     other = self.__ary_cmp(other)
     return 0 if 0 == other
@@ -1499,12 +1490,12 @@ class Array
     end
   end
 
-  ##
   # call-seq:
   #   array.delete(obj) -> deleted_object
   #   array.delete(obj) {|nosuch| ... } -> deleted_object or block_return
   #
   # Delete element with index +key+
+  #: (untyped key) ?{ (?) -> untyped } -> untyped
   def delete(key, &block)
     while i = self.index(key)
       self.delete_at(i)
@@ -1514,13 +1505,13 @@ class Array
     ret
   end
 
-  ##
   # call-seq:
   #   array.sort! -> self
   #   array.sort! {|a, b| ... } -> self
   #
   # Sort all elements and replace +self+ with these
   # elements.
+  #: () ?{ (?) -> untyped } -> self
   def sort!(&block)
     stack = [ [ 0, self.size - 1 ] ]
     until stack.empty?
@@ -1586,27 +1577,26 @@ class Array
     self
   end
 
-  ##
   # call-seq:
   #   array.sort -> new_array
   #   array.sort {|a, b| ... } -> new_array
   #
   # Returns a new Array whose elements are those from +self+, sorted.
+  #: () { (?) -> untyped } -> untyped
   def sort(&block)
     self.dup.sort!(&block)
   end
 
-  ##
   # call-seq:
   #   array.to_a -> self
   #
   # Returns self, no need to convert.
+  #: () -> self
   def to_a
     self
   end
   alias entries to_a
 
-  ##
   # Array is enumerable
   # ISO 15.2.12.3
   include Enumerable
@@ -1614,7 +1604,6 @@ end
 
 # Array extensions (from mruby-enum-ext)
 class Array
-  ##
   # call-seq:
   #   array.sort_by {|element| ... } -> new_array
   #   array.sort_by                  -> enumerator
@@ -1622,6 +1611,7 @@ class Array
   # Returns a new array with elements sorted by the values returned
   # from the block. Faster than +sort+ for expensive comparison
   # functions because the block is called only once per element.
+  #: () ?{ (?) -> untyped } -> untyped
   def sort_by(&block)
     return to_enum :sort_by unless block
 
@@ -1635,17 +1625,16 @@ class Array
     ary.collect!{|e,i| self[i]}
   end
 
-  ##
   # call-seq:
   #   array.sort_by! {|element| ... } -> self
   #
   # Sorts +self+ in place by the values returned from the block.
+  #: () { (?) -> untyped } -> untyped
   def sort_by!(&block)
     self.replace(self.sort_by(&block))
   end
 end
 
-##
 # Hash
 #
 # Unordered mapping from keys to values (insertion order is preserved on
@@ -1655,13 +1644,11 @@ end
 #
 # ISO 15.2.13
 class Hash
-  ##
   # Hash is enumerable
   #
   # ISO 15.2.13.3
   include Enumerable
 
-  ##
   # call-seq:
   #   hash == object -> true or false
   #
@@ -1671,6 +1658,7 @@ class Hash
   #  hash.
   #
   # ISO 15.2.13.4.1
+  #: (untyped hash) -> (true | false | untyped)
   def ==(hash)
     return true if self.equal?(hash)
     unless Hash === hash
@@ -1684,13 +1672,13 @@ class Hash
     return true
   end
 
-  ##
   # call-seq:
   #   hash.eql? object -> true or false
   #
   # Returns <code>true</code> if <i>hash</i> and <i>other</i> are
   # both hashes with the same content compared by eql?.
   #
+  #: (untyped hash) -> (true | false | untyped)
   def eql?(hash)
     return true if self.equal?(hash)
     unless Hash === hash
@@ -1704,7 +1692,6 @@ class Hash
     return true
   end
 
-  ##
   # call-seq:
   #   hash.delete(key) -> value or nil
   #   hash.delete(key) {|key| ... } -> object
@@ -1716,6 +1703,7 @@ class Hash
   # block with the value of the element.
   #
   # ISO 15.2.13.4.8
+  #: (untyped key) ?{ (?) -> untyped } -> untyped
   def delete(key, &block)
     if block && !self.has_key?(key)
       return block.call(key)
@@ -1723,7 +1711,6 @@ class Hash
     self.__delete(key)
   end
 
-  ##
   # call-seq:
   #   hsh.each      {| key, value | block } -> hsh
   #   hsh.each_pair {| key, value | block } -> hsh
@@ -1744,6 +1731,7 @@ class Hash
   # b is 200
   #
   # ISO 15.2.13.4.9
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each(&block)
     return to_enum :each unless block
 
@@ -1758,7 +1746,6 @@ class Hash
     self
   end
 
-  ##
   # call-seq:
   #   hsh.each_key {| key | block } -> hsh
   #   hsh.each_key                  -> an_enumerator
@@ -1777,6 +1764,7 @@ class Hash
   #  b
   #
   # ISO 15.2.13.4.10
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each_key(&block)
     return to_enum :each_key unless block
 
@@ -1784,7 +1772,6 @@ class Hash
     self
   end
 
-  ##
   # call-seq:
   #   hsh.each_value {| value | block } -> self
   #   hsh.each_value                    -> an_enumerator
@@ -1802,6 +1789,7 @@ class Hash
   #  200
   #
   # ISO 15.2.13.4.11
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each_value(&block)
     return to_enum :each_value unless block
 
@@ -1809,7 +1797,6 @@ class Hash
     self
   end
 
-  ##
   # call-seq:
   #     hsh.merge(other_hash..)                                 -> hsh
   #     hsh.merge(other_hash..){|key, oldval, newval| block}    -> hsh
@@ -1832,6 +1819,7 @@ class Hash
   #   h3 # => {:foo=>0, :bar=>5, :baz=>2, :bat=>9, :bam=>5}
   #
   # ISO 15.2.13.4.22
+  #: (*untyped others) ?{ (?) -> untyped } -> untyped
   def merge(*others, &block)
     h = self.dup
     return h.__merge(*others) unless block
@@ -1847,7 +1835,6 @@ class Hash
     h
   end
 
-  ##
   #  call-seq:
   #     hsh.reject! {| key, value | block }  -> hsh or nil
   #     hsh.reject!                          -> an_enumerator
@@ -1857,6 +1844,7 @@ class Hash
   #
   #  1.8/1.9 Hash#reject! returns Hash; ISO says nothing.
   #
+  #: () ?{ (?) -> untyped } -> (untyped | nil | self)
   def reject!(&block)
     return to_enum :reject! unless block
 
@@ -1873,7 +1861,6 @@ class Hash
     self
   end
 
-  ##
   #  call-seq:
   #     hsh.reject {|key, value| block}   -> a_hash
   #     hsh.reject                        -> an_enumerator
@@ -1888,6 +1875,7 @@ class Hash
   #
   #  1.8/1.9 Hash#reject returns Hash; ISO says nothing.
   #
+  #: () ?{ (?) -> untyped } -> untyped
   def reject(&block)
     return to_enum :reject unless block
 
@@ -1900,7 +1888,6 @@ class Hash
     h
   end
 
-  ##
   #  call-seq:
   #     hsh.select! {| key, value | block }  -> hsh or nil
   #     hsh.select!                          -> an_enumerator
@@ -1910,6 +1897,7 @@ class Hash
   #
   #  1.9 Hash#select! returns Hash; ISO says nothing.
   #
+  #: () ?{ (?) -> untyped } -> (untyped | nil | self)
   def select!(&block)
     return to_enum :select! unless block
 
@@ -1926,7 +1914,6 @@ class Hash
     self
   end
 
-  ##
   #  call-seq:
   #     hsh.select {|key, value| block}   -> a_hash
   #     hsh.select                        -> an_enumerator
@@ -1941,6 +1928,7 @@ class Hash
   #
   #  1.9 Hash#select returns Hash; ISO says nothing
   #
+  #: () ?{ (?) -> untyped } -> untyped
   def select(&block)
     return to_enum :select unless block
 
@@ -1954,17 +1942,15 @@ class Hash
   end
 end
 
-##
 # Integer
 #
 # ISO 15.2.8
-##
 class Integer
-  ##
   # Calls the given block once for each Integer
   # from +self+ downto +num+.
   #
   # ISO 15.2.8.3.15
+  #: (untyped num) ?{ (?) -> untyped } -> (untyped | self)
   def downto(num, &block)
     return to_enum(:downto, num) unless block
 
@@ -1977,10 +1963,10 @@ class Integer
   end
 
 
-  ##
   # Calls the given block +self+ times.
   #
   # ISO 15.2.8.3.22
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def times(&block)
     return to_enum :times unless block
 
@@ -1993,11 +1979,11 @@ class Integer
   end
 
 
-  ##
   # Calls the given block once for each Integer
   # from +self+ upto +num+.
   #
   # ISO 15.2.8.3.27
+  #: (untyped num) ?{ (?) -> untyped } -> (untyped | self)
   def upto(num, &block)
     return to_enum(:upto, num) unless block
 
@@ -2010,7 +1996,6 @@ class Integer
   end
 end
 
-##
 # Range
 #
 # An interval between two values, written as <code>begin..end</code>
@@ -2020,17 +2005,16 @@ end
 #
 # ISO 15.2.14
 class Range
-  ##
   # Range is enumerable
   #
   # ISO 15.2.14.3
   include Enumerable
 
-  ##
   # Calls the given block for each element of +self+
   # and pass the respective element.
   #
   # ISO 15.2.14.4.4
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each(&block)
     return to_enum :each unless block
 
@@ -2090,13 +2074,13 @@ class Range
   end
 
   # redefine #hash 15.3.1.3.15
+  #: () -> untyped
   def hash
     h = first.hash ^ last.hash
     h += 1 if self.exclude_end?
     h
   end
 
-  ##
   # call-seq:
   #    rng.to_a                   -> array
   #    rng.entries                -> array
@@ -2105,6 +2089,7 @@ class Range
   #
   #   (1..7).to_a  #=> [1, 2, 3, 4, 5, 6, 7]
   #   (1..).to_a   #=> RangeError: cannot convert endless range to an array
+  #: () -> untyped
   def to_a
     a = __num_to_a
     return a if a
@@ -2113,13 +2098,11 @@ class Range
   alias entries to_a
 end
 
-##
 # Interned, immutable identifier -- written +:name+. Two symbols with the
 # same name are the same object, which makes them efficient as hash keys,
 # method names, and tag values. Convert to and from strings with +to_s+
 # and +String#to_sym+.
 class Symbol
-  ##
   # call-seq:
   #   sym.to_proc -> proc
   #
@@ -2127,6 +2110,7 @@ class Symbol
   # named by +sym+ on that object with any additional arguments.
   #
   #   [1, 2, 3].map(&:to_s)   #=> ["1", "2", "3"]
+  #: () -> untyped
   def to_proc
     mid = self
     ->(obj,*args,**opts,&block) do
@@ -2135,7 +2119,6 @@ class Symbol
   end
 end
 
-##
 # Comparable
 #
 # Mixin providing ordering and equality predicates (+<+, +<=+, +==+,
@@ -2146,7 +2129,6 @@ end
 # ISO 15.3.3
 module Comparable
 
-  ##
   # call-seq:
   #   obj < other    -> true or false
   #
@@ -2155,6 +2137,7 @@ module Comparable
   # false.
   #
   # ISO 15.3.3.2.1
+  #: (untyped other) -> untyped
   def < other
     cmp = self <=> other
     if cmp.nil?
@@ -2163,7 +2146,6 @@ module Comparable
     cmp < 0
   end
 
-  ##
   # call-seq:
   #   obj <= other   -> true or false
   #
@@ -2172,6 +2154,7 @@ module Comparable
   # Otherwise return false.
   #
   # ISO 15.3.3.2.2
+  #: (untyped other) -> untyped
   def <= other
     cmp = self <=> other
     if cmp.nil?
@@ -2180,7 +2163,6 @@ module Comparable
     cmp <= 0
   end
 
-  ##
   # call-seq:
   #   obj == other   -> true or false
   #
@@ -2189,12 +2171,12 @@ module Comparable
   # false.
   #
   # ISO 15.3.3.2.3
+  #: (untyped other) -> untyped
   def == other
     cmp = self <=> other
     cmp.equal?(0)
   end
 
-  ##
   # call-seq:
   #   obj > other    -> true or false
   #
@@ -2203,6 +2185,7 @@ module Comparable
   # false.
   #
   # ISO 15.3.3.2.4
+  #: (untyped other) -> untyped
   def > other
     cmp = self <=> other
     if cmp.nil?
@@ -2211,7 +2194,6 @@ module Comparable
     cmp > 0
   end
 
-  ##
   # call-seq:
   #   obj >= other   -> true or false
   #
@@ -2220,6 +2202,7 @@ module Comparable
   # Otherwise return false.
   #
   # ISO 15.3.3.2.5
+  #: (untyped other) -> untyped
   def >= other
     cmp = self <=> other
     if cmp.nil?
@@ -2228,7 +2211,6 @@ module Comparable
     cmp >= 0
   end
 
-  ##
   # call-seq:
   #   obj.between?(min,max) -> true or false
   #
@@ -2238,12 +2220,12 @@ module Comparable
   # Otherwise return false.
   #
   # ISO 15.3.3.2.6
+  #: (untyped min, untyped max) -> untyped
   def between?(min, max)
     self >= min and self <= max
   end
 end
 
-##
 # String
 #
 # Mutable sequence of bytes, usually interpreted as UTF-8 text. Indexing
@@ -2255,11 +2237,11 @@ class String
   # ISO 15.2.10.3
   include Comparable
 
-  ##
   # Calls the given block for each line
   # and pass the respective line.
   #
   # ISO 15.2.10.5.15
+  #: (?::String separator) ?{ (?) -> untyped } -> (untyped | self)
   def each_line(separator = "\n", &block)
     return to_enum(:each_line, separator) unless block
 
@@ -2291,13 +2273,13 @@ class String
     self
   end
 
-  ##
   # Replace all matches of +pattern+ with +replacement+.
   # Call block (if given) for each match and replace
   # +pattern+ with the value of the block. Return the
   # final value.
   #
   # ISO 15.2.10.5.18
+  #: (*untyped args) ?{ (?) -> untyped } -> untyped
   def gsub(*args, &block)
     return to_enum(:gsub, *args) if args.length == 1 && !block
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1..2)" unless (1..2).include?(args.length)
@@ -2326,13 +2308,13 @@ class String
     result.join
   end
 
-  ##
   # Replace all matches of +pattern+ with +replacement+.
   # Call block (if given) for each match and replace
   # +pattern+ with the value of the block. Modify
   # +self+ with the final value.
   #
   # ISO 15.2.10.5.19
+  #: (*untyped args) { (?) -> untyped } -> (untyped | nil)
   def gsub!(*args, &block)
     raise FrozenError, "can't modify frozen String" if frozen?
     return to_enum(:gsub!, *args) if args.length == 1 && !block
@@ -2351,13 +2333,13 @@ class String
 #    # TODO: String#scan is not implemented yet
 #  end
 
-  ##
   # Replace only the first match of +pattern+ with
   # +replacement+. Call block (if given) for each
   # match and replace +pattern+ with the value of the
   # block. Return the final value.
   #
   # ISO 15.2.10.5.36
+  #: (*untyped args) ?{ (?) -> untyped } -> (self | untyped)
   def sub(*args, &block)
     unless (1..2).include?(args.length)
       raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 2)"
@@ -2381,13 +2363,13 @@ class String
     result.join
   end
 
-  ##
   # Replace only the first match of +pattern+ with
   # +replacement+. Call block (if given) for each
   # match and replace +pattern+ with the value of the
   # block. Modify +self+ with the final value.
   #
   # ISO 15.2.10.5.37
+  #: (*untyped args) { (?) -> untyped } -> (nil | untyped)
   def sub!(*args, &block)
     raise FrozenError, "can't modify frozen String" if frozen?
     str = self.sub(*args, &block)
@@ -2395,8 +2377,8 @@ class String
     self.replace(str)
   end
 
-  ##
   # Call the given block for each byte of +self+.
+  #: () ?{ (?) -> untyped } -> (untyped | self)
   def each_byte(&block)
     return to_enum(:each_byte, &block) unless block
     pos = 0
@@ -2408,33 +2390,28 @@ class String
   end
 
   # those two methods requires Regexp that is optional in mruby
-  ##
   # ISO 15.2.10.5.3
   #def =~(re)
   # re =~ self
   #end
 
-  ##
   # ISO 15.2.10.5.27
   #def match(re, &block)
   #  re.match(self, &block)
   #end
 end
 
-##
 # Raised by Enumerator#next when iteration has finished. Internal
 # iterators like +loop+ catch this exception to terminate cleanly.
 # The +#result+ accessor exposes the value the iterator returned.
 #
 # StopIteration#result accessor (from mruby-fiber upstream)
 class StopIteration
-  ##
   # The value returned by the enumeration's terminating method (e.g. the
   # block return value of an Enumerator).
-  attr_accessor :result
+  attr_accessor :result #: untyped
 end
 
-##
 # Enumerator
 #
 # A class which allows both internal and external iteration.
@@ -2442,7 +2419,6 @@ end
 class Enumerator
   include Enumerable
 
-  ##
   # call-seq:
   #   Enumerator.new(obj, method=:each, *args, **kwd) -> enumerator
   #   Enumerator.new {|yielder| ... }                  -> enumerator
@@ -2450,6 +2426,7 @@ class Enumerator
   # Creates a new Enumerator. With an object, iteration is delegated to
   # +obj.method(*args, **kwd)+. With a block, the block receives a
   # Yielder and produces values on demand.
+  #: (?untyped obj, ?::Symbol meth, *untyped args, **untyped kwd) ?{ (?) -> untyped } -> void
   def initialize(obj=Enumerable::NONE, meth=:each, *args, **kwd, &block)
     if block
       obj = Generator.new(&block)
@@ -2468,12 +2445,12 @@ class Enumerator
     @stop_exc = false
   end
 
-  ##
   # call-seq:
   #   enum.initialize_copy(other) -> self
   #
   # Copies internal state from another Enumerator. Raises TypeError if
   # +other+ is not an Enumerator or has an active execution context.
+  #: (untyped obj) -> self
   def initialize_copy(obj)
     raise TypeError, "can't copy type #{obj.class}" unless obj.kind_of? Enumerator
     raise TypeError, "can't copy execution context" if obj.instance_eval{@fib}
@@ -2494,13 +2471,13 @@ class Enumerator
     self
   end
 
-  ##
   # call-seq:
   #   enum.with_index(offset=0) {|element, index| ... } -> object
   #   enum.with_index(offset=0)                         -> enumerator
   #
   # Iterates the block with each element and an index starting from
   # +offset+. Returns the value returned by the underlying iteration.
+  #: (?::Integer offset) ?{ (?) -> untyped } -> untyped
   def with_index(offset=0, &block)
     return to_enum :with_index, offset unless block
 
@@ -2517,24 +2494,24 @@ class Enumerator
     end
   end
 
-  ##
   # call-seq:
   #   enum.each_with_index {|element, index| ... } -> object
   #   enum.each_with_index                         -> enumerator
   #
   # Iterates the block with each element and its zero-based index.
   # Shorthand for <code>with_index(0)</code>.
+  #: () { (?) -> untyped } -> untyped
   def each_with_index(&block)
     with_index(0, &block)
   end
 
-  ##
   # call-seq:
   #   enum.with_object(obj) {|element, obj| ... } -> obj
   #   enum.with_object(obj)                       -> enumerator
   #
   # Iterates the block with each element and the given +obj+, returning
   # +obj+ after iteration completes.
+  #: (untyped object) ?{ (?) -> untyped } -> untyped
   def with_object(object, &block)
     return to_enum(:with_object, object) unless block
 
@@ -2544,12 +2521,12 @@ class Enumerator
     object
   end
 
-  ##
   # call-seq:
   #   enum.inspect -> string
   #
   # Returns a string representation including the receiver, the method
   # name, and any arguments.
+  #: () -> ::String
   def inspect
     if @args && @args.size > 0
       args = @args.join(", ")
@@ -2559,12 +2536,12 @@ class Enumerator
     end
   end
 
-  ##
   # call-seq:
   #   enum.size -> integer or nil
   #
   # Returns the size of the enumerator, if known. Otherwise returns
   # nil. Delegates to <code>@obj.size</code> when available.
+  #: () -> (untyped | untyped | nil)
   def size
     if @size
       @size
@@ -2573,13 +2550,13 @@ class Enumerator
     end
   end
 
-  ##
   # call-seq:
   #   enum.each(*args) {|element| ... } -> object
   #   enum.each(*args)                  -> enumerator
   #
   # Iterates the underlying object's enumerated method, optionally
   # appending +args+ to the originally bound arguments.
+  #: (*untyped argv) ?{ (?) -> untyped } -> untyped
   def each(*argv, &block)
     obj = self
     if 0 < argv.length
@@ -2597,30 +2574,30 @@ class Enumerator
     __enumerator_block_call(&block)
   end
 
-  ##
   # Internal helper used by Enumerator iteration methods to invoke the
   # bound method on the wrapped object with stored arguments.
+  #: () { (?) -> untyped } -> untyped
   def __enumerator_block_call(&block)
     @obj.__send__ @meth, *@args, **@kwd, &block
   end
   private :__enumerator_block_call
 
-  ##
   # call-seq:
   #   enum.next -> object
   #
   # Returns the next element in external iteration. Raises
   # StopIteration when iteration is complete.
+  #: () -> untyped
   def next
     next_values.__svalue
   end
 
-  ##
   # call-seq:
   #   enum.next_values -> array
   #
   # Returns the next element as an array of values yielded by the
   # underlying iteration. Raises StopIteration at the end.
+  #: () -> untyped
   def next_values
     if @lookahead
       vs = @lookahead
@@ -2661,21 +2638,21 @@ class Enumerator
     vs
   end
 
-  ##
   # call-seq:
   #   enum.peek -> object
   #
   # Returns the next element without advancing iteration. Raises
   # StopIteration at the end.
+  #: () -> untyped
   def peek
     peek_values.__svalue
   end
 
-  ##
   # call-seq:
   #   enum.peek_values -> array
   #
   # Returns the next element as an array, without advancing iteration.
+  #: () -> untyped
   def peek_values
     if @lookahead.nil?
       @lookahead = next_values
@@ -2683,12 +2660,12 @@ class Enumerator
     @lookahead.dup
   end
 
-  ##
   # call-seq:
   #   enum.rewind -> self
   #
   # Resets external iteration to the beginning. Calls +rewind+ on the
   # underlying object if it responds to it.
+  #: () -> self
   def rewind
     @obj.rewind if @obj.respond_to? :rewind
     @fib = nil
@@ -2699,79 +2676,76 @@ class Enumerator
     self
   end
 
-  ##
   # call-seq:
   #   enum.feed(value) -> nil
   #
   # Sets the value that will be returned from the next +yield+ in the
   # underlying iteration. Raises TypeError if a feed value is already
   # set.
+  #: (untyped value) -> nil
   def feed(value)
     raise TypeError, "feed value already set" if @feedvalue
     @feedvalue = value
     nil
   end
 
-  ##
   # Internal helper used by Enumerator.new(&block). Wraps a block that
   # receives a Yielder and produces values for the enumerator. Includes
   # Enumerable, so it can drive +each+-based iteration directly.
   class Generator
     include Enumerable
-    ##
     # Creates a Generator wrapping the given block. The block is
     # invoked with a Yielder when iteration begins.
+    #: () { (?) -> untyped } -> void
     def initialize(&block)
       raise TypeError, "wrong argument type #{self.class} (expected Proc)" unless block.kind_of? Proc
 
       @proc = block
     end
 
-    ##
     # Runs the generator block with a fresh Yielder bound to the given
     # block, producing values for the consumer.
+    #: (*untyped args) { (?) -> untyped } -> untyped
     def each(*args, &block)
       args.unshift Yielder.new(&block)
       @proc.call(*args)
     end
   end
 
-  ##
   # Internal helper passed to the block of Enumerator.new. Each call to
   # +yield+ (or +<<+) on a Yielder invokes the consumer block with the
   # given value, producing one element of the enumeration.
   class Yielder
-    ##
     # Creates a Yielder wrapping a callback block. The block is invoked
     # for every yielded value.
+    #: () ?{ (?) -> untyped } -> void
     def initialize(&block)
       raise LocalJumpError, "no block given" unless block
 
       @proc = block
     end
 
-    ##
     # call-seq:
     #   yielder.yield(*args)
     #
     # Yields +args+ to the consumer of this Yielder.
+    #: (*untyped args) -> untyped
     def yield(*args)
       @proc.call(*args)
     end
 
-    ##
     # call-seq:
     #   yielder << value -> self
     #
     # Alias-like operator form for #yield; returns +self+ to allow
     # chaining.
+    #: (*untyped args) -> self
     def << *args
       self.yield(*args)
       self
     end
   end
 
-  ##
   # call-seq:
   #   Enumerator.produce(initial=nil) {|prev| ... } -> enumerator
   #
@@ -2779,7 +2753,8 @@ class Enumerator
   # calling the block with the previously generated value (or +initial+
   # the first time). Iteration ends when the block raises
   # StopIteration.
-  def Enumerator.produce(init=Enumerable::NONE, &block)
+  #: (?untyped init) { (?) -> untyped } -> untyped
+  def self.produce(init=Enumerable::NONE, &block)
     raise ArgumentError, "no block given" if block.nil?
     Enumerator.new do |y|
       if Enumerable::NONE.equal?(init)
@@ -2800,13 +2775,13 @@ class Enumerator
 end
 
 module Kernel
-  ##
   # call-seq:
   #   obj.to_enum(method=:each, *args, **kwd)   -> enumerator
   #   obj.enum_for(method=:each, *args, **kwd)  -> enumerator
   #
   # Returns a new Enumerator that, when iterated, calls +method+ on
   # +obj+ with the given arguments.
+  #: (?::Symbol meth, *untyped args, **untyped kwd) -> untyped
   def to_enum(meth=:each, *args, **kwd)
     Enumerator.new self, meth, *args, **kwd
   end
@@ -2815,6 +2790,7 @@ end
 
 module Enumerable
   # use Enumerator to use infinite sequence
+  #: (*untyped args) ?{ (?) -> untyped } -> untyped
   def zip(*args, &block)
     args = args.map do |a|
       if a.respond_to?(:each)
@@ -2850,7 +2826,6 @@ module Enumerable
     result
   end
 
-  ##
   # call-seq:
   #   enum.chunk {|element| ... } -> enumerator
   #   enum.chunk                  -> enumerator
@@ -2859,6 +2834,7 @@ module Enumerable
   # value, yielding <code>[value, [elements...]]</code> pairs. Returns
   # +:_alone+ to put an element in its own chunk, or +:_separator+ /
   # +nil+ to drop it.
+  #: () ?{ (?) -> untyped } -> untyped
   def chunk(&block)
     return to_enum :chunk unless block
 
@@ -2887,13 +2863,13 @@ module Enumerable
     end
   end
 
-  ##
   # call-seq:
   #   enum.chunk_while {|i, j| ... } -> enumerator
   #
   # Splits +enum+ into chunks where the block returns false for adjacent
   # element pairs. Returns an enumerator that yields each chunk as an
   # array.
+  #: () { (?) -> untyped } -> untyped
   def chunk_while(&block)
     enum = self
     Enumerator.new do |y|

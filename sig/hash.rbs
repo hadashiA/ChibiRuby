@@ -159,7 +159,6 @@ class Hash[K, V] < Object
 
   # --- from lib.rb ---
 
-  #
   # call-seq:
   #   hash == object -> true or false
   #
@@ -171,7 +170,6 @@ class Hash[K, V] < Object
   # ISO 15.2.13.4.1
   def ==: (untyped hash) -> (true | false | untyped)
 
-  #
   # call-seq:
   #   hash.eql? object -> true or false
   #
@@ -180,7 +178,6 @@ class Hash[K, V] < Object
   #
   def eql?: (untyped hash) -> (true | false | untyped)
 
-  #
   # call-seq:
   #   hash.delete(key) -> value or nil
   #   hash.delete(key) {|key| ... } -> object
@@ -194,7 +191,6 @@ class Hash[K, V] < Object
   # ISO 15.2.13.4.8
   def delete: (untyped key) ?{ (?) -> untyped } -> untyped
 
-  #
   # call-seq:
   #   hsh.each      {| key, value | block } -> hsh
   #   hsh.each_pair {| key, value | block } -> hsh
@@ -217,7 +213,6 @@ class Hash[K, V] < Object
   # ISO 15.2.13.4.9
   def each: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # call-seq:
   #   hsh.each_key {| key | block } -> hsh
   #   hsh.each_key                  -> an_enumerator
@@ -238,7 +233,6 @@ class Hash[K, V] < Object
   # ISO 15.2.13.4.10
   def each_key: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # call-seq:
   #   hsh.each_value {| value | block } -> self
   #   hsh.each_value                    -> an_enumerator
@@ -258,7 +252,6 @@ class Hash[K, V] < Object
   # ISO 15.2.13.4.11
   def each_value: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # call-seq:
   #     hsh.merge(other_hash..)                                 -> hsh
   #     hsh.merge(other_hash..){|key, oldval, newval| block}    -> hsh
@@ -283,61 +276,57 @@ class Hash[K, V] < Object
   # ISO 15.2.13.4.22
   def merge: (*untyped others) ?{ (?) -> untyped } -> untyped
 
+  # call-seq:
+  #    hsh.reject! {| key, value | block }  -> hsh or nil
+  #    hsh.reject!                          -> an_enumerator
   #
-  #  call-seq:
-  #     hsh.reject! {| key, value | block }  -> hsh or nil
-  #     hsh.reject!                          -> an_enumerator
+  # Equivalent to <code>Hash#delete_if</code>, but returns
+  # <code>nil</code> if no changes were made.
   #
-  #  Equivalent to <code>Hash#delete_if</code>, but returns
-  #  <code>nil</code> if no changes were made.
-  #
-  #  1.8/1.9 Hash#reject! returns Hash; ISO says nothing.
+  # 1.8/1.9 Hash#reject! returns Hash; ISO says nothing.
   #
   def reject!: () ?{ (?) -> untyped } -> (untyped | nil | self)
 
+  # call-seq:
+  #    hsh.reject {|key, value| block}   -> a_hash
+  #    hsh.reject                        -> an_enumerator
   #
-  #  call-seq:
-  #     hsh.reject {|key, value| block}   -> a_hash
-  #     hsh.reject                        -> an_enumerator
+  # Returns a new hash consisting of entries for which the block returns false.
   #
-  #  Returns a new hash consisting of entries for which the block returns false.
+  # If no block is given, an enumerator is returned instead.
   #
-  #  If no block is given, an enumerator is returned instead.
+  #    h = { "a" => 100, "b" => 200, "c" => 300 }
+  #    h.reject {|k,v| k < "b"}  #=> {"b" => 200, "c" => 300}
+  #    h.reject {|k,v| v > 100}  #=> {"a" => 100}
   #
-  #     h = { "a" => 100, "b" => 200, "c" => 300 }
-  #     h.reject {|k,v| k < "b"}  #=> {"b" => 200, "c" => 300}
-  #     h.reject {|k,v| v > 100}  #=> {"a" => 100}
-  #
-  #  1.8/1.9 Hash#reject returns Hash; ISO says nothing.
+  # 1.8/1.9 Hash#reject returns Hash; ISO says nothing.
   #
   def reject: () ?{ (?) -> untyped } -> untyped
 
+  # call-seq:
+  #    hsh.select! {| key, value | block }  -> hsh or nil
+  #    hsh.select!                          -> an_enumerator
   #
-  #  call-seq:
-  #     hsh.select! {| key, value | block }  -> hsh or nil
-  #     hsh.select!                          -> an_enumerator
+  # Equivalent to <code>Hash#keep_if</code>, but returns
+  # <code>nil</code> if no changes were made.
   #
-  #  Equivalent to <code>Hash#keep_if</code>, but returns
-  #  <code>nil</code> if no changes were made.
-  #
-  #  1.9 Hash#select! returns Hash; ISO says nothing.
+  # 1.9 Hash#select! returns Hash; ISO says nothing.
   #
   def select!: () ?{ (?) -> untyped } -> (untyped | nil | self)
 
+  # call-seq:
+  #    hsh.select {|key, value| block}   -> a_hash
+  #    hsh.select                        -> an_enumerator
   #
-  #  call-seq:
-  #     hsh.select {|key, value| block}   -> a_hash
-  #     hsh.select                        -> an_enumerator
+  # Returns a new hash consisting of entries for which the block returns true.
   #
-  #  Returns a new hash consisting of entries for which the block returns true.
+  # If no block is given, an enumerator is returned instead.
   #
-  #  If no block is given, an enumerator is returned instead.
+  #    h = { "a" => 100, "b" => 200, "c" => 300 }
+  #    h.select {|k,v| k > "a"}  #=> {"b" => 200, "c" => 300}
+  #    h.select {|k,v| v < 200}  #=> {"a" => 100}
   #
-  #     h = { "a" => 100, "b" => 200, "c" => 300 }
-  #     h.select {|k,v| k > "a"}  #=> {"b" => 200, "c" => 300}
-  #     h.select {|k,v| v < 200}  #=> {"a" => 100}
-  #
-  #  1.9 Hash#select returns Hash; ISO says nothing
+  # 1.9 Hash#select returns Hash; ISO says nothing
   #
   def select: () ?{ (?) -> untyped } -> untyped
 end

@@ -172,7 +172,6 @@ module Kernel
   def self.raise: (*untyped) -> bot
 
   # --- from lib.rb ---
-  #
   # call-seq:
   #    obj.extend(module, ...)    -> obj
   #
@@ -204,15 +203,10 @@ module Kernel
   # 15.3.1.3.3
   def `: (untyped s) -> untyped
 
-  private
-
-  #
   # Calls the given block repetitively.
   #
   # ISO 15.3.1.3.29
-  def loop: () ?{ () -> untyped } -> untyped
-
-  public
+  private def loop: () ?{ () -> untyped } -> untyped
 
   # 11.4.4 Step c)
   def !~: (untyped y) -> untyped
@@ -229,22 +223,20 @@ module Kernel
 
   alias then yield_self
 
+  # call-seq:
+  #    obj.tap{|x|...}    -> obj
   #
-  #  call-seq:
-  #     obj.tap{|x|...}    -> obj
+  # Yields `x` to the block, and then returns `x`.
+  # The primary purpose of this method is to "tap into" a method chain,
+  # in order to perform operations on intermediate results within the chain.
   #
-  #  Yields `x` to the block, and then returns `x`.
-  #  The primary purpose of this method is to "tap into" a method chain,
-  #  in order to perform operations on intermediate results within the chain.
-  #
-  #  (1..10)                .tap {|x| puts "original: #{x.inspect}"}
-  #    .to_a                .tap {|x| puts "array: #{x.inspect}"}
-  #    .select {|x| x%2==0} .tap {|x| puts "evens: #{x.inspect}"}
-  #    .map { |x| x*x }     .tap {|x| puts "squares: #{x.inspect}"}
+  # (1..10)                .tap {|x| puts "original: #{x.inspect}"}
+  #   .to_a                .tap {|x| puts "array: #{x.inspect}"}
+  #   .select {|x| x%2==0} .tap {|x| puts "evens: #{x.inspect}"}
+  #   .map { |x| x*x }     .tap {|x| puts "squares: #{x.inspect}"}
   #
   def tap: () { (untyped) -> untyped } -> self
   # --- from lib.rb ---
-  #
   # call-seq:
   #   obj.to_enum(method=:each, *args, **kwd)   -> enumerator
   #   obj.enum_for(method=:each, *args, **kwd)  -> enumerator

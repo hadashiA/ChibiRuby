@@ -183,20 +183,17 @@ class Integer < Numeric
   def >>: (Integer) -> Integer
 
   # --- from lib.rb ---
-  #
   # Calls the given block once for each Integer
   # from +self+ downto +num+.
   #
   # ISO 15.2.8.3.15
   def downto: (untyped num) ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # Calls the given block +self+ times.
   #
   # ISO 15.2.8.3.22
   def times: () ?{ (?) -> untyped } -> (untyped | self)
 
-  #
   # Calls the given block once for each Integer
   # from +self+ upto +num+.
   #

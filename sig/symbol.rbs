@@ -25,7 +25,6 @@ class Symbol < Object
   def <=>: (untyped) -> Integer?
 
   # --- from lib.rb ---
-  #
   # call-seq:
   #   sym.to_proc -> proc
   #

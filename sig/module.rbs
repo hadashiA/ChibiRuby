@@ -182,7 +182,6 @@ class Module < Object
   # 15.2.2.4.27
   def include: (*untyped args) -> self
 
-  #
   # call-seq:
   #   prepend(module, ...) -> self
   #
