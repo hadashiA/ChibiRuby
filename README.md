@@ -135,7 +135,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 2. Install following packages via NuGetForUnity
     - Utf8StringInterpolation
     - MRubyCS
-    - (Optional) MRubyCS.Compiler — runtime Ruby compiler. Native binaries (macOS / Linux / Windows) ship inside the NuGet package.
+    - (Optional) MRubyCS.Compiler — runtime Ruby compiler. Native binaries (macOS, Linux, Windows, Android, iOS, WebGL) ship inside the NuGet package.
     - (Optional) MRubyCS.Serializer
 3. (Optional) For an Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, install `MRubyCS.Compiler` Unity package as well — see [Unity AssetImporter](#unity-assetimporter).
 
@@ -314,13 +314,16 @@ $ ./build/host/bin/mrbc -o output.mrb input.rb
 
 `MRubyCS.Compiler` is a thin wrapper of the C# API for the native compiler.
 
-NOTE: This is a wrapper for native compilers. Currently, only the following platforms are supported:
+NOTE: This is a wrapper for native compilers. Currently, the following platforms are supported:
 
-| OS      | Architecture |
-|:--------|:-------------|
-| Linux   | x64, arm64   |
-| macOS   | x64, arm64   |
-| Windows | x64          |
+| OS / Runtime | Architecture                           | .NET RID                                  |
+|:-------------|:---------------------------------------|:------------------------------------------|
+| Windows      | x64                                    | `win-x64`                                 |
+| Linux        | x64, arm64                             | `linux-x64`, `linux-arm64`                |
+| macOS        | x64, arm64                             | `osx-x64`, `osx-arm64`                    |
+| Android      | arm64-v8a, x86_64                      | `android-arm64`, `android-x64`            |
+| iOS          | arm64 (device + Apple Silicon simulator) | `ios-arm64`, `iossimulator-arm64`       |
+| WebAssembly  | wasm32 (Unity WebGL / .NET Browser WASM) | `browser-wasm`                          |
 
 ```bash
 dotnet add package MRubyCS.Compiler
