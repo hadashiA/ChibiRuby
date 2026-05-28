@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0;net10.0;netstandard2.1</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <LangVersion>13</LangVersion>
+        <Description>Debug Adapter Protocol (DAP) server for MRubyCS.Debugger. Plug into any DAP-compatible editor (VSCode, Zed, JetBrains, Neovim, etc.).</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="MRubyCS.Debugger.Dap.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MRubyCS\MRubyCS.csproj" />
+      <ProjectReference Include="..\MRubyCS.Compiler\MRubyCS.Compiler.csproj" />
+      <ProjectReference Include="..\MRubyCS.Debugger\MRubyCS.Debugger.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.IO.Pipelines" Version="9.0.0" />
+    </ItemGroup>
+
+</Project>

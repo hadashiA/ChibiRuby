@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+        <PackageReference Include="NUnit" Version="3.14.0" />
+        <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="NUnit.Framework" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\MRubyCS\MRubyCS.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.Compiler\MRubyCS.Compiler.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.Debugger\MRubyCS.Debugger.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.Debugger.Dap\MRubyCS.Debugger.Dap.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.SourceGenerator\MRubyCS.SourceGenerator.csproj">
+            <OutputItemType>Analyzer</OutputItemType>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+        </ProjectReference>
+    </ItemGroup>
+
+</Project>
