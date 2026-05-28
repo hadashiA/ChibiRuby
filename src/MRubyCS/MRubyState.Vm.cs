@@ -458,6 +458,13 @@ partial class MRubyState
         {
             try
             {
+                // Debugger hook: fires once per fetched opcode while a debugger is attached.
+                // The null check is the only cost paid when no debugger is installed
+                // (a predictable branch the JIT can speculate through). Once attached the
+                // hook itself is expected to early-out unless something interesting (a
+                // breakpoint, step trap, etc.) actually applies to this pc.
+                DebuggerHook?.OnInstruction(this, irep, callInfo.ProgramCounter);
+
                 var opcode = (OpCode)Unsafe.Add(ref sequence, callInfo.ProgramCounter);
                 switch (opcode)
                 {

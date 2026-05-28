@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace MRubyCS;
 
@@ -130,6 +131,49 @@ public sealed class IrepDebugInfoFileEntry
             line += lineDelta;
         }
         return (int)line;
+    }
+
+    // Cached set of pc values that begin a new source line (each entry in the packed_map
+    // marks one such boundary). Computed on first access from <see cref="LineData"/>; used
+    // by debuggers to filter "this pc is the first instruction of a line" so a single
+    // source line generates exactly one stop opportunity, no matter how many pcs it spans.
+    HashSet<int>? lineBoundaries;
+
+    /// <summary>
+    /// Returns true when <paramref name="pc"/> is the *first* pc associated with its
+    /// source line (per the DBG section's packed_map encoding). Subsequent pcs that fall
+    /// inside the same line range return false. Useful for debuggers that want to fire
+    /// breakpoints / step stops once per source line entry rather than at every fetched
+    /// opcode.
+    /// </summary>
+    public bool IsLineBoundary(int pc)
+    {
+        if (LineType != DebugLineType.PackedMap) return false;
+        var set = lineBoundaries;
+        if (set is null)
+        {
+            set = ComputeBoundaries();
+            // Idempotent install; concurrent calls can race but produce identical sets.
+            System.Threading.Interlocked.CompareExchange(ref lineBoundaries, set, null);
+            set = lineBoundaries;
+        }
+        return set!.Contains(pc);
+    }
+
+    HashSet<int> ComputeBoundaries()
+    {
+        var set = new HashSet<int>();
+        var p = (ReadOnlySpan<byte>)LineData;
+        uint pos = 0;
+        var i = 0;
+        while (i < p.Length)
+        {
+            if (!TryDecodePackedInt(p, ref i, out var posDelta)) break;
+            pos += posDelta;
+            if (!TryDecodePackedInt(p, ref i, out _)) break; // skip line delta
+            set.Add((int)pos);
+        }
+        return set;
     }
 
     /// <summary>

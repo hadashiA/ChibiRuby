@@ -27,6 +27,7 @@ public partial class MRubyState : IDisposable
         state.InitSymbol();
         state.InitString();
         state.InitProc();
+        state.InitBinding();
         state.InitException();
         state.InitNumeric();
         state.InitArray();
@@ -366,6 +367,21 @@ public partial class MRubyState : IDisposable
         var callMethod = new MRubyMethod(callProc);
         DefineMethod(ProcClass, Names.Call, callMethod);
         DefineMethod(ProcClass, Names.OpAref, callMethod);
+    }
+
+    void InitBinding()
+    {
+        BindingClass = DefineClass(Intern("Binding"u8), ObjectClass);
+        UndefClassMethod(BindingClass, Names.New);
+
+        DefineMethod(BindingClass, Intern("receiver"u8), BindingMembers.Receiver);
+        DefineMethod(BindingClass, Intern("local_variables"u8), BindingMembers.LocalVariables);
+        DefineMethod(BindingClass, Intern("local_variable_get"u8), BindingMembers.LocalVariableGet);
+        DefineMethod(BindingClass, Intern("local_variable_set"u8), BindingMembers.LocalVariableSet);
+        DefineMethod(BindingClass, Intern("local_variable_defined?"u8), BindingMembers.LocalVariableDefined);
+        DefineMethod(BindingClass, Intern("irb"u8), BindingMembers.Irb);
+
+        DefineMethod(KernelModule, Intern("binding"u8), BindingMembers.Binding);
     }
 
     void InitException()
