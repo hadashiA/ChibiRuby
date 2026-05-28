@@ -741,6 +741,85 @@ public partial class MRubyState : IDisposable
         DefineClass(Intern("IOError"u8), StandardErrorClass);
     }
 
+    /// <summary>
+    /// Registers the optional Ruby <c>HTTP</c> module and its companion classes
+    /// (<c>HTTP::Response</c>, <c>HTTP::Headers</c>, <c>HTTP::Body</c>) plus the
+    /// <c>HTTP::Error</c> / <c>HTTP::TimeoutError</c> / <c>HTTP::ConnectionError</c>
+    /// exception hierarchy. Not called by <see cref="Create()"/>; invoke
+    /// explicitly when the host wants Ruby code to issue HTTP requests.
+    /// <para>
+    /// Implementation is built on <see cref="System.Net.Http.HttpClient"/>;
+    /// transport errors (DNS, connection, TLS) raise
+    /// <c>HTTP::ConnectionError</c>, request-level timeouts raise
+    /// <c>HTTP::TimeoutError</c>, and 4xx/5xx responses come back as plain
+    /// <c>HTTP::Response</c> objects (use <c>#ensure_success_status!</c> to
+    /// raise on them explicitly — matches <c>HttpClient</c>'s defaults).
+    /// </para>
+    /// <para>
+    /// When a fiber scheduler is installed via
+    /// <see cref="UseFiberScheduler"/>, requests issued from a non-root fiber
+    /// park the fiber instead of blocking the host thread.
+    /// </para>
+    /// </summary>
+    public void DefineHttp()
+    {
+        // Module + nested namespace anchor
+        var httpModule = DefineModule(Intern("HTTP"u8), ObjectClass);
+
+        // Error hierarchy under the HTTP module. All inherit StandardError so
+        // typical `rescue => e` catches them.
+        var httpError = DefineClass(Intern("Error"u8), StandardErrorClass, outer: httpModule);
+        DefineClass(Intern("TimeoutError"u8), httpError, outer: httpModule);
+        DefineClass(Intern("ConnectionError"u8), httpError, outer: httpModule);
+
+        // Top-level HTTP module methods
+        DefineClassMethod(httpModule, Intern("get"u8), HttpMembers.Get);
+        DefineClassMethod(httpModule, Intern("post"u8), HttpMembers.Post);
+        DefineClassMethod(httpModule, Intern("put"u8), HttpMembers.Put);
+        DefineClassMethod(httpModule, Intern("patch"u8), HttpMembers.Patch);
+        DefineClassMethod(httpModule, Intern("delete"u8), HttpMembers.Delete);
+        DefineClassMethod(httpModule, Intern("head"u8), HttpMembers.Head);
+        DefineClassMethod(httpModule, Intern("options"u8), HttpMembers.Options);
+        DefineClassMethod(httpModule, Intern("request"u8), HttpMembers.Request);
+
+        // HTTP::Response — one HTTP exchange's result
+        var responseClass = DefineClass(Intern("Response"u8), ObjectClass, MRubyVType.CSharpData, outer: httpModule);
+        DefineMethod(responseClass, Intern("status"u8), HttpResponseMembers.Status);
+        DefineMethod(responseClass, Intern("headers"u8), HttpResponseMembers.Headers);
+        DefineMethod(responseClass, Intern("body"u8), HttpResponseMembers.Body);
+        DefineMethod(responseClass, Intern("uri"u8), HttpResponseMembers.Uri);
+        DefineMethod(responseClass, Intern("version"u8), HttpResponseMembers.Version);
+        DefineMethod(responseClass, Intern("content_type"u8), HttpResponseMembers.ContentType);
+        DefineMethod(responseClass, Intern("success?"u8), HttpResponseMembers.SuccessQ);
+        DefineMethod(responseClass, Intern("redirect?"u8), HttpResponseMembers.RedirectQ);
+        DefineMethod(responseClass, Intern("client_error?"u8), HttpResponseMembers.ClientErrorQ);
+        DefineMethod(responseClass, Intern("server_error?"u8), HttpResponseMembers.ServerErrorQ);
+        DefineMethod(responseClass, Intern("error?"u8), HttpResponseMembers.ErrorQ);
+        DefineMethod(responseClass, Intern("ensure_success_status!"u8), HttpResponseMembers.EnsureSuccessStatusBang);
+        DefineMethod(responseClass, Intern("inspect"u8), HttpResponseMembers.Inspect);
+        DefineMethod(responseClass, Intern("to_s"u8), HttpResponseMembers.ToS);
+
+        // HTTP::Headers — case-insensitive header bag
+        var headersClass = DefineClass(Intern("Headers"u8), ObjectClass, MRubyVType.CSharpData, outer: httpModule);
+        DefineMethod(headersClass, Intern("[]"u8), HttpHeadersMembers.OpAref);
+        DefineMethod(headersClass, Intern("[]="u8), HttpHeadersMembers.OpAset);
+        DefineMethod(headersClass, Intern("key?"u8), HttpHeadersMembers.KeyQ);
+        DefineMethod(headersClass, Intern("each"u8), HttpHeadersMembers.Each);
+        DefineMethod(headersClass, Intern("to_h"u8), HttpHeadersMembers.ToH);
+        DefineMethod(headersClass, Intern("size"u8), HttpHeadersMembers.Size);
+        DefineMethod(headersClass, Intern("length"u8), HttpHeadersMembers.Size);
+        DefineMethod(headersClass, Intern("inspect"u8), HttpHeadersMembers.Inspect);
+
+        // HTTP::Body — buffered response body
+        var bodyClass = DefineClass(Intern("Body"u8), ObjectClass, MRubyVType.CSharpData, outer: httpModule);
+        DefineMethod(bodyClass, Intern("to_s"u8), HttpBodyMembers.ToS);
+        DefineMethod(bodyClass, Intern("bytesize"u8), HttpBodyMembers.Bytesize);
+        DefineMethod(bodyClass, Intern("content_type"u8), HttpBodyMembers.ContentType);
+        DefineMethod(bodyClass, Intern("empty?"u8), HttpBodyMembers.EmptyQ);
+        DefineMethod(bodyClass, Intern("each"u8), HttpBodyMembers.Each);
+        DefineMethod(bodyClass, Intern("inspect"u8), HttpBodyMembers.Inspect);
+    }
+
     void InitObjectExt()
     {
         DefineMethod(NilClass, Names.ToA, (state, _) => state.NewArray(0));
