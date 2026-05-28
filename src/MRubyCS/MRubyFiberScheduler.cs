@@ -70,6 +70,9 @@ public class MRubyFiberScheduler : IDisposable
 {
     protected MRubyState MRubyState = default!;
     readonly ConcurrentDictionary<RFiber, TaskCompletionSource<MRubyValue>> blockedFibers = new();
+    readonly CancellationTokenSource disposeSource = new();
+
+    public CancellationToken DisposalToken => disposeSource.Token;
 
     /// <summary>
     /// Bind this scheduler to the given <see cref="MRubyCS.MRubyState"/>. Invoked
@@ -199,9 +202,11 @@ public class MRubyFiberScheduler : IDisposable
     /// </remarks>
     public virtual void KernelSleep(TimeSpan duration, CancellationToken cancellationToken = default)
     {
-        Await((duration, cancellationToken), async (_, x) =>
+        Await((duration, cancellationToken, disposalToken: DisposalToken), async (_, x) =>
         {
-            await Task.Delay(x.duration, x.cancellationToken);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                x.cancellationToken, x.disposalToken);
+            await Task.Delay(x.duration, linked.Token);
             return MRubyValue.Nil;
         });
     }
@@ -277,6 +282,7 @@ public class MRubyFiberScheduler : IDisposable
 
     public virtual void Dispose()
     {
+        disposeSource.Cancel();
         foreach (var kv in blockedFibers) kv.Value.TrySetCanceled();
         blockedFibers.Clear();
     }
