@@ -170,6 +170,28 @@ public class FiberSchedulerTest
     }
 
     [Test]
+    public async Task Dispose_CancelsInflightKernelSleep()
+    {
+        // Disposing the scheduler mid-sleep must cancel the underlying
+        // Task.Delay (via DisposalToken), not just unpark the fiber.
+        var sched = new ObservableSleepScheduler();
+        mrb.UseFiberScheduler(sched);
+
+        var fiber = compiler.LoadSourceCodeAsFiber("sleep 100; :done"u8);
+        fiber.Resume();
+
+        await sched.SleepStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        sched.Dispose();
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while (fiber.IsAlive && DateTime.UtcNow < deadline) await Task.Delay(5);
+
+        Assert.That(fiber.IsAlive, Is.False, "fiber should resume after Dispose");
+        Assert.That(sched.SleepCancelled, Is.True,
+            "underlying Task.Delay should observe cancellation through DisposalToken");
+    }
+
+    [Test]
     public async Task KernelSleep_Cancellation_ResumesFiberWithNil()
     {
         // Regression: with the old per-scheduler timer-based KernelSleep,
@@ -534,6 +556,34 @@ public class FiberSchedulerTest
         public readonly CancellationTokenSource Cts = new();
         public override void KernelSleep(TimeSpan duration, CancellationToken cancellationToken = default)
             => base.KernelSleep(duration, Cts.Token);
+    }
+
+    /// <summary>Observes whether the underlying Task.Delay sees cancellation via DisposalToken.</summary>
+    sealed class ObservableSleepScheduler : MRubyFiberScheduler
+    {
+        public readonly TaskCompletionSource SleepStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool SleepCancelled;
+
+        public override void KernelSleep(TimeSpan duration, CancellationToken cancellationToken = default)
+        {
+            Await((duration, cancellationToken, disposalToken: DisposalToken, scheduler: this),
+                async (_, x) =>
+                {
+                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                        x.cancellationToken, x.disposalToken);
+                    x.scheduler.SleepStarted.TrySetResult();
+                    try
+                    {
+                        await Task.Delay(x.duration, linked.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        x.scheduler.SleepCancelled = true;
+                        throw;
+                    }
+                    return MRubyValue.Nil;
+                });
+        }
     }
 
     /// <summary>Minimal pumped SyncContext for the SyncContext-host test.</summary>
