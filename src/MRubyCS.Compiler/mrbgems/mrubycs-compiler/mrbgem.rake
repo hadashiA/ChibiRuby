@@ -6,10 +6,12 @@ end
 MRuby.each_target do
   next unless name.match(/^(windows|macOS|android)/i)
 
+  # Pick the shared-library extension based on the *target* (not the host)
+  # so cross-builds (e.g. Android-on-macOS) produce the correct file name.
   sharedlib_ext =
-    if RUBY_PLATFORM.match(/darwin/i)
+    if name.match(/^macOS/i)
       'dylib'
-    elsif ENV['OS'] == 'Windows_NT'
+    elsif name.match(/^windows/i)
       'dll'
     else
       'so'

@@ -1,0 +1,35 @@
+name: Build mruby-compiler (iOS)
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  MRUBY_DIR: ${{ github.workspace }}/src/MRubyCS.Compiler/mruby
+  CONFIG_DIR: ${{ github.workspace }}/src/MRubyCS.Compiler
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    outputs:
+      artifact-url: ${{ steps.upload-build.artifact-url }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+
+    - name: Build mruby-compiler (iOS)
+      working-directory: ${{ env.MRUBY_DIR }}
+      run: |
+        MRUBY_CONFIG=${{ env.CONFIG_DIR }}/build_config.iOS.rb rake
+
+    - uses: actions/upload-artifact@v4
+      id: upload-build
+      with:
+        name: ios-build
+        path: ${{ env.MRUBY_DIR }}/build

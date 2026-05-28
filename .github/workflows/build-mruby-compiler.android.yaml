@@ -1,0 +1,44 @@
+name: Build mruby-compiler (Android)
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  MRUBY_DIR: ${{ github.workspace }}/src/MRubyCS.Compiler/mruby
+  CONFIG_DIR: ${{ github.workspace }}/src/MRubyCS.Compiler
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      artifact-url: ${{ steps.upload-build.artifact-url }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+
+    - name: Setup Android NDK
+      id: setup-ndk
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26d
+        add-to-path: false
+
+    - name: Build mruby-compiler (Android)
+      working-directory: ${{ env.MRUBY_DIR }}
+      env:
+        ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+      run: |
+        MRUBY_CONFIG=${{ env.CONFIG_DIR }}/build_config.android.rb rake
+
+    - uses: actions/upload-artifact@v4
+      id: upload-build
+      with:
+        name: android-build
+        path: ${{ env.MRUBY_DIR }}/build
