@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "mruby-cs",
+      "request": "attach",
+      "name": "mruby/cs: Attach to embedded host",
+      "host": "127.0.0.1",
+      "port": 4711
+    }
+  ]
+}
