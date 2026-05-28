@@ -113,9 +113,6 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
         - [Rider / IntelliJ](#rider--intellij)
         - [Zed](#zed)
     - [Setting breakpoints](#setting-breakpoints)
-        - [VSCode](#vscode)
-        - [JetBrains](#jetbrains)
-        - [Zed][#zed]
 - [Serializer](#serializer)
 
 ## Installation
