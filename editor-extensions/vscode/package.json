@@ -1,0 +1,121 @@
+{
+  "name": "mruby-cs-debugger",
+  "displayName": "mruby/cs Debugger",
+  "description": "DAP debug adapter for MRubyCS (mruby on .NET).",
+  "version": "0.1.0",
+  "publisher": "hadashiA",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "keywords": [
+    "mruby",
+    "ruby",
+    "debugger",
+    "DAP"
+  ],
+  "license": "MIT",
+  "main": "./extension.js",
+  "activationEvents": [
+    "onDebug",
+    "onDebugResolve:mruby-cs",
+    "onDebugDynamicConfigurations:mruby-cs",
+    "onCommand:mruby-cs.attachToRunningHost"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mruby-cs.attachToRunningHost",
+        "title": "mruby/cs: Attach to running host",
+        "category": "mruby/cs"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "ruby"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "mruby-cs",
+        "label": "mruby/cs",
+        "languages": [
+          "ruby"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to the .rb file to debug.",
+                "default": "${file}"
+              },
+              "adapterCommand": {
+                "type": "string",
+                "description": "Path or name of the mruby-debug binary. Defaults to `mruby-debug` (resolved from PATH).",
+                "default": "mruby-debug"
+              },
+              "adapterArgs": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Additional arguments passed to the adapter before the DAP handshake (e.g. `[\"--verbose\"]`).",
+                "default": []
+              }
+            }
+          },
+          "attach": {
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "Host running the embedded MRubyDapTcpServer.",
+                "default": "127.0.0.1"
+              },
+              "port": {
+                "type": "number",
+                "description": "TCP port the embedded MRubyDapTcpServer is listening on.",
+                "default": 4711
+              }
+            }
+          }
+        },
+        "configurationSnippets": [
+          {
+            "label": "mruby/cs: Launch current file",
+            "description": "Debug the active .rb file with MRubyCS.",
+            "body": {
+              "type": "mruby-cs",
+              "request": "launch",
+              "name": "mruby/cs: Debug ${1:script.rb}",
+              "program": "^\"\\${workspaceFolder}/${1:script.rb}\""
+            }
+          },
+          {
+            "label": "mruby/cs: Attach to embedded host",
+            "description": "Connect to a running C# host that exposes MRubyDapTcpServer on a TCP port.",
+            "body": {
+              "type": "mruby-cs",
+              "request": "attach",
+              "name": "mruby/cs: Attach (port 4711)",
+              "host": "127.0.0.1",
+              "port": 4711
+            }
+          }
+        ],
+        "initialConfigurations": [
+          {
+            "type": "mruby-cs",
+            "request": "attach",
+            "name": "mruby/cs: Attach to embedded host",
+            "host": "127.0.0.1",
+            "port": 4711
+          }
+        ]
+      }
+    ]
+  }
+}

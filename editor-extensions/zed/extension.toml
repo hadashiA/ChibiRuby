@@ -1,0 +1,12 @@
+id = "mruby-cs"
+name = "mruby/cs Debug Adapter"
+version = "0.1.0"
+schema_version = 1
+authors = ["hadashiA"]
+description = "DAP bridge for MRubyCS — attach to MRubyDapServer running inside a Unity host (or any .NET host) over TCP."
+repository = "https://github.com/hadashiA/MRubyCS"
+
+# Registers the "mruby-cs" adapter name so .zed/debug.json's `"adapter": "mruby-cs"`
+# resolves here. The actual TCP host/port comes from the user's `tcp_connection`
+# field (defaulted to 127.0.0.1:4711 in src/mruby_cs.rs).
+[debug_adapters.mruby-cs]
