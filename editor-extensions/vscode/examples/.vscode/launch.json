@@ -14,7 +14,7 @@
       "program": "${workspaceFolder}/sample.rb",
       "adapterCommand": "dotnet",
       "adapterArgs": [
-        "${workspaceFolder}/../../../src/MRubyCS.Debugger.Cli/bin/Debug/net9.0/MRubyCS.Debugger.Cli.dll"
+        "${workspaceFolder}/../../../src/ChibiRuby.Debugger.Cli/bin/Debug/net9.0/ChibiRuby.Debugger.Cli.dll"
       ]
     }
   ]

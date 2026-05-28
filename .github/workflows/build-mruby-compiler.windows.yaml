@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
 
 env:
-  MRUBY_DIR: ${{ github.workspace }}\src/MRubyCS.Compiler\mruby
-  CONFIG_DIR: ${{ github.workspace }}\src/MRubyCS.Compiler
-  BENCHMARK_MRUBY_DIR: ${{ github.workspace }}\sandbox/MRubyCS.Benchmark\mruby
-  BENCHMARK_CONFIG_DIR: ${{ github.workspace }}\sandbox/MRubyCS.Benchmark
+  MRUBY_DIR: ${{ github.workspace }}\src/ChibiRuby.Compiler\mruby
+  CONFIG_DIR: ${{ github.workspace }}\src/ChibiRuby.Compiler
+  BENCHMARK_MRUBY_DIR: ${{ github.workspace }}\sandbox/ChibiRuby.Benchmark\mruby
+  BENCHMARK_CONFIG_DIR: ${{ github.workspace }}\sandbox/ChibiRuby.Benchmark
     
 jobs:
   build-windows:
@@ -38,7 +38,7 @@ jobs:
       run: |
         rake clean
         rm -fr ./build        
-        MRUBY_CONFIG=${GITHUB_WORKSPACE}/src/MRubyCS.Compiler/build_config.windows.rb rake
+        MRUBY_CONFIG=${GITHUB_WORKSPACE}/src/ChibiRuby.Compiler/build_config.windows.rb rake
         
     - uses: actions/upload-artifact@v4
       id: upload-windows-build
@@ -52,7 +52,7 @@ jobs:
       run: |
         rake clean
         rm -fr ./build
-        MRUBY_CONFIG=${GITHUB_WORKSPACE}/sandbox/MRubyCS.Benchmark/build_config.windows.rb rake
+        MRUBY_CONFIG=${GITHUB_WORKSPACE}/sandbox/ChibiRuby.Benchmark/build_config.windows.rb rake
 
     - uses: actions/upload-artifact@v4
       id: upload-benchmark-build

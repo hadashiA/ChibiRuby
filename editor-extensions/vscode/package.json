@@ -1,7 +1,7 @@
 {
   "name": "mruby-cs-debugger",
   "displayName": "mruby/cs Debugger",
-  "description": "DAP debug adapter for MRubyCS (mruby on .NET).",
+  "description": "DAP debug adapter for ChibiRuby (mruby on .NET).",
   "version": "0.108.0",
   "publisher": "hadashiA",
   "engines": {
@@ -86,7 +86,7 @@
         "configurationSnippets": [
           {
             "label": "mruby/cs: Launch current file",
-            "description": "Debug the active .rb file with MRubyCS.",
+            "description": "Debug the active .rb file with ChibiRuby.",
             "body": {
               "type": "mruby-cs",
               "request": "launch",

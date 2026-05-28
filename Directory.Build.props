@@ -3,7 +3,7 @@
         <!-- NuGet Packaging -->
         <PackageVersion>0.108.0</PackageVersion>
         <Authors>hadashiA</Authors>
-        <PackageProjectUrl>https://github.com/hadashiA/MRubyCS</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/hadashiA/ChibiRuby</PackageProjectUrl>
         <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

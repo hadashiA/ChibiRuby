@@ -1,0 +1,23 @@
+﻿<Solution>
+  <Folder Name="/sandbox/">
+    <Project Path="sandbox\ChibiRuby.Benchmark\ChibiRuby.Benchmark.csproj" Type="Classic C#" />
+    <Project Path="sandbox\ChibiRuby.ConsoleApp\ChibiRuby.ConsoleApp.csproj" Type="Classic C#" />
+    <Project Path="sandbox\DebuggerEmbeddedSample\DebuggerEmbeddedSample.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src\ChibiRuby.Compiler.Cli\ChibiRuby.Compiler.Cli.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.Debugger\ChibiRuby.Debugger.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.Debugger.Dap\ChibiRuby.Debugger.Dap.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.Serializer.SourceGenerator\ChibiRuby.Serializer.SourceGenerator.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.Serializer\ChibiRuby.Serializer.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.SourceGenerator\ChibiRuby.SourceGenerator.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby\ChibiRuby.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests\ChibiRuby.Debugger.Tests\ChibiRuby.Debugger.Tests.csproj" Type="Classic C#" />
+    <Project Path="tests\ChibiRuby.Debugger.Dap.Tests\ChibiRuby.Debugger.Dap.Tests.csproj" Type="Classic C#" />
+    <Project Path="tests\ChibiRuby.Serializer.Tests\ChibiRuby.Serializer.Tests.csproj" Type="Classic C#" />
+    <Project Path="tests\ChibiRuby.Tests\ChibiRuby.Tests.csproj" Type="Classic C#" />
+  </Folder>
+</Solution>

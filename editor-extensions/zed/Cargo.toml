@@ -1,12 +1,12 @@
 [package]
-name = "zed_mruby_cs"
+name = "zed_chibi_ruby"
 version = "0.1.0"
 edition = "2021"
 publish = false
 license = "MIT"
 
 [lib]
-path = "src/mruby_cs.rs"
+path = "src/chibi_ruby.rs"
 crate-type = ["cdylib"]
 
 [dependencies]

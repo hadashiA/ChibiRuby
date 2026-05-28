@@ -1,0 +1,12 @@
+{
+  "name": "jp.hadashikick.chibiruby-serializer",
+  "displayName": "ChibiRuby.Serializer",
+  "version": "0.108.0",
+  "unity": "2021.3",
+  "description": "ChibiRuby serializer extensions for unity",
+  "keywords": ["mruby", "ruby"],
+  "license": "MIT",
+  "documentationUrl": "https://github.com/hadashiA/ChibiRuby",
+  "changelogUrl": "https://github.com/hadashiA/ChibiRuby/releases",
+  "licensesUrl": "https://github.com/hadashiA/ChibiRuby/blob/master/LICENSE"
+}

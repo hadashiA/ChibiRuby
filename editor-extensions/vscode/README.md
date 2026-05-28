@@ -1,6 +1,6 @@
 # mruby/cs Debugger (VSCode)
 
-DAP-based debug adapter for [MRubyCS](https://github.com/hadashiA/MRubyCS). Pause at
+DAP-based debug adapter for [ChibiRuby](https://github.com/hadashiA/ChibiRuby). Pause at
 `binding.irb`, inspect locals, and evaluate arbitrary Ruby in the Debug Console.
 
 ## Phase 1 capabilities
@@ -33,7 +33,7 @@ write a `launch.json` (see below).
 
 ### Attach mode (typical for embedded hosts)
 
-Your C# / Unity host has its own startup and embeds MRubyCS for scripting. It exposes a
+Your C# / Unity host has its own startup and embeds ChibiRuby for scripting. It exposes a
 DAP listener via `MRubyDapTcpServer.Listen(...)`. You launch the host first; VSCode
 attaches over TCP.
 
@@ -74,7 +74,7 @@ itself. Useful for one-off scripts without writing host code.
 From the repo root:
 
 ```sh
-dotnet build -c Release src/MRubyCS.Debugger.Cli/MRubyCS.Debugger.Cli.csproj
+dotnet build -c Release src/ChibiRuby.Debugger.Cli/ChibiRuby.Debugger.Cli.csproj
 ```
 
 You have two ways to make the adapter discoverable to VSCode:
@@ -82,9 +82,9 @@ You have two ways to make the adapter discoverable to VSCode:
 #### Option A — `dotnet tool` install (clean, but requires a re-install on each rebuild)
 
 ```sh
-cd src/MRubyCS.Debugger.Cli
+cd src/ChibiRuby.Debugger.Cli
 dotnet pack -c Release
-dotnet tool install -g --add-source ./nupkg MRubyCS.Debugger.Cli
+dotnet tool install -g --add-source ./nupkg ChibiRuby.Debugger.Cli
 # `mruby-debug` is now on your PATH (~/.dotnet/tools/mruby-debug)
 ```
 
@@ -102,7 +102,7 @@ In your `.vscode/launch.json`:
   "program": "${file}",
   "adapterCommand": "dotnet",
   "adapterArgs": [
-    "/abs/path/to/MRubyCS-Debugger/src/MRubyCS.Debugger.Cli/bin/Debug/net9.0/MRubyCS.Debugger.Cli.dll"
+    "/abs/path/to/ChibiRuby-Debugger/src/ChibiRuby.Debugger.Cli/bin/Debug/net9.0/ChibiRuby.Debugger.Cli.dll"
   ]
 }
 ```

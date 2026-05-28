@@ -9,10 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\MRubyCS\MRubyCS.csproj" />
-        <ProjectReference Include="..\..\src\MRubyCS.Compiler\MRubyCS.Compiler.csproj" />
-        <ProjectReference Include="..\..\src\MRubyCS.Debugger\MRubyCS.Debugger.csproj" />
-        <ProjectReference Include="..\..\src\MRubyCS.Debugger.Dap\MRubyCS.Debugger.Dap.csproj" />
+        <ProjectReference Include="..\..\src\ChibiRuby\ChibiRuby.csproj" />
+        <ProjectReference Include="..\..\src\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" />
+        <ProjectReference Include="..\..\src\ChibiRuby.Debugger\ChibiRuby.Debugger.csproj" />
+        <ProjectReference Include="..\..\src\ChibiRuby.Debugger.Dap\ChibiRuby.Debugger.Dap.csproj" />
     </ItemGroup>
 
     <ItemGroup>
