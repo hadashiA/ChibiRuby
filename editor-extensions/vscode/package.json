@@ -2,7 +2,7 @@
   "name": "mruby-cs-debugger",
   "displayName": "mruby/cs Debugger",
   "description": "DAP debug adapter for MRubyCS (mruby on .NET).",
-  "version": "0.1.0",
+  "version": "0.108.0",
   "publisher": "hadashiA",
   "engines": {
     "vscode": "^1.75.0"

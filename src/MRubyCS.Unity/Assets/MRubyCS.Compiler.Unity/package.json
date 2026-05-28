@@ -1,7 +1,7 @@
 {
   "name": "jp.hadashikick.mrubycs-compiler",
   "displayName": "MRubyCS.Compiler",
-  "version": "0.107.1",
+  "version": "0.108.0",
   "unity": "2021.3",
   "description": "Unity Editor extension for MRubyCS.Compiler (ScriptedImporter for .rb / .mrb). Requires the MRubyCS.Compiler NuGet package installed via NuGetForUnity.",
   "keywords": ["mruby", "ruby"],
