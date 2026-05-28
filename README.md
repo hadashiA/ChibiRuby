@@ -53,6 +53,7 @@ end
       - [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs) / [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs) (via `mrb.DefineRegexp()`)
       - [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
 - **Fiber & async/await integration** — suspend Ruby execution and await C# async methods without blocking threads.
+- **Debugger (DAP)** — line breakpoints, stepping, locals view, and expression evaluation. Attach from VSCode / Rider / Zed to a running Unity or .NET host over TCP. See [Debugger](#debugger).
 - **Prism-based compiler** — uses [mruby-compiler2](https://github.com/picoruby/mruby-compiler2), the next-generation mruby compiler built on [Prism](https://github.com/ruby/prism) (the official CRuby parser), for more accurate and modern Ruby syntax support.
 
 ## Performance
@@ -105,6 +106,9 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
     - [Low-level: `Suspend` + `FiberContinuation`](#low-level-suspend--fibercontinuation)
     - [Thread routing (`SynchronizationContext`)](#thread-routing-synchronizationcontext)
     - [Custom Schedulers (subclassing)](#custom-schedulers-subclassing)
+- [Debugger](#debugger)
+    - [Quick start (embedded host)](#quick-start-embedded-host)
+    - [Editor setup](#editor-setup)
 - [MRubyCS.Serializer](#mrubycsserializer)
 
 ## Installation
@@ -122,6 +126,8 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 | MRubyCS.Compiler | Compile ruby source code utility. (Native binding)  | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler)](https://www.nuget.org/packages/MRubyCS.Compiler)   |
 | MRubyCS.Compiler.Cli | dotnet tool for compiling Ruby source to bytecode | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler.Cli)](https://www.nuget.org/packages/MRubyCS.Compiler.Cli) |
 | MRubyCS.Serializer  | Converting Ruby and C# Objects Between Each Other | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Serializer)](https://www.nuget.org/packages/MRubyCS.Serializer)  |
+| MRubyCS.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger)](https://www.nuget.org/packages/MRubyCS.Debugger) |
+| MRubyCS.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger) | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger.Dap)](https://www.nuget.org/packages/MRubyCS.Debugger.Dap) |
 
 ### Unity
 
@@ -1400,6 +1406,60 @@ Contract:
 - **No double-parking.** A fiber is only parked under one wait at a time. `Suspend` throws `InvalidOperationException` on a re-park; subclass overrides should preserve this.
 
 See [`MRubyFiberScheduler.cs`](src/MRubyCS/MRubyFiberScheduler.cs) for the complete reference implementation.
+
+## Debugger
+
+![demo](./docs/demo_debugger.gif)
+
+Attach a DAP-compatible editor to a running Unity (or any .NET) host and step through Ruby code: line breakpoints, step in/over/out, locals view, expression evaluation inside `binding.irb`. The debug server is embedded in your host process — no separate adapter to ship.
+
+### Quick start (embedded host)
+
+```cs
+using MRubyCS;
+using MRubyCS.Compiler;
+using MRubyCS.Debugger.Dap;
+
+var mrb = MRubyState.Create();
+var compiler = MRubyCompiler.Create(mrb);
+
+// Start the DAP server on loopback:4711. Pass `bindAddress: IPAddress.Any`
+// to allow attaches from another machine on your LAN (iPhone, etc.).
+using var dap = new MRubyDapServer(mrb, compiler, port: 4711);
+_ = dap.StartAsync();   // accept loop runs in the background
+
+// Compile with an absolute path so the editor can navigate to the source.
+using var compilation = compiler.CompileFile("/abs/path/to/game.rb");
+mrb.LoadBytecode(compilation.AsBytecode());
+// Execution blocks at the first `binding.irb` until the editor attaches.
+```
+
+Inside Ruby, drop a `binding.irb` wherever you want a pause point:
+
+```ruby
+def update(dt)
+  velocity += gravity * dt
+  binding.irb   # ← editor pauses here once attached
+  position += velocity * dt
+end
+```
+
+End-to-end demos: [`sandbox/MRubyCS.Debugger.EmbeddedSample`](./sandbox/MRubyCS.Debugger.EmbeddedSample) (dotnet console host) and [`src/MRubyCS.Unity/Assets/SampleBehaviour.cs`](./src/MRubyCS.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
+
+### Editor setup
+
+| Editor | Setup |
+|---|---|
+| **VSCode** | Dev-install the extension at [`editor-extensions/vscode`](./editor-extensions/vscode/README.md), then drop a `mruby-cs` attach config into `launch.json`. |
+| **Rider / IntelliJ** | Install the [LSP4IJ](https://plugins.jetbrains.com/plugin/23257-lsp4ij) plugin (provides DAP support). Then Run/Debug Configurations → **+** → **Debug Adapter Protocol** → `create a new server` → TCP, `127.0.0.1:4711`. |
+| **Zed** | Dev-install the extension at [`editor-extensions/zed`](./editor-extensions/zed/README.md), then add a `mruby-cs` adapter entry to `.zed/debug.json`. |
+
+#### Rider screenshots
+
+<p>
+<img src="./docs/screenshot_debugger_rider1.png" width="48%" />
+<img src="./docs/screenshot_debugger_rider2.png" width="48%" />
+</p>
 
 ## MRubyCS.Serializer
 
