@@ -49,7 +49,7 @@ attaches over TCP.
 }
 ```
 
-See `sandbox/MRubyCS.Debugger.EmbeddedSample/` for a complete working host.
+See `sandbox/DebuggerEmbeddedSample/` for a complete working host.
 
 ### Launch mode (single .rb file)
 

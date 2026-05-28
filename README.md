@@ -53,7 +53,7 @@ end
       - [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs) / [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs) (via `mrb.DefineRegexp()`)
       - [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
 - **Fiber & async/await integration** — suspend Ruby execution and await C# async methods without blocking threads.
-- **Debugger (DAP)** — line breakpoints, stepping, locals view, and expression evaluation. Attach from VSCode / Rider / Zed to a running Unity or .NET host over TCP. See [Debugger](#debugger).
+- **Debugger (DAP)** — line breakpoints, stepping, locals view, and expression evaluation. Attach from VSCode / JetBrains / Zed to a running Unity or .NET host over TCP. See [Debugger](#debugger).
 - **Prism-based compiler** — uses [mruby-compiler2](https://github.com/picoruby/mruby-compiler2), the next-generation mruby compiler built on [Prism](https://github.com/ruby/prism) (the official CRuby parser), for more accurate and modern Ruby syntax support.
 
 ## Performance
@@ -107,9 +107,16 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
     - [Thread routing (`SynchronizationContext`)](#thread-routing-synchronizationcontext)
     - [Custom Schedulers (subclassing)](#custom-schedulers-subclassing)
 - [Debugger](#debugger)
-    - [Quick start (embedded host)](#quick-start-embedded-host)
+    - [Host setup](#host-setup)
     - [Editor setup](#editor-setup)
-- [MRubyCS.Serializer](#mrubycsserializer)
+        - [VSCode](#vscode)
+        - [Rider / IntelliJ](#rider--intellij)
+        - [Zed](#zed)
+    - [Setting breakpoints](#setting-breakpoints)
+        - [VSCode](#vscode)
+        - [JetBrains](#jetbrains)
+        - [Zed][#zed]
+- [Serializer](#serializer)
 
 ## Installation
 
@@ -120,14 +127,14 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 
 ### NuGet
 
-| Package   | Description    | Latest version |
-|:----------|:---------------|----------------|
-| MRubyCS   |  Main package. A mruby vm implementation. | [![NuGet](https://img.shields.io/nuget/v/MRubyCS)](https://www.nuget.org/packages/MRubyCS) |
-| MRubyCS.Compiler | Compile ruby source code utility. (Native binding)  | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler)](https://www.nuget.org/packages/MRubyCS.Compiler)   |
-| MRubyCS.Compiler.Cli | dotnet tool for compiling Ruby source to bytecode | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler.Cli)](https://www.nuget.org/packages/MRubyCS.Compiler.Cli) |
-| MRubyCS.Serializer  | Converting Ruby and C# Objects Between Each Other | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Serializer)](https://www.nuget.org/packages/MRubyCS.Serializer)  |
+| Package   | Description                                                                       | Latest version |
+|:----------|:----------------------------------------------------------------------------------|----------------|
+| MRubyCS   | Main package. A mruby vm implementation.                                          | [![NuGet](https://img.shields.io/nuget/v/MRubyCS)](https://www.nuget.org/packages/MRubyCS) |
+| MRubyCS.Compiler | Compile ruby source code utility. (Native binding)                                | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler)](https://www.nuget.org/packages/MRubyCS.Compiler)   |
+| MRubyCS.Compiler.Cli | dotnet tool for compiling Ruby source to bytecode                                 | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler.Cli)](https://www.nuget.org/packages/MRubyCS.Compiler.Cli) |
+| MRubyCS.Serializer  | Converting Ruby and C# Objects Between Each Other                                 | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Serializer)](https://www.nuget.org/packages/MRubyCS.Serializer)  |
 | MRubyCS.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger)](https://www.nuget.org/packages/MRubyCS.Debugger) |
-| MRubyCS.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger) | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger.Dap)](https://www.nuget.org/packages/MRubyCS.Debugger.Dap) |
+| MRubyCS.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger)        | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger.Dap)](https://www.nuget.org/packages/MRubyCS.Debugger.Dap) |
 
 ### Unity
 
@@ -147,7 +154,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 
 > [!NOTE]
 > **For macOS Editor users**
-> 
+>
 > NuGetForUnity v4.3.0's default `NativeRuntimeSettings` ships broken Editor settings for the `osx-arm64` / `osx-x64` runtimes (the Apple Silicon variant has no Editor target, and the Intel variant defaults to "Any CPU"), so `libmruby.dylib` may fail to load in the Editor.
 > A fix has been submitted upstream — [NuGetForUnity#755](https://github.com/GlitchEnzo/NuGetForUnity/pull/755). Once that is merged and released, this workaround will no longer be needed. In the meantime, fix the two dylibs from Unity's Inspector:
 > 1. In the Project window, select `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-arm64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, check **Include Platforms → Editor**, set **CPU** to `ARM64`, set **OS** to `OSX`, then click **Apply**.
@@ -1411,9 +1418,12 @@ See [`MRubyFiberScheduler.cs`](src/MRubyCS/MRubyFiberScheduler.cs) for the compl
 
 ![demo](./docs/demo_debugger.gif)
 
-Attach a DAP-compatible editor to a running Unity (or any .NET) host and step through Ruby code: line breakpoints, step in/over/out, locals view, expression evaluation inside `binding.irb`. The debug server is embedded in your host process — no separate adapter to ship.
+Attach a DAP-compatible editor to a running Unity (or any .NET) host and step through Ruby code: line breakpoints, step in/over/out, locals view, expression evaluation. The debug server is embedded in your host process — no separate adapter to ship.
 
-### Quick start (embedded host)
+### Host setup
+
+By executing MRubyDapServer.StartAsync, the Debug Adapter Protocol TCP server begins listening.
+Any DAP-compatible editor can perform an Attach to the process in this state.
 
 ```cs
 using MRubyCS;
@@ -1426,42 +1436,96 @@ var compiler = MRubyCompiler.Create(mrb);
 // Start the DAP server on loopback:4711. Pass `bindAddress: IPAddress.Any`
 // to allow attaches from another machine on your LAN (iPhone, etc.).
 using var dap = new MRubyDapServer(mrb, compiler, port: 4711);
-_ = dap.StartAsync();   // accept loop runs in the background
+_ = Task.Run(async () => await dap.StartAsync());
 
 // Compile with an absolute path so the editor can navigate to the source.
 using var compilation = compiler.CompileFile("/abs/path/to/game.rb");
 mrb.LoadBytecode(compilation.AsBytecode());
-// Execution blocks at the first `binding.irb` until the editor attaches.
 ```
 
-Inside Ruby, drop a `binding.irb` wherever you want a pause point:
 
-```ruby
-def update(dt)
-  velocity += gravity * dt
-  binding.irb   # ← editor pauses here once attached
-  position += velocity * dt
-end
-```
-
-End-to-end demos: [`sandbox/MRubyCS.Debugger.EmbeddedSample`](./sandbox/MRubyCS.Debugger.EmbeddedSample) (dotnet console host) and [`src/MRubyCS.Unity/Assets/SampleBehaviour.cs`](./src/MRubyCS.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
+End-to-end demos: [`sandbox/DebuggerEmbeddedSample`](./sandbox/DebuggerEmbeddedSample) (dotnet console host) and [`src/MRubyCS.Unity/Assets/SampleBehaviour.cs`](./src/MRubyCS.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
 
 ### Editor setup
 
-| Editor | Setup |
-|---|---|
-| **VSCode** | Dev-install the extension at [`editor-extensions/vscode`](./editor-extensions/vscode/README.md), then drop a `mruby-cs` attach config into `launch.json`. |
-| **Rider / IntelliJ** | Install the [LSP4IJ](https://plugins.jetbrains.com/plugin/23257-lsp4ij) plugin (provides DAP support). Then Run/Debug Configurations → **+** → **Debug Adapter Protocol** → `create a new server` → TCP, `127.0.0.1:4711`. |
-| **Zed** | Dev-install the extension at [`editor-extensions/zed`](./editor-extensions/zed/README.md), then add a `mruby-cs` adapter entry to `.zed/debug.json`. |
+VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rider needs the LSP4IJ plugin from the JetBrains Marketplace. Pick your editor:
 
-#### Rider screenshots
+#### VSCode
 
-<p>
-<img src="./docs/screenshot_debugger_rider1.png" width="48%" />
-<img src="./docs/screenshot_debugger_rider2.png" width="48%" />
-</p>
+1. **Install the extension** (dev install while it's not yet on the Marketplace):
+   - In VSCode, open the folder [`editor-extensions/vscode`](./editor-extensions/vscode/README.md).
+   - Press **F5** to launch an Extension Development Host (a new VSCode window with the extension preloaded).
+   - Or, for a permanent install, run `npx @vscode/vsce package` in that folder and then `code --install-extension mruby-cs-debugger-*.vsix`.
+2. **Create `launch.json`** in your project (`.vscode/launch.json`):
+   ```json
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "type": "mruby-cs",
+         "request": "attach",
+         "name": "Attach to mruby/cs",
+         "host": "127.0.0.1",
+         "port": 4711
+       }
+     ]
+   }
+   ```
+3. Start the host so `MRubyDapServer` is listening, then press **F5** in VSCode.
 
-## MRubyCS.Serializer
+#### Rider / IntelliJ
+
+1. **Install [LSP4IJ](https://plugins.jetbrains.com/plugin/23257-lsp4ij)** (Settings → Plugins → Marketplace → search "LSP4IJ" → Install). Restart the IDE if prompted. The plugin provides both LSP and DAP integration.
+2. **Add a Debug Adapter Protocol run configuration**:
+   - **Run → Edit Configurations…** → **+** → **Debug Adapter Protocol**.
+   - In the **Server** tab, click **create a new server**.
+   - In the dialog: pick a name (e.g. `MRubyCS DAP`), set **Connection type** to **TCP socket**, **Host** = `127.0.0.1`, **Port** = `4711`. Save.
+   - Back in the run configuration, select the server you just created from the dropdown.
+
+   <p>
+     <img src="./docs/screenshot_debugger_rider1.png" width="48%" />
+     <img src="./docs/screenshot_debugger_rider2.png" width="48%" />
+   </p>
+
+3. Start the host, then run the configuration in **Debug** mode.
+
+#### Zed
+
+1. **Prerequisites** (one-time):
+   - [Rust](https://rustup.rs) toolchain.
+   - `wasm32-wasip2` target: `rustup target add wasm32-wasip2`.
+2. **Dev-install the extension**:
+   - In Zed, open the command palette (`cmd-shift-p`).
+   - Run **`zed: install dev extension`** and pick the [`editor-extensions/zed`](./editor-extensions/zed/README.md) folder.
+   - Zed compiles the WASM blob and registers the adapter.
+3. **Add `.zed/debug.json`** to your workspace:
+   ```json
+   [
+     {
+       "label": "Attach to mruby/cs",
+       "adapter": "mruby-cs",
+       "request": "attach",
+       "tcp_connection": { "host": "127.0.0.1", "port": 4711 }
+     }
+   ]
+   ```
+4. Start the host, then open Zed's debug panel (`cmd-shift-d`), pick **Attach to mruby/cs**, and run.
+
+### Setting breakpoints
+
+Once host + editor are wired:
+
+1. Open the `.rb` file in the editor.
+2. Click the gutter next to the line you want to pause at — a red breakpoint marker appears.
+3. Run the host. Execution stops at the breakpoint; the editor surfaces the call stack and locals.
+4. Use the editor's debug controls (**Continue** / **Step Over** / **Step In** / **Step Out**) and the REPL pane (variables view + expression evaluation) as usual.
+
+> [!NOTE]
+> Please ensure that MRubyCSCompiler passes the filename when compiling Ruby.
+> APIs such as CompileFile or Unity's ScriptedImporter resolve the filename automatically.
+> When compiling without going through a file, such as with Compile(bytes), the debugger will not work unless the file path is passed as an additional argument.
+
+## Serializer
 
 Using the MRuby.Serializer package enables conversion between MRubyValue and C# objects.
 

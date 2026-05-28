@@ -2,7 +2,7 @@
   <Folder Name="/sandbox/">
     <Project Path="sandbox\MRubyCS.Benchmark\MRubyCS.Benchmark.csproj" Type="Classic C#" />
     <Project Path="sandbox\MRubyCS.ConsoleApp\MRubyCS.ConsoleApp.csproj" Type="Classic C#" />
-    <Project Path="sandbox\MRubyCS.Debugger.EmbeddedSample\MRubyCS.Debugger.EmbeddedSample.csproj" Type="Classic C#" />
+    <Project Path="sandbox\DebuggerEmbeddedSample\DebuggerEmbeddedSample.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src\MRubyCS.Compiler.Cli\MRubyCS.Compiler.Cli.csproj" Type="Classic C#" />
