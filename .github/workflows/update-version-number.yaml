@@ -81,6 +81,7 @@ jobs:
         run: |
           ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity/package.json
           ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity/package.json
+          ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' editor-extensions/vscode/package.json
 
       - name: Check update on git
         id: check_update

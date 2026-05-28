@@ -64,15 +64,37 @@ jobs:
           --source https://api.nuget.org/v3/index.json \
           --skip-duplicate
       
+  build-vscode-extension:
+    needs: [update-version-number]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ needs.update-version-number.outputs.sha }}
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Package VSIX
+      run: npx --yes @vscode/vsce package
+      working-directory: editor-extensions/vscode
+    - uses: actions/upload-artifact@v4
+      with:
+        name: vscode-extension
+        path: editor-extensions/vscode/*.vsix
+
   create-release:
-    if: github.event.inputs.dry-run == 'false'    
-    needs: [update-version-number, build-dotnet]
+    if: github.event.inputs.dry-run == 'false'
+    needs: [update-version-number, build-dotnet, build-vscode-extension]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     timeout-minutes: 10
     steps:
-    # Create Releases
+    - uses: actions/download-artifact@v4
+      with:
+        name: vscode-extension
+        path: ./release-assets
     - uses: softprops/action-gh-release@v1
       id: create_release
       with:
@@ -81,3 +103,4 @@ jobs:
         draft: true
         prerelease: false
         generate_release_notes: true
+        files: ./release-assets/*.vsix

@@ -1452,10 +1452,11 @@ VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rid
 
 #### VSCode
 
-1. **Install the extension** (dev install while it's not yet on the Marketplace):
-   - In VSCode, open the folder [`editor-extensions/vscode`](./editor-extensions/vscode/README.md).
-   - Press **F5** to launch an Extension Development Host (a new VSCode window with the extension preloaded).
-   - Or, for a permanent install, run `npx @vscode/vsce package` in that folder and then `code --install-extension mruby-cs-debugger-*.vsix`.
+1. **Install the extension** — download `mruby-cs-debugger-*.vsix` from the [latest release](https://github.com/hadashiA/MRubyCS/releases/latest), then install it via either:
+   - **VSCode UI**: Extensions panel → `...` menu → **Install from VSIX…** → pick the downloaded file.
+   - **CLI**: `code --install-extension mruby-cs-debugger-*.vsix`.
+
+   (Contributors can also dev-install: open [`editor-extensions/vscode`](./editor-extensions/vscode/README.md) in VSCode and press **F5** to launch an Extension Development Host.)
 2. **Create `launch.json`** in your project (`.vscode/launch.json`):
    ```json
    {
