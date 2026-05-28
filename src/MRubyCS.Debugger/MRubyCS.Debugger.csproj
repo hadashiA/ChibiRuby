@@ -14,13 +14,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MRubyCS\MRubyCS.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-        <PackageReference Include="PolySharp" Version="1.15.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
+      <ProjectReference Include="..\MRubyCS.Compiler\MRubyCS.Compiler.csproj" />
     </ItemGroup>
 
 </Project>

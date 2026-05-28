@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>DebuggerEmbeddedSample</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\MRubyCS\MRubyCS.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.Compiler\MRubyCS.Compiler.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.Debugger\MRubyCS.Debugger.csproj" />
+        <ProjectReference Include="..\..\src\MRubyCS.Debugger.Dap\MRubyCS.Debugger.Dap.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="scenarios\**\*.rb" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

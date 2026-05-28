@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "mruby-cs",
+      "request": "launch",
+      "name": "mruby/cs: Debug current file",
+      "program": "${file}"
+    },
+    {
+      "type": "mruby-cs",
+      "request": "launch",
+      "name": "mruby/cs: Debug sample.rb (local CLI build)",
+      "program": "${workspaceFolder}/sample.rb",
+      "adapterCommand": "dotnet",
+      "adapterArgs": [
+        "${workspaceFolder}/../../../src/MRubyCS.Debugger.Cli/bin/Debug/net9.0/MRubyCS.Debugger.Cli.dll"
+      ]
+    }
+  ]
+}

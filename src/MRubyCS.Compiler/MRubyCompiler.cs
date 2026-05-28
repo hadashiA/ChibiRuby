@@ -6,12 +6,7 @@ using System.Threading.Tasks;
 
 namespace MRubyCS.Compiler
 {
-    public class MRubyCompileException : Exception
-    {
-        public MRubyCompileException(string message) : base(message)
-        {
-        }
-    }
+    public class MRubyCompileException(string message) : Exception(message);
 
     public record MRubyCompileOptions
     {
@@ -25,6 +20,8 @@ namespace MRubyCS.Compiler
             var compilerStateHandle = MrbStateHandle.Create();
             return new MRubyCompiler(mrb, compilerStateHandle, options);
         }
+
+        public MRubyState State => mruby;
 
         readonly MRubyState mruby;
         readonly MrbStateHandle compileStateHandle;

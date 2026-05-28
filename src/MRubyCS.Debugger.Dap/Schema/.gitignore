@@ -1,0 +1,3 @@
+# Cache of upstream DAP schema, fetched by build-schema.sh.
+# Not committed — the only build product worth checking in is dap-schema.json (merged).
+dap-schema.upstream.json

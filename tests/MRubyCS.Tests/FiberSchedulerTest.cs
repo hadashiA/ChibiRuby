@@ -183,8 +183,12 @@ public class FiberSchedulerTest
         await sched.SleepStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
         sched.Dispose();
 
+        // Both the fiber unpark and the Await-body catch block run on independent
+        // tasks after Dispose; wait until BOTH have settled (or the deadline hits)
+        // so we don't sample SleepCancelled while the catch is still in flight.
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
-        while (fiber.IsAlive && DateTime.UtcNow < deadline) await Task.Delay(5);
+        while ((fiber.IsAlive || !sched.SleepCancelled) && DateTime.UtcNow < deadline)
+            await Task.Delay(5);
 
         Assert.That(fiber.IsAlive, Is.False, "fiber should resume after Dispose");
         Assert.That(sched.SleepCancelled, Is.True,

@@ -77,6 +77,14 @@ struct MRubyCallInfo
     public MRubyMethodVisibility Visibility;
     public bool VisibilityBreak;
 
+    /// <summary>
+    /// Bindings that hold a live reference to this frame's locals. Allocated lazily — null on
+    /// the hot path. Walked by <see cref="MRubyContext.PopCallStack"/> just before the frame's
+    /// slot is reused so each binding can copy its current register values into its own
+    /// snapshot storage, keeping the binding usable after the frame is gone.
+    /// </summary>
+    public List<RBinding>? LiveBindings;
+
     public bool ArgumentPacked => ArgumentCount >= CallMaxArgs;
     public bool KeywordArgumentPacked => KeywordArgumentCount >= CallMaxArgs;
     public int KeywordArgumentOffset => CalculateKeywordArgumentOffset(ArgumentCount, KeywordArgumentCount);
@@ -107,6 +115,7 @@ struct MRubyCallInfo
         KeywordArgumentCount = 0;
         Visibility = MRubyMethodVisibility.Default;
         VisibilityBreak = false;
+        LiveBindings = null;
     }
 
     public void MarkAsArgumentPacked()
@@ -279,6 +288,17 @@ class MRubyContext
         if (currentCallInfo.Scope is REnv currentEnv)
         {
             currentEnv.CaptureStack();
+        }
+
+        // Hand off live bindings that point at this frame to their own snapshot storage
+        // before the slot is reused. The null check is the only cost paid on the hot path
+        // when no debugger / binding is involved (branch-predicted "null").
+        if (currentCallInfo.LiveBindings is { } liveBindings)
+        {
+            foreach (var binding in liveBindings)
+            {
+                binding.FreezeFromFrame(Stack, currentCallInfo.StackPointer);
+            }
         }
 
         // currentCallInfo.
