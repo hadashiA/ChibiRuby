@@ -2,16 +2,21 @@
   <Folder Name="/sandbox/">
     <Project Path="sandbox\MRubyCS.Benchmark\MRubyCS.Benchmark.csproj" Type="Classic C#" />
     <Project Path="sandbox\MRubyCS.ConsoleApp\MRubyCS.ConsoleApp.csproj" Type="Classic C#" />
+    <Project Path="sandbox\MRubyCS.Debugger.EmbeddedSample\MRubyCS.Debugger.EmbeddedSample.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src\MRubyCS.Compiler.Cli\MRubyCS.Compiler.Cli.csproj" Type="Classic C#" />
     <Project Path="src\MRubyCS.Compiler\MRubyCS.Compiler.csproj" Type="Classic C#" />
+    <Project Path="src\MRubyCS.Debugger\MRubyCS.Debugger.csproj" Type="Classic C#" />
+    <Project Path="src\MRubyCS.Debugger.Dap\MRubyCS.Debugger.Dap.csproj" Type="Classic C#" />
     <Project Path="src\MRubyCS.Serializer.SourceGenerator\MRubyCS.Serializer.SourceGenerator.csproj" Type="Classic C#" />
     <Project Path="src\MRubyCS.Serializer\MRubyCS.Serializer.csproj" Type="Classic C#" />
     <Project Path="src\MRubyCS.SourceGenerator\MRubyCS.SourceGenerator.csproj" Type="Classic C#" />
     <Project Path="src\MRubyCS\MRubyCS.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests\MRubyCS.Debugger.Tests\MRubyCS.Debugger.Tests.csproj" Type="Classic C#" />
+    <Project Path="tests\MRubyCS.Debugger.Dap.Tests\MRubyCS.Debugger.Dap.Tests.csproj" Type="Classic C#" />
     <Project Path="tests\MRubyCS.Serializer.Tests\MRubyCS.Serializer.Tests.csproj" Type="Classic C#" />
     <Project Path="tests\MRubyCS.Tests\MRubyCS.Tests.csproj" Type="Classic C#" />
   </Folder>
