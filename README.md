@@ -7,6 +7,10 @@ Easily embed Ruby into Unity or .NET—empowering users to script game logic whi
 > [!NOTE]
 > [VitalRouter.MRuby](https://github.com/hadashiA/VitalRouter) provides a high-level framework for integrating ChibiRuby with Unity (and .NET), including command routing and script lifecycle management.
 
+> [!NOTE]
+> This project was named MRubyCS before version 1.0. Now, it has restarted under the name ChibiRuby.
+ 
+
 ## Why mruby?
 
 Ruby's clean, expressive syntax makes it perfect for building DSLs. Game designers and scenario writers can describe game logic — event triggers, dialogue trees, and AI behavior — in simple, readable scripts.
