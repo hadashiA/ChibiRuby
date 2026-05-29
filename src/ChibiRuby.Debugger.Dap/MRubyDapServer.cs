@@ -44,7 +44,7 @@ public sealed class MRubyDapServer : IDisposable
     {
         Debugger.Attach();
         listener.Start();
-        log?.Invoke(LogLevel.Information, $"mruby-cs debug: listening on {LocalEndpoint}", null);
+        log?.Invoke(LogLevel.Information, $"chibiruby debug: listening on {LocalEndpoint}", null);
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, stopSource.Token);
         try
@@ -68,7 +68,7 @@ public sealed class MRubyDapServer : IDisposable
                 catch (ObjectDisposedException) { break; }
                 catch (InvalidOperationException) when (linked.IsCancellationRequested) { break; }
 
-                log?.Invoke(LogLevel.Information, $"mruby-cs debug: client connected from {client.Client.RemoteEndPoint}", null);
+                log?.Invoke(LogLevel.Information, $"chibiruby debug: client connected from {client.Client.RemoteEndPoint}", null);
                 var stream = client.GetStream();
                 using var handler = new MRubyDapMessageHandler(
                     Debugger,
@@ -83,13 +83,13 @@ public sealed class MRubyDapServer : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    log?.Invoke(LogLevel.Warning, $"mruby-cs debug: session ended with: {ex.Message}", ex);
+                    log?.Invoke(LogLevel.Warning, $"chibiruby debug: session ended with: {ex.Message}", ex);
                 }
                 finally
                 {
                     activeHandler = null;
                 }
-                log?.Invoke(LogLevel.Information, "mruby-cs debug: client disconnected", null);
+                log?.Invoke(LogLevel.Information, "chibiruby debug: client disconnected", null);
             }
         }
         catch (OperationCanceledException) { /* normal */ }

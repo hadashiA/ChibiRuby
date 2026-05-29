@@ -83,9 +83,36 @@ jobs:
         name: vscode-extension
         path: editor-extensions/vscode/*.vsix
 
+    # Requires repo secret VSCE_PAT — Azure DevOps Personal Access Token with
+    # Marketplace → Manage scope, owned by the same publisher as package.json.
+    - name: Publish to Visual Studio Marketplace
+      if: github.event.inputs.dry-run == 'false'
+      run: npx --yes @vscode/vsce publish --packagePath *.vsix --pat "$VSCE_PAT"
+      working-directory: editor-extensions/vscode
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+  build-zed-extension:
+    needs: [update-version-number]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ needs.update-version-number.outputs.sha }}
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-wasip2
+    - name: Build Zed extension (WASM)
+      run: cargo build --release --target wasm32-wasip2
+      working-directory: editor-extensions/zed
+    # Zed extension distribution is via PR to zed-industries/extensions, not
+    # an API push. This job only verifies the WASM blob builds cleanly so a
+    # broken extension never ships with the release.
+
   create-release:
     if: github.event.inputs.dry-run == 'false'
-    needs: [update-version-number, build-dotnet, build-vscode-extension]
+    needs: [update-version-number, build-dotnet, build-vscode-extension, build-zed-extension]
     runs-on: ubuntu-latest
     permissions:
       contents: write

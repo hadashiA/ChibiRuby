@@ -1,6 +1,6 @@
 // Zed extension for the ChibiRuby DAP server.
 //
-// All this extension does is tell Zed: "when the user picks the `mruby-cs` adapter,
+// All this extension does is tell Zed: "when the user picks the `chibiruby` adapter,
 // don't spawn a process — open a TCP connection to the host they specified (or
 // 127.0.0.1:4711 by default) and speak DAP." MRubyDapServer itself lives inside the
 // user's host process (typically a Unity scene) and is already listening when we
@@ -20,7 +20,7 @@ use zed_extension_api::{
     StartDebuggingRequestArguments, StartDebuggingRequestArgumentsRequest, TcpArguments, Worktree,
 };
 
-const ADAPTER_NAME: &str = "mruby-cs";
+const ADAPTER_NAME: &str = "chibiruby";
 const DEFAULT_HOST: u32 = 0x7F00_0001; // 127.0.0.1, packed network-order u32 per Zed's API.
 const DEFAULT_PORT: u16 = 4711;
 
@@ -78,7 +78,7 @@ impl Extension for ChibiRubyExtension {
         // synthesize from "given a project, figure out how to debug it". Users write
         // their debug.json by hand for now. (We could relax this later if scenario
         // auto-creation becomes useful.)
-        Err("mruby-cs: please configure the session manually in .zed/debug.json".into())
+        Err("chibiruby: please configure the session manually in .zed/debug.json".into())
     }
 }
 
@@ -89,7 +89,7 @@ fn ensure_known_adapter(adapter_name: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "mruby-cs extension does not handle adapter '{adapter_name}' (only '{ADAPTER_NAME}')"
+            "chibiruby extension does not handle adapter '{adapter_name}' (only '{ADAPTER_NAME}')"
         ))
     }
 }

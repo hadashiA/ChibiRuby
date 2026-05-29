@@ -1,4 +1,4 @@
-# mruby/cs Debugger (VSCode)
+# ChibiRuby Debugger (VSCode)
 
 DAP-based debug adapter for [ChibiRuby](https://github.com/hadashiA/ChibiRuby). Pause at
 `binding.irb`, inspect locals, and evaluate arbitrary Ruby in the Debug Console.
@@ -19,10 +19,10 @@ display in the call stack. The stack frame currently shows line 1 as a placehold
 
 For ad-hoc attach against a running host, two zero-config paths are available:
 
-- **Command Palette**: `Cmd+Shift+P` → **"mruby/cs: Attach to running host"** → type a port
+- **Command Palette**: `Cmd+Shift+P` → **"ChibiRuby: Attach to running host"** → type a port
   (default 4711) → Enter. The session starts immediately.
 - **Run-and-Debug picker**: with no `.vscode/launch.json` present, opening the Run-and-Debug
-  panel offers **"mruby/cs: Attach to embedded host (4711)"** via the dynamic-configuration
+  panel offers **"ChibiRuby: Attach to embedded host (4711)"** via the dynamic-configuration
   list. One click starts the session.
 
 Both routes assume `MRubyDapTcpServer.Listen(...)` is already running on the chosen port
@@ -41,9 +41,9 @@ attaches over TCP.
 
 ```json
 {
-  "type": "mruby-cs",
+  "type": "chibiruby",
   "request": "attach",
-  "name": "mruby/cs: Attach",
+  "name": "ChibiRuby: Attach",
   "host": "127.0.0.1",
   "port": 4711
 }
@@ -58,9 +58,9 @@ itself. Useful for one-off scripts without writing host code.
 
 ```json
 {
-  "type": "mruby-cs",
+  "type": "chibiruby",
   "request": "launch",
-  "name": "mruby/cs: Debug current file",
+  "name": "ChibiRuby: Debug current file",
   "program": "${file}"
 }
 ```
@@ -96,7 +96,7 @@ In your `.vscode/launch.json`:
 
 ```json
 {
-  "type": "mruby-cs",
+  "type": "chibiruby",
   "request": "launch",
   "name": "Debug current file (local build)",
   "program": "${file}",
@@ -119,10 +119,10 @@ npm install -g @vscode/vsce
 
 # Package the extension into a .vsix
 vsce package
-# -> mruby-cs-debugger-0.1.0.vsix
+# -> chibiruby-debugger-0.1.0.vsix
 
 # Install into your VSCode
-code --install-extension mruby-cs-debugger-0.1.0.vsix
+code --install-extension chibiruby-debugger-0.1.0.vsix
 ```
 
 Alternatively, **Extension Development Host** for live iteration on the extension itself:
@@ -136,7 +136,7 @@ code editor-extensions/vscode
 ### 3. Try it
 
 Open `editor-extensions/vscode/examples/sample.rb` in VSCode, press **F5**, choose
-the **mruby/cs: Debug current file** configuration when prompted.
+the **ChibiRuby: Debug current file** configuration when prompted.
 
 Execution should halt at the `binding.irb` line. In the **Debug Console**, type:
 
@@ -157,9 +157,9 @@ Hit **Continue** (F5) to finish the script.
 
 ```json
 {
-  "type": "mruby-cs",
+  "type": "chibiruby",
   "request": "launch",
-  "name": "mruby/cs",
+  "name": "ChibiRuby",
   "program": "${file}",            // Required. .rb file to execute.
   "adapterCommand": "mruby-debug", // Optional. Executable that speaks DAP on stdio.
   "adapterArgs": []                 // Optional. Args prepended to the adapter command.

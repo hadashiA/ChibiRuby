@@ -2,15 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "mruby-cs",
+      "type": "chibiruby",
       "request": "launch",
-      "name": "mruby/cs: Debug current file",
+      "name": "ChibiRuby: Debug current file",
       "program": "${file}"
     },
     {
-      "type": "mruby-cs",
+      "type": "chibiruby",
       "request": "launch",
-      "name": "mruby/cs: Debug sample.rb (local CLI build)",
+      "name": "ChibiRuby: Debug sample.rb (local CLI build)",
       "program": "${workspaceFolder}/sample.rb",
       "adapterCommand": "dotnet",
       "adapterArgs": [

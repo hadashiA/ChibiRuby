@@ -1,9 +1,17 @@
 {
-  "name": "mruby-cs-debugger",
-  "displayName": "mruby/cs Debugger",
+  "name": "chibiruby-debugger",
+  "displayName": "ChibiRuby Debugger",
   "description": "DAP debug adapter for ChibiRuby (mruby on .NET).",
   "version": "1.1.0",
   "publisher": "hadashiA",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hadashiA/ChibiRuby.git"
+  },
+  "homepage": "https://github.com/hadashiA/ChibiRuby#readme",
+  "bugs": {
+    "url": "https://github.com/hadashiA/ChibiRuby/issues"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -14,22 +22,23 @@
     "mruby",
     "ruby",
     "debugger",
-    "DAP"
+    "DAP",
+    "chibiruby"
   ],
   "license": "MIT",
   "main": "./extension.js",
   "activationEvents": [
     "onDebug",
-    "onDebugResolve:mruby-cs",
-    "onDebugDynamicConfigurations:mruby-cs",
-    "onCommand:mruby-cs.attachToRunningHost"
+    "onDebugResolve:chibiruby",
+    "onDebugDynamicConfigurations:chibiruby",
+    "onCommand:chibiruby.attachToRunningHost"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "mruby-cs.attachToRunningHost",
-        "title": "mruby/cs: Attach to running host",
-        "category": "mruby/cs"
+        "command": "chibiruby.attachToRunningHost",
+        "title": "ChibiRuby: Attach to running host",
+        "category": "ChibiRuby"
       }
     ],
     "breakpoints": [
@@ -39,8 +48,8 @@
     ],
     "debuggers": [
       {
-        "type": "mruby-cs",
-        "label": "mruby/cs",
+        "type": "chibiruby",
+        "label": "ChibiRuby",
         "languages": [
           "ruby"
         ],
@@ -85,22 +94,22 @@
         },
         "configurationSnippets": [
           {
-            "label": "mruby/cs: Launch current file",
+            "label": "ChibiRuby: Launch current file",
             "description": "Debug the active .rb file with ChibiRuby.",
             "body": {
-              "type": "mruby-cs",
+              "type": "chibiruby",
               "request": "launch",
-              "name": "mruby/cs: Debug ${1:script.rb}",
+              "name": "ChibiRuby: Debug ${1:script.rb}",
               "program": "^\"\\${workspaceFolder}/${1:script.rb}\""
             }
           },
           {
-            "label": "mruby/cs: Attach to embedded host",
+            "label": "ChibiRuby: Attach to embedded host",
             "description": "Connect to a running C# host that exposes MRubyDapTcpServer on a TCP port.",
             "body": {
-              "type": "mruby-cs",
+              "type": "chibiruby",
               "request": "attach",
-              "name": "mruby/cs: Attach (port 4711)",
+              "name": "ChibiRuby: Attach (port 4711)",
               "host": "127.0.0.1",
               "port": 4711
             }
@@ -108,9 +117,9 @@
         ],
         "initialConfigurations": [
           {
-            "type": "mruby-cs",
+            "type": "chibiruby",
             "request": "attach",
-            "name": "mruby/cs: Attach to embedded host",
+            "name": "ChibiRuby: Attach to embedded host",
             "host": "127.0.0.1",
             "port": 4711
           }
