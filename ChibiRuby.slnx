@@ -1,8 +1,8 @@
 ﻿<Solution>
   <Folder Name="/sandbox/">
     <Project Path="sandbox\ChibiRuby.Benchmark\ChibiRuby.Benchmark.csproj" Type="Classic C#" />
-    <Project Path="sandbox\ChibiRuby.ConsoleApp\ChibiRuby.ConsoleApp.csproj" Type="Classic C#" />
-    <Project Path="sandbox\DebuggerEmbeddedSample\DebuggerEmbeddedSample.csproj" Type="Classic C#" />
+    <Project Path="sandbox\SampleConsoleApp\SampleConsoleApp.csproj" Type="Classic C#" />
+    <Project Path="sandbox\SampleDebuggerEmbedded\SampleDebuggerEmbedded.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src\ChibiRuby.Compiler.Cli\ChibiRuby.Compiler.Cli.csproj" Type="Classic C#" />

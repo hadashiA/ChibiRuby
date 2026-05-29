@@ -11,7 +11,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="ChibiRuby.Tests" />
         <InternalsVisibleTo Include="ChibiRuby.Serializer" />
-        <InternalsVisibleTo Include="ChibiRuby.ConsoleApp" />
+        <InternalsVisibleTo Include="SampleConsoleApp" />
         <InternalsVisibleTo Include="ChibiRuby.Debugger" />
         <InternalsVisibleTo Include="ChibiRuby.Debugger.Tests" />
     </ItemGroup>

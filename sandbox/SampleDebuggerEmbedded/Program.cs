@@ -1,5 +1,5 @@
 // Minimal embedded host that demonstrates how to wire up ChibiRuby.Debugger.Dap from a
-// regular C# application. Run with `dotnet run --project sandbox/DebuggerEmbeddedSample`
+// regular C# application. Run with `dotnet run --project sandbox/SampleDebuggerEmbedded`
 // and the program will block at the first binding.irb call until a DAP client (e.g.
 // VSCode with the mruby-cs-debugger extension) attaches to 127.0.0.1:4711.
 

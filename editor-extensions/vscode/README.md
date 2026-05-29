@@ -49,7 +49,7 @@ attaches over TCP.
 }
 ```
 
-See `sandbox/DebuggerEmbeddedSample/` for a complete working host.
+See `sandbox/SampleDebuggerEmbedded/` for a complete working host.
 
 ### Launch mode (single .rb file)
 

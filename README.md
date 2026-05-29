@@ -1444,7 +1444,7 @@ mrb.LoadBytecode(compilation.AsBytecode());
 ```
 
 
-End-to-end demos: [`sandbox/DebuggerEmbeddedSample`](./sandbox/DebuggerEmbeddedSample) (dotnet console host) and [`src/ChibiRuby.Unity/Assets/SampleBehaviour.cs`](./src/ChibiRuby.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
+End-to-end demos: [`sandbox/SampleDebuggerEmbedded`](./sandbox/SampleDebuggerEmbedded) (dotnet console host) and [`src/ChibiRuby.Unity/Assets/SampleBehaviour.cs`](./src/ChibiRuby.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
 
 ### Editor setup
 
