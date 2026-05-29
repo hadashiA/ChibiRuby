@@ -5,7 +5,7 @@
     <Project Path="sandbox\SampleDebuggerEmbedded\SampleDebuggerEmbedded.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src\ChibiRuby.Compiler.Cli\ChibiRuby.Compiler.Cli.csproj" Type="Classic C#" />
+    <Project Path="src\ChibiRuby.Cli\ChibiRuby.Cli.csproj" Type="Classic C#" />
     <Project Path="src\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" Type="Classic C#" />
     <Project Path="src\ChibiRuby.Debugger\ChibiRuby.Debugger.csproj" Type="Classic C#" />
     <Project Path="src\ChibiRuby.Debugger.Dap\ChibiRuby.Debugger.Dap.csproj" Type="Classic C#" />

@@ -19,8 +19,8 @@ class Commands
     /// <param name="format">Output format: binary or csharp</param>
     /// <param name="csharpNamespace">C# namespace for generated code</param>
     /// <param name="csharpClassName">C# class name for generated code</param>
-    [Command("")]
-    public void Run(
+    [Command("compile")]
+    public void Compile(
         [Argument] string inputFile,
         string? output = null,
         bool dump = false,

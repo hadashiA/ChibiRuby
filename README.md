@@ -121,7 +121,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 |:----------|:----------------------------------------------------------------------------------|----------------|
 | ChibiRuby   | Main package. A mruby vm implementation.                                          | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby)](https://www.nuget.org/packages/ChibiRuby) |
 | ChibiRuby.Compiler | Compile ruby source code utility. (Native binding)                                | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler)](https://www.nuget.org/packages/ChibiRuby.Compiler)   |
-| ChibiRuby.Compiler.Cli | dotnet tool for compiling Ruby source to bytecode                                 | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler.Cli)](https://www.nuget.org/packages/ChibiRuby.Compiler.Cli) |
+| ChibiRuby.Cli | dotnet tool with subcommands (e.g. `compile`) for ChibiRuby workflows               | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Cli)](https://www.nuget.org/packages/ChibiRuby.Cli) |
 | ChibiRuby.Serializer  | Converting Ruby and C# Objects Between Each Other                                 | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Serializer)](https://www.nuget.org/packages/ChibiRuby.Serializer)  |
 | ChibiRuby.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger)](https://www.nuget.org/packages/ChibiRuby.Debugger) |
 | ChibiRuby.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger)        | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger.Dap)](https://www.nuget.org/packages/ChibiRuby.Debugger.Dap) |
@@ -190,8 +190,8 @@ You can choose whether to deploy precompiled bytecode or raw source code:
 Pre-compile Ruby source to `.mrb` bytecode with the CLI tool:
 
 ```bash
-dotnet tool install -g ChibiRuby.Compiler.Cli
-mruby-compiler fibonacci.rb -o fibonacci.mrb
+dotnet tool install -g ChibiRuby.Cli
+chibiruby compile fibonacci.rb -o fibonacci.mrb
 ```
 
 Or with the C# API:
@@ -279,20 +279,20 @@ mrb.Execute(irep);
 The ChibiRuby runtime is pure C#, but the mrb compiler uses the native prism compiler.
 Note that the compiler's supported target platforms are subject to the following limitations.
 
-##### ChibiRuby.Compiler.Cli (dotnet tool)
+##### ChibiRuby.Cli (dotnet tool)
 
-The `mruby-compiler` CLI supports additional output formats beyond simple `.mrb`:
+The `chibiruby compile` CLI supports additional output formats beyond simple `.mrb`:
 
 ```bash
 # Dump bytecode in human-readable format
-$ mruby-compiler input.rb --dump
+$ chibiruby compile input.rb --dump
 
 # Generate C# code with embedded bytecode
-$ mruby-compiler input.rb -o Bytecode.cs --format csharp --csharp-namespace MyApp
+$ chibiruby compile input.rb -o Bytecode.cs --format csharp --csharp-namespace MyApp
 ```
 
 > [!TIP]
-> For local tool installation, use `dotnet tool install ChibiRuby.Compiler.Cli` and run with `dotnet mruby-compiler`.
+> For local tool installation, use `dotnet tool install ChibiRuby.Cli` and run with `dotnet chibiruby compile`.
 
 | Option | Description |
 |:-------|:------------|

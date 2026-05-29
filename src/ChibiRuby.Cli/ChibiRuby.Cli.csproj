@@ -6,8 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackAsTool>true</PackAsTool>
-        <ToolCommandName>mruby-compiler</ToolCommandName>
-        <Description>Wrapper for the mruby compiler CLI tool</Description>
+        <ToolCommandName>chibiruby</ToolCommandName>
+        <Description>ChibiRuby CLI tool</Description>
     </PropertyGroup>
 
     <ItemGroup>
