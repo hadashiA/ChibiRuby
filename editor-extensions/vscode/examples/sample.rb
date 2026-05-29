@@ -1,5 +1,5 @@
-# Sample script for trying the mruby/cs DAP debugger.
-# Open this file in VSCode (with the mruby-cs-debugger extension installed),
+# Sample script for trying the ChibiRuby DAP debugger.
+# Open this file in VSCode (with the chibiruby-debugger extension installed),
 # press F5, and you should pause at the binding.irb call.
 
 greeting = "hello"

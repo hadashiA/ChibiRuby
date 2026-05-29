@@ -1,4 +1,4 @@
-// VSCode extension entry point for the mruby/cs DAP debugger.
+// VSCode extension entry point for the ChibiRuby DAP debugger.
 //
 // Intentionally written in plain JS with zero npm dependencies (other than VSCode's
 // own runtime API which is provided implicitly). To package: `npx @vscode/vsce package`
@@ -18,9 +18,9 @@ function activate(context) {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'ruby') {
           config = {
-            type: 'mruby-cs',
+            type: 'chibiruby',
             request: 'launch',
-            name: 'mruby/cs (auto)',
+            name: 'ChibiRuby (auto)',
             program: editor.document.uri.fsPath
           };
         }
@@ -35,7 +35,7 @@ function activate(context) {
     }
   };
   context.subscriptions.push(
-    vscode.debug.registerDebugConfigurationProvider('mruby-cs', resolver)
+    vscode.debug.registerDebugConfigurationProvider('chibiruby', resolver)
   );
 
   // Two adapter topologies:
@@ -60,17 +60,17 @@ function activate(context) {
     }
   };
   context.subscriptions.push(
-    vscode.debug.registerDebugAdapterDescriptorFactory('mruby-cs', factory)
+    vscode.debug.registerDebugAdapterDescriptorFactory('chibiruby', factory)
   );
 
   // -- Command Palette: attach without a launch.json ----------------------------------
   // The user has a host process running with MRubyDapTcpServer.Listen() somewhere.
-  // They can invoke "mruby/cs: Attach to running host" from Cmd+Shift+P, type a port
+  // They can invoke "ChibiRuby: Attach to running host" from Cmd+Shift+P, type a port
   // (default 4711), and the debug session starts immediately.
   context.subscriptions.push(
-    vscode.commands.registerCommand('mruby-cs.attachToRunningHost', async () => {
+    vscode.commands.registerCommand('chibiruby.attachToRunningHost', async () => {
       const portInput = await vscode.window.showInputBox({
-        prompt: 'mruby/cs DAP server port (host running MRubyDapTcpServer.Listen)',
+        prompt: 'ChibiRuby DAP server port (host running MRubyDapTcpServer.Listen)',
         value: '4711',
         validateInput: v => /^\d+$/.test(v) ? null : 'port must be an integer'
       });
@@ -78,9 +78,9 @@ function activate(context) {
       const port = parseInt(portInput, 10);
       const folder = vscode.workspace.workspaceFolders?.[0];
       await vscode.debug.startDebugging(folder, {
-        type: 'mruby-cs',
+        type: 'chibiruby',
         request: 'attach',
-        name: `mruby/cs: Attach (port ${port})`,
+        name: `ChibiRuby: Attach (port ${port})`,
         host: '127.0.0.1',
         port
       });
@@ -88,17 +88,17 @@ function activate(context) {
   );
 
   // -- Dynamic configuration provider --------------------------------------------------
-  // Surfaces "mruby/cs: Attach to embedded host (4711)" in the Run-and-Debug "Show all
+  // Surfaces "ChibiRuby: Attach to embedded host (4711)" in the Run-and-Debug "Show all
   // automatic debug configurations" picker, so users without a launch.json can still
   // start a session in one click.
   context.subscriptions.push(
-    vscode.debug.registerDebugConfigurationProvider('mruby-cs', {
+    vscode.debug.registerDebugConfigurationProvider('chibiruby', {
       provideDebugConfigurations() {
         return [
           {
-            type: 'mruby-cs',
+            type: 'chibiruby',
             request: 'attach',
-            name: 'mruby/cs: Attach to embedded host (4711)',
+            name: 'ChibiRuby: Attach to embedded host (4711)',
             host: '127.0.0.1',
             port: 4711
           }

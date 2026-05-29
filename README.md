@@ -1441,13 +1441,13 @@ End-to-end demos: [`sandbox/SampleDebuggerEmbedded`](./sandbox/SampleDebuggerEmb
 
 ### Editor setup
 
-VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rider needs the LSP4IJ plugin from the JetBrains Marketplace. Pick your editor:
+VSCode and Zed need a small extension to register the `chibiruby` debug type; Rider needs the LSP4IJ plugin from the JetBrains Marketplace. Pick your editor:
 
 #### VSCode
 
-1. **Install the extension** — download `mruby-cs-debugger-*.vsix` from the [latest release](https://github.com/hadashiA/ChibiRuby/releases/latest), then install it via either:
+1. **Install the extension** — download `chibiruby-debugger-*.vsix` from the [latest release](https://github.com/hadashiA/ChibiRuby/releases/latest), then install it via either:
    - **VSCode UI**: Extensions panel → `...` menu → **Install from VSIX…** → pick the downloaded file.
-   - **CLI**: `code --install-extension mruby-cs-debugger-*.vsix`.
+   - **CLI**: `code --install-extension chibiruby-debugger-*.vsix`.
 
    (Contributors can also dev-install: open [`editor-extensions/vscode`](./editor-extensions/vscode/README.md) in VSCode and press **F5** to launch an Extension Development Host.)
 2. **Create `launch.json`** in your project (`.vscode/launch.json`):
@@ -1456,9 +1456,9 @@ VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rid
      "version": "0.2.0",
      "configurations": [
        {
-         "type": "mruby-cs",
+         "type": "chibiruby",
          "request": "attach",
-         "name": "Attach to mruby/cs",
+         "name": "Attach to ChibiRuby",
          "host": "127.0.0.1",
          "port": 4711
        }
@@ -1496,14 +1496,14 @@ VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rid
    ```json
    [
      {
-       "label": "Attach to mruby/cs",
-       "adapter": "mruby-cs",
+       "label": "Attach to ChibiRuby",
+       "adapter": "chibiruby",
        "request": "attach",
        "tcp_connection": { "host": "127.0.0.1", "port": 4711 }
      }
    ]
    ```
-4. Start the host, then open Zed's debug panel (`cmd-shift-d`), pick **Attach to mruby/cs**, and run.
+4. Start the host, then open Zed's debug panel (`cmd-shift-d`), pick **Attach to ChibiRuby**, and run.
 
 ### Setting breakpoints
 

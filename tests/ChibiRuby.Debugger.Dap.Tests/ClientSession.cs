@@ -35,7 +35,7 @@ sealed class ClientSession
 
     // --- Per-command typed helpers ----------------------------------------------------
 
-    public Task<InitializeResponse> InitializeAsync(string adapterId = "mruby-cs")
+    public Task<InitializeResponse> InitializeAsync(string adapterId = "chibiruby")
     {
         var req = new InitializeRequest
         {

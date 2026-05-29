@@ -66,7 +66,7 @@ sealed class TestHarness : IDisposable
 
     // --- Forwarding helpers (let tests call harness.XxxAsync(...) directly) ----------
 
-    public Task<InitializeResponse> InitializeAsync(string adapterId = "mruby-cs") =>
+    public Task<InitializeResponse> InitializeAsync(string adapterId = "chibiruby") =>
         client.InitializeAsync(adapterId);
 
     public Task<AttachResponse> AttachAsync() => client.AttachAsync();
