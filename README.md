@@ -1,39 +1,28 @@
-# mruby/cs
+# ChibiRuby
 
-MRubyCS is a pure C# [mruby](https://github.com/mruby/mruby) virtual machine implementation  It combines high Ruby-level compatibility with the performance and extensibility of modern C#.
+ChibiRuby is a pure C# [mruby](https://github.com/mruby/mruby) virtual machine implementation. It combines high Ruby-level compatibility with the performance and extensibility of modern C#.
 
 Easily embed Ruby into Unity or .NET—empowering users to script game logic while keeping your core engine in C#.
 
 > [!NOTE]
-> [VitalRouter.MRuby](https://github.com/hadashiA/VitalRouter) provides a high-level framework for integrating MRubyCS with Unity (and .NET), including command routing and script lifecycle management.
+> [VitalRouter.MRuby](https://github.com/hadashiA/VitalRouter) provides a high-level framework for integrating ChibiRuby with Unity (and .NET), including command routing and script lifecycle management.
 
 ## Why mruby?
 
-Ruby's elegant, expressive syntax makes it ideal for building DSLs (Domain-Specific Languages). Game designers and scenario writers can describe complex game logic — event triggers, dialogue trees, AI behavior — in clean, readable scripts without wrestling with C-like syntax.
+Ruby's clean, expressive syntax makes it perfect for building DSLs. Game designers and scenario writers can describe game logic — event triggers, dialogue trees, and AI behavior — in simple, readable scripts.
 
 ```ruby
 # Example: game event DSL
-scene :throne_room_betrayal do
-  sequence do
-    camera.focus_on :king, over: 1.2.seconds
-    king.say "You have served me well, knight."
-    wait 0.5.seconds
-    advisor.move_to :behind_king
-    advisor.say "Too well, perhaps."
+with(:Yogoroza) do
+  talk "Who are you?"
+  motion :suprize
+end
 
-    choice do
-      option "Draw your sword" do
-        player.equip :longsword
-        goto :combat_phase
-      end
-
-      option "Kneel" do
-        player.animate :kneel
-        king.say "Loyalty. How rare."
-        complete_scene
-      end
-    end
-  end
+with(:BlackCat) do
+  talk "It's you, isn't it."
+  motion :laugh
+  talk "You seem to be gradually forgetting who you are."
+  talk "Isn't that right?"
 end
 ```
 
@@ -46,12 +35,12 @@ end
 - **Pure C# implementation/Zero native dependencies mruby VM** — runs anywhere Unity/.NET runs. No per-platform native builds to maintain.
 - **High performance** — leverages .NET JIT, GC, and modern C# optimizations with minimal overhead.
 - **Ruby compatible** — all opcodes implemented; passes mruby's official test suite
-  - [Syntax](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/syntax.rb), [Literals](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/literals.rb), [Lang](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/lang.rb), [Methods](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/methods.rb), [Module](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/module.rb), [Exception](https://github.com/hadashiA/MRubyCS/blob/main/tests/MRubyCS.Tests/ruby/test/exception.rb), ...
-  - Supported classes/modules and their method signatures are published as RBS files under [`sig/`](https://github.com/hadashiA/MRubyCS/tree/main/sig) — [`Array`](https://github.com/hadashiA/MRubyCS/blob/main/sig/array.rbs), [`Hash`](https://github.com/hadashiA/MRubyCS/blob/main/sig/hash.rbs), [`String`](https://github.com/hadashiA/MRubyCS/blob/main/sig/string.rbs), [`Integer`](https://github.com/hadashiA/MRubyCS/blob/main/sig/integer.rbs), [`Float`](https://github.com/hadashiA/MRubyCS/blob/main/sig/float.rbs), [`Range`](https://github.com/hadashiA/MRubyCS/blob/main/sig/range.rbs), [`Proc`](https://github.com/hadashiA/MRubyCS/blob/main/sig/proc.rbs), [`Symbol`](https://github.com/hadashiA/MRubyCS/blob/main/sig/symbol.rbs), [`Fiber`](https://github.com/hadashiA/MRubyCS/blob/main/sig/fiber.rbs), [`Time`](https://github.com/hadashiA/MRubyCS/blob/main/sig/time.rbs), [`Random`](https://github.com/hadashiA/MRubyCS/blob/main/sig/random.rbs), [`Enumerable`](https://github.com/hadashiA/MRubyCS/blob/main/sig/enumerable.rbs), [`Comparable`](https://github.com/hadashiA/MRubyCS/blob/main/sig/comparable.rbs), etc.
-  - Enumerable extensions (mruby-enum-ext): see [`sig/enumerable.rbs`](https://github.com/hadashiA/MRubyCS/blob/main/sig/enumerable.rbs)
+  - [Syntax](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/syntax.rb), [Literals](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/literals.rb), [Lang](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/lang.rb), [Methods](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/methods.rb), [Module](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/module.rb), [Exception](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/exception.rb), ...
+  - Supported classes/modules and their method signatures are published as RBS files under [`sig/`](https://github.com/hadashiA/ChibiRuby/tree/main/sig) — [`Array`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/array.rbs), [`Hash`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/hash.rbs), [`String`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/string.rbs), [`Integer`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/integer.rbs), [`Float`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/float.rbs), [`Range`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/range.rbs), [`Proc`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/proc.rbs), [`Symbol`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/symbol.rbs), [`Fiber`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/fiber.rbs), [`Time`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/time.rbs), [`Random`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/random.rbs), [`Enumerable`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/enumerable.rbs), [`Comparable`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/comparable.rbs), etc.
+  - Enumerable extensions (mruby-enum-ext): see [`sig/enumerable.rbs`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/enumerable.rbs)
   - **Optional (opt-in)** — see [Optional Classes](#optional-classes-opt-in)
-      - [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs) / [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs) (via `mrb.DefineRegexp()`)
-      - [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
+      - [`Regexp`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/regexp.rbs) / [`MatchData`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/match_data.rbs) (via `mrb.DefineRegexp()`)
+      - [`IO`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
 - **Fiber & async/await integration** — suspend Ruby execution and await C# async methods without blocking threads.
 - **Debugger (DAP)** — line breakpoints, stepping, locals view, and expression evaluation. Attach from VSCode / JetBrains / Zed to a running Unity or .NET host over TCP. See [Debugger](#debugger).
 - **Prism-based compiler** — uses [mruby-compiler2](https://github.com/picoruby/mruby-compiler2), the next-generation mruby compiler built on [Prism](https://github.com/ruby/prism) (the official CRuby parser), for more accurate and modern Ruby syntax support.
@@ -60,11 +49,11 @@ end
 
 In the .NET JIT environment, execution speeds are equal to or faster than the original native mruby.
 
-<img width="594" height="389" alt="ss 2026-03-04 22 11 01" src="https://github.com/user-attachments/assets/00cd3644-e460-4b21-a41e-661d484fe30c" />
+<img width="700" alt="ChibiRuby vs mruby benchmark" src="docs/benchmark.webp" />
 
 The above results were obtained on macOS with Apple M4 over 10 iterations.
 
-Please refer to the following for the [benchmark code](https://github.com/hadashiA/MRubyCS/tree/main/sandbox/MRubyCS.Benchmark).
+Please refer to the following for the [benchmark code](https://github.com/hadashiA/ChibiRuby/tree/main/sandbox/ChibiRuby.Benchmark).
 
 ## Limitations
 
@@ -120,18 +109,18 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 > [!WARNING]
 > The current version supports mruby 4.0 bytecode.
 > Versions 0.70.0 and older supported mruby 3.0 bytecode.
-> If you have bytecode from an older MRubyCS.Compiler (or mrbc), please regenerate it with the latest version.
+> If you have bytecode from an older ChibiRuby.Compiler (or mrbc), please regenerate it with the latest version.
 
 ### NuGet
 
 | Package   | Description                                                                       | Latest version |
 |:----------|:----------------------------------------------------------------------------------|----------------|
-| MRubyCS   | Main package. A mruby vm implementation.                                          | [![NuGet](https://img.shields.io/nuget/v/MRubyCS)](https://www.nuget.org/packages/MRubyCS) |
-| MRubyCS.Compiler | Compile ruby source code utility. (Native binding)                                | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler)](https://www.nuget.org/packages/MRubyCS.Compiler)   |
-| MRubyCS.Compiler.Cli | dotnet tool for compiling Ruby source to bytecode                                 | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Compiler.Cli)](https://www.nuget.org/packages/MRubyCS.Compiler.Cli) |
-| MRubyCS.Serializer  | Converting Ruby and C# Objects Between Each Other                                 | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Serializer)](https://www.nuget.org/packages/MRubyCS.Serializer)  |
-| MRubyCS.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger)](https://www.nuget.org/packages/MRubyCS.Debugger) |
-| MRubyCS.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger)        | [![NuGet](https://img.shields.io/nuget/v/MRubyCS.Debugger.Dap)](https://www.nuget.org/packages/MRubyCS.Debugger.Dap) |
+| ChibiRuby   | Main package. A mruby vm implementation.                                          | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby)](https://www.nuget.org/packages/ChibiRuby) |
+| ChibiRuby.Compiler | Compile ruby source code utility. (Native binding)                                | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler)](https://www.nuget.org/packages/ChibiRuby.Compiler)   |
+| ChibiRuby.Compiler.Cli | dotnet tool for compiling Ruby source to bytecode                                 | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler.Cli)](https://www.nuget.org/packages/ChibiRuby.Compiler.Cli) |
+| ChibiRuby.Serializer  | Converting Ruby and C# Objects Between Each Other                                 | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Serializer)](https://www.nuget.org/packages/ChibiRuby.Serializer)  |
+| ChibiRuby.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger)](https://www.nuget.org/packages/ChibiRuby.Debugger) |
+| ChibiRuby.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger)        | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger.Dap)](https://www.nuget.org/packages/ChibiRuby.Debugger.Dap) |
 
 ### Unity
 
@@ -139,23 +128,23 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 > Requirements: Unity 2021.3 or later.
 
 > [!IMPORTANT]
-> As of v0.107.0, MRubyCS.Compiler is distributed via NuGetForUnity. Users of earlier versions should refer to this migration guide. [v0.107.0](https://github.com/hadashiA/MRubyCS/releases/tag/0.107.0)
+> As of v0.107.0, ChibiRuby.Compiler is distributed via NuGetForUnity. Users of earlier versions should refer to this migration guide. [v0.107.0](https://github.com/hadashiA/ChibiRuby/releases/tag/0.107.0)
 
 1. Install [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (v4.3.0 or later — required for native plugin support).
 2. Install following packages via NuGetForUnity
     - Utf8StringInterpolation
-    - MRubyCS
-    - (Optional) MRubyCS.Compiler — runtime Ruby compiler. Native binaries (macOS, Linux, Windows, Android, iOS, WebGL) ship inside the NuGet package.
-    - (Optional) MRubyCS.Serializer
-3. (Optional) For an Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, install `MRubyCS.Compiler` Unity package as well — see [Unity AssetImporter](#unity-assetimporter).
+    - ChibiRuby
+    - (Optional) ChibiRuby.Compiler — runtime Ruby compiler. Native binaries (macOS, Linux, Windows, Android, iOS, WebGL) ship inside the NuGet package.
+    - (Optional) ChibiRuby.Serializer
+3. (Optional) For an Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, install `ChibiRuby.Compiler` Unity package as well — see [Unity AssetImporter](#unity-assetimporter).
 
 > [!NOTE]
 > **For macOS Editor users**
 >
 > NuGetForUnity v4.3.0's default `NativeRuntimeSettings` ships broken Editor settings for the `osx-arm64` / `osx-x64` runtimes (the Apple Silicon variant has no Editor target, and the Intel variant defaults to "Any CPU"), so `libmruby.dylib` may fail to load in the Editor.
 > A fix has been submitted upstream — [NuGetForUnity#755](https://github.com/GlitchEnzo/NuGetForUnity/pull/755). Once that is merged and released, this workaround will no longer be needed. In the meantime, fix the two dylibs from Unity's Inspector:
-> 1. In the Project window, select `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-arm64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, check **Include Platforms → Editor**, set **CPU** to `ARM64`, set **OS** to `OSX`, then click **Apply**.
-> 2. Select `Assets/Packages/MRubyCS.Compiler.*/runtimes/osx-x64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, **uncheck** Editor (or set **CPU** to `x86_64` and **OS** to `OSX` if you want it kept for Intel Editors), then click **Apply**.
+> 1. In the Project window, select `Assets/Packages/ChibiRuby.Compiler.*/runtimes/osx-arm64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, check **Include Platforms → Editor**, set **CPU** to `ARM64`, set **OS** to `OSX`, then click **Apply**.
+> 2. Select `Assets/Packages/ChibiRuby.Compiler.*/runtimes/osx-x64/native/libmruby.dylib`. In the Inspector, under **Platform settings → Editor**, **uncheck** Editor (or set **CPU** to `x86_64` and **OS** to `OSX` if you want it kept for Intel Editors), then click **Apply**.
 > 3. Right-click each of the two `libmruby.dylib` files in the Project window and choose **Reimport**. NuGetForUnity skips reprocessing assets that already have its label, so the explicit reimport is required to apply the corrected Editor/CPU settings.
 
 ## Basic Usage
@@ -197,15 +186,15 @@ You can choose whether to deploy precompiled bytecode or raw source code:
 Pre-compile Ruby source to `.mrb` bytecode with the CLI tool:
 
 ```bash
-dotnet tool install -g MRubyCS.Compiler.Cli
+dotnet tool install -g ChibiRuby.Compiler.Cli
 mruby-compiler fibonacci.rb -o fibonacci.mrb
 ```
 
 Or with the C# API:
 
 ```cs
-using MRubyCS;
-using MRubyCS.Compiler;
+using ChibiRuby;
+using ChibiRuby.Compiler;
 
 var mrb = MRubyState.Create();
 var compiler = MRubyCompiler.Create(mrb);
@@ -227,7 +216,7 @@ File.WriteAllBytes("fibonacci.mrb", compilation.AsBytecode());
 Then execute the pre-compiled bytecode:
 
 ```cs
-using MRubyCS;
+using ChibiRuby;
 
 var mrb = MRubyState.Create();
 var bytecode = File.ReadAllBytes("/path/to/fibonacci.mrb");
@@ -239,13 +228,13 @@ result.IntegerValue //=> 55
 #### Option B: Using Compiler library (runtime compile)
 
 ```bash
-dotnet add package MRubyCS
-dotnet add package MRubyCS.Compiler
+dotnet add package ChibiRuby
+dotnet add package ChibiRuby.Compiler
 ```
 
 ```cs
-using MRubyCS;
-using MRubyCS.Compiler;
+using ChibiRuby;
+using ChibiRuby.Compiler;
 
 var mrb = MRubyState.Create();
 var compiler = MRubyCompiler.Create(mrb);
@@ -262,7 +251,7 @@ var result = compiler.LoadSourceCode("""
 result.IntegerValue //=> 55
 ```
 
-See also [MRubyCS.Compiler (library)](#mrubycscompiler-library) for installation details.
+See also [ChibiRuby.Compiler (library)](#chibirubycompiler-library) for installation details.
 
 #### Irep
 
@@ -283,10 +272,10 @@ mrb.Execute(irep);
 
 #### Compiler Reference
 
-The MRubyCS runtime is pure C#, but the mrb compiler uses the native prism compiler.
+The ChibiRuby runtime is pure C#, but the mrb compiler uses the native prism compiler.
 Note that the compiler's supported target platforms are subject to the following limitations.
 
-##### MRubyCS.Compiler.Cli (dotnet tool)
+##### ChibiRuby.Compiler.Cli (dotnet tool)
 
 The `mruby-compiler` CLI supports additional output formats beyond simple `.mrb`:
 
@@ -299,7 +288,7 @@ $ mruby-compiler input.rb -o Bytecode.cs --format csharp --csharp-namespace MyAp
 ```
 
 > [!TIP]
-> For local tool installation, use `dotnet tool install MRubyCS.Compiler.Cli` and run with `dotnet mruby-compiler`.
+> For local tool installation, use `dotnet tool install ChibiRuby.Compiler.Cli` and run with `dotnet mruby-compiler`.
 
 | Option | Description |
 |:-------|:------------|
@@ -320,9 +309,9 @@ $ rake
 $ ./build/host/bin/mrbc -o output.mrb input.rb
 ```
 
-##### MRubyCS.Compiler (library)
+##### ChibiRuby.Compiler (library)
 
-`MRubyCS.Compiler` is a thin wrapper of the C# API for the native compiler.
+`ChibiRuby.Compiler` is a thin wrapper of the C# API for the native compiler.
 
 NOTE: This is a wrapper for native compilers. Currently, the following platforms are supported:
 
@@ -336,21 +325,21 @@ NOTE: This is a wrapper for native compilers. Currently, the following platforms
 | WebAssembly  | wasm32 (Unity WebGL / .NET Browser WASM) | `browser-wasm`                          |
 
 ```bash
-dotnet add package MRubyCS.Compiler
+dotnet add package ChibiRuby.Compiler
 ```
 
-**Unity**: install `MRubyCS.Compiler` via [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (v4.3.0 or later). The native compiler binaries (`libmruby.dylib` / `.so` / `.dll`) are bundled in the NuGet package and resolved automatically.
+**Unity**: install `ChibiRuby.Compiler` via [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (v4.3.0 or later). The native compiler binaries (`libmruby.dylib` / `.so` / `.dll`) are bundled in the NuGet package and resolved automatically.
 
 If you also want the Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, additionally install the Unity package. Open Window > Package Manager, click [+] > Add package from git URL, and enter:
 
 ```
-https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity#0.108.0
+https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Compiler.Unity#0.108.0
 ```
 
 See [Unity AssetImporter](#unity-assetimporter) for details.
 
 ```cs
-using MRubyCS.Compiler;
+using ChibiRuby.Compiler;
 
 var source = """
 def f(a)
@@ -412,7 +401,7 @@ Addressables.LoadAssetAsync<TextAsset>("Assets/hoge.rb[hoge.mrb]")
 
 Bundling pre-compiled `.mrb` bytecode via the importer is the production path, but it is **not** the only option.
 
-In environments where MRubyCS.Compiler is supported (macOS, Windows, Linux), it is possible to dynamically load .rb source code at any time, even while it is running.
+In environments where ChibiRuby.Compiler is supported (macOS, Windows, Linux), it is possible to dynamically load .rb source code at any time, even while it is running.
 
 - **Hot-reload Ruby scripts in Play Mode** — re-`LoadSourceCode` a modified `.rb` file without exiting Play Mode and reattaching the player.
 
@@ -957,8 +946,8 @@ Some bundled classes are **not** registered by `MRubyState.Create()` so that emb
 
 | Enable with | Adds |
 |---|---|
-| `mrb.DefineRegexp()` | [`Regexp`](https://github.com/hadashiA/MRubyCS/blob/main/sig/regexp.rbs), [`MatchData`](https://github.com/hadashiA/MRubyCS/blob/main/sig/match_data.rbs), and regexp-related `String` methods (`=~` / `match` / `sub` / `gsub` / `scan` / `index`) |
-| `mrb.DefineIO()` | [`IO`](https://github.com/hadashiA/MRubyCS/blob/main/sig/io.rbs), [`File`](https://github.com/hadashiA/MRubyCS/blob/main/sig/file.rbs), `IOError` |
+| `mrb.DefineRegexp()` | [`Regexp`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/regexp.rbs), [`MatchData`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/match_data.rbs), and regexp-related `String` methods (`=~` / `match` / `sub` / `gsub` / `scan` / `index`) |
+| `mrb.DefineIO()` | [`IO`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/io.rbs), [`File`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/file.rbs), `IOError` |
 
 Both calls are idempotent and must be made **before** compiling/running Ruby code that references the classes.
 
@@ -1030,13 +1019,13 @@ When a `FiberScheduler` is installed, `IO`/`File` reads and writes route through
 
 ## Fiber (Coroutine)
 
-MRubyCS supports Ruby Fibers, which are lightweight concurrency primitives that allow you to pause and resume code execution. In addition to standard Ruby Fiber features, MRubyCS provides seamless integration with C#'s async/await pattern.
+ChibiRuby supports Ruby Fibers, which are lightweight concurrency primitives that allow you to pause and resume code execution. In addition to standard Ruby Fiber features, ChibiRuby provides seamless integration with C#'s async/await pattern.
 
 ### Basic Fiber Usage
 
 ```cs
-using MRubyCS;
-using MRubyCS.Compiler;
+using ChibiRuby;
+using ChibiRuby.Compiler;
 
 // Create state and compiler
 var mrb = MRubyState.Create();
@@ -1089,7 +1078,7 @@ fiber.Resume(); //=> 600
 
 ### Async/Await Integration
 
-MRubyCS provides unique C# async integration features for working with Fibers:
+ChibiRuby provides unique C# async integration features for working with Fibers:
 
 ```cs
 // Wait for fiber to terminate
@@ -1138,7 +1127,7 @@ await foreach (var value in fiber.AsAsyncEnumerable())
 }
 ```
 
-MRubyCS supports multiple consumers waiting for fiber results simultaneously:
+ChibiRuby supports multiple consumers waiting for fiber results simultaneously:
 
 ```cs
 using var compilation = compiler.Compile(code);
@@ -1376,7 +1365,7 @@ Override example — `UnityFiberScheduler` that routes `sleep` / `Thread.pass` t
 using UnityEngine;
 using System;
 using System.Threading;
-using MRubyCS;
+using ChibiRuby;
 
 class UnityFiberScheduler : MRubyFiberScheduler
 {
@@ -1412,7 +1401,7 @@ Contract:
 - **Exceptions are deliverable to Ruby.** Any exception inside `Await`'s body is wrapped and delivered as a Ruby exception on resume; surrounding `begin/rescue` catches it.
 - **No double-parking.** A fiber is only parked under one wait at a time. `Suspend` throws `InvalidOperationException` on a re-park; subclass overrides should preserve this.
 
-See [`MRubyFiberScheduler.cs`](src/MRubyCS/MRubyFiberScheduler.cs) for the complete reference implementation.
+See [`MRubyFiberScheduler.cs`](src/ChibiRuby/MRubyFiberScheduler.cs) for the complete reference implementation.
 
 ## Debugger
 
@@ -1426,9 +1415,9 @@ By executing MRubyDapServer.StartAsync, the Debug Adapter Protocol TCP server be
 Any DAP-compatible editor can perform an Attach to the process in this state.
 
 ```cs
-using MRubyCS;
-using MRubyCS.Compiler;
-using MRubyCS.Debugger.Dap;
+using ChibiRuby;
+using ChibiRuby.Compiler;
+using ChibiRuby.Debugger.Dap;
 
 var mrb = MRubyState.Create();
 var compiler = MRubyCompiler.Create(mrb);
@@ -1444,7 +1433,7 @@ mrb.LoadBytecode(compilation.AsBytecode());
 ```
 
 
-End-to-end demos: [`sandbox/DebuggerEmbeddedSample`](./sandbox/DebuggerEmbeddedSample) (dotnet console host) and [`src/MRubyCS.Unity/Assets/SampleBehaviour.cs`](./src/MRubyCS.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
+End-to-end demos: [`sandbox/SampleDebuggerEmbedded`](./sandbox/SampleDebuggerEmbedded) (dotnet console host) and [`src/ChibiRuby.Unity/Assets/SampleBehaviour.cs`](./src/ChibiRuby.Unity/Assets/SampleBehaviour.cs) (Unity MonoBehaviour).
 
 ### Editor setup
 
@@ -1452,7 +1441,7 @@ VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rid
 
 #### VSCode
 
-1. **Install the extension** — download `mruby-cs-debugger-*.vsix` from the [latest release](https://github.com/hadashiA/MRubyCS/releases/latest), then install it via either:
+1. **Install the extension** — download `mruby-cs-debugger-*.vsix` from the [latest release](https://github.com/hadashiA/ChibiRuby/releases/latest), then install it via either:
    - **VSCode UI**: Extensions panel → `...` menu → **Install from VSIX…** → pick the downloaded file.
    - **CLI**: `code --install-extension mruby-cs-debugger-*.vsix`.
 
@@ -1480,7 +1469,7 @@ VSCode and Zed need a small extension to register the `mruby-cs` debug type; Rid
 2. **Add a Debug Adapter Protocol run configuration**:
    - **Run → Edit Configurations…** → **+** → **Debug Adapter Protocol**.
    - In the **Server** tab, click **create a new server**.
-   - In the dialog: pick a name (e.g. `MRubyCS DAP`), set **Connection type** to **TCP socket**, **Host** = `127.0.0.1`, **Port** = `4711`. Save.
+   - In the dialog: pick a name (e.g. `ChibiRuby DAP`), set **Connection type** to **TCP socket**, **Host** = `127.0.0.1`, **Port** = `4711`. Save.
    - Back in the run configuration, select the server you just created from the dropdown.
 
    <p>
@@ -1522,7 +1511,7 @@ Once host + editor are wired:
 4. Use the editor's debug controls (**Continue** / **Step Over** / **Step In** / **Step Out**) and the REPL pane (variables view + expression evaluation) as usual.
 
 > [!NOTE]
-> Please ensure that MRubyCSCompiler passes the filename when compiling Ruby.
+> Please ensure that ChibiRubyCompiler passes the filename when compiling Ruby.
 > APIs such as CompileFile or Unity's ScriptedImporter resolve the filename automatically.
 > When compiling without going through a file, such as with Compile(bytes), the debugger will not work unless the file path is passed as an additional argument.
 
@@ -1581,7 +1570,7 @@ By introducing the following packages, serialization of Unity-specific types wil
 Open the Package Manager window by selecting Window > Package Manager, then click on [+] > Add package from git URL and enter the following URL:
 
 ```
-https://github.com/hadashiA/MRubyCS.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity#0.108.0
+https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Serializer.Unity#0.108.0
 ```
 
 | mruby                                | C#  |

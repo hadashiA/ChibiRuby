@@ -1,10 +1,10 @@
-[submodule "src/MRubyCS.Compiler/mruby"]
-	path = src/MRubyCS.Compiler/mruby
+[submodule "src/ChibiRuby.Compiler/mruby"]
+	path = src/ChibiRuby.Compiler/mruby
 	url = https://github.com/mruby/mruby.git
-[submodule "sandbox/MRubyCS.Benchmark/mruby"]
-	path = sandbox/MRubyCS.Benchmark/mruby
+[submodule "sandbox/ChibiRuby.Benchmark/mruby"]
+	path = sandbox/ChibiRuby.Benchmark/mruby
 	url = https://github.com/mruby/mruby.git
-[submodule "src/MRubyCS.Compiler/mruby-compiler2"]
-	path = src/MRubyCS.Compiler/mruby-compiler2
+[submodule "src/ChibiRuby.Compiler/mruby-compiler2"]
+	path = src/ChibiRuby.Compiler/mruby-compiler2
 	url = git@github.com:hadashiA/mruby-compiler2.git
 	branch = master

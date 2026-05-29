@@ -482,14 +482,14 @@ $RECYCLE.BIN/
 
 # Unity
 
-src/MRubyCS.Unity/Library/*
-src/MRubyCS.Unity/Temp/*
-src/MRubyCS.Unity/Logs/*
-src/MRubyCS.Unity/*.csproj
-src/MRubyCS.Unity/*.sln
-src/MRubyCS.Unity/UserSettings
-!src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity
-!src/MRubyCS.Unity/Assets/MRubyCS.Serializer.Unity
+src/ChibiRuby.Unity/Library/*
+src/ChibiRuby.Unity/Temp/*
+src/ChibiRuby.Unity/Logs/*
+src/ChibiRuby.Unity/*.csproj
+src/ChibiRuby.Unity/*.sln
+src/ChibiRuby.Unity/UserSettings
+!src/ChibiRuby.Unity/Assets/ChibiRuby.Compiler.Unity
+!src/ChibiRuby.Unity/Assets/ChibiRuby.Serializer.Unity
 
-src/MRubyCS.Unity/Assets/Packages/*
+src/ChibiRuby.Unity/Assets/Packages/*
 

@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
 
 env:
-  MRUBY_DIR: ${{ github.workspace }}/src/MRubyCS.Compiler/mruby
-  CONFIG_DIR: ${{ github.workspace }}/src/MRubyCS.Compiler
-  BENCHMARK_MRUBY_DIR: ${{ github.workspace }}/sandbox/MRubyCS.Benchmark/mruby
-  BENCHMARK_CONFIG_DIR: ${{ github.workspace }}/sandbox/MRubyCS.Benchmark
+  MRUBY_DIR: ${{ github.workspace }}/src/ChibiRuby.Compiler/mruby
+  CONFIG_DIR: ${{ github.workspace }}/src/ChibiRuby.Compiler
+  BENCHMARK_MRUBY_DIR: ${{ github.workspace }}/sandbox/ChibiRuby.Benchmark/mruby
+  BENCHMARK_CONFIG_DIR: ${{ github.workspace }}/sandbox/ChibiRuby.Benchmark
 
 jobs:
   build-macOS:

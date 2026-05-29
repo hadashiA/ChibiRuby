@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0;net10.0;netstandard2.1</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <LangVersion>13</LangVersion>
+        <Description>Debugger core for ChibiRuby. Protocol-agnostic primitives for breakpoints, stepping, and binding.irb suspension.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="ChibiRuby.Debugger.Dap" />
+        <InternalsVisibleTo Include="ChibiRuby.Debugger.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ChibiRuby\ChibiRuby.csproj" />
+      <ProjectReference Include="..\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" />
+    </ItemGroup>
+
+</Project>

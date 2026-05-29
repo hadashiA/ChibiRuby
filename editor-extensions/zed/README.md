@@ -1,7 +1,7 @@
 # mruby/cs Debug Adapter for Zed
 
-Bridges Zed's built-in DAP UI to [`MRubyDapServer`](../../src/MRubyCS.Debugger.Dap/),
-the debug server that ships inside the MRubyCS host process (typically Unity).
+Bridges Zed's built-in DAP UI to [`MRubyDapServer`](../../src/ChibiRuby.Debugger.Dap/),
+the debug server that ships inside the ChibiRuby host process (typically Unity).
 
 The extension itself ships no binary — it only tells Zed:
 

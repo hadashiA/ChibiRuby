@@ -750,7 +750,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zed_mruby_cs"
+name = "zed_chibi_ruby"
 version = "0.1.0"
 dependencies = [
  "serde_json",
