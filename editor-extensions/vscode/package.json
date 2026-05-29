@@ -2,7 +2,7 @@
   "name": "chibiruby-debugger",
   "displayName": "ChibiRuby Debugger",
   "description": "DAP debug adapter for ChibiRuby (mruby on .NET).",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "hadashiA",
   "repository": {
     "type": "git",
