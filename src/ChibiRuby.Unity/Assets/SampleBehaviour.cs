@@ -55,8 +55,7 @@ public class SampleBehaviour : MonoBehaviour
         // In a real game build (no asset on disk) you'd want a synthetic but stable
         // path like "ruby/sample.rb" instead.
         var scriptPath = $"{Application.dataPath}/ruby/sample.rb";
-        // using var compilation = compiler.CompileFile(scriptPath);
-        using var compilation = compiler.Compile(File.ReadAllBytes(scriptPath));
+        using var compilation = compiler.CompileFile(scriptPath);
 
         var fiber = mrb.ParseBytecodeAsFiber(compilation.AsBytecode());
         fiber.Resume(Array.Empty<MRubyValue>());
