@@ -59,12 +59,6 @@ The above results were obtained on macOS with Apple M4 over 10 iterations.
 
 Please refer to the following for the [benchmark code](https://github.com/hadashiA/ChibiRuby/tree/main/sandbox/ChibiRuby.Benchmark).
 
-## Limitations
-
-- As of mruby 4.0, almost all bundled classes/methods are supported.
-    - Support for extensions split into [mrbgems](https://github.com/mruby/mruby/tree/master/mrbgems) remains limited.
-- `Regexp` and `IO` / `File` are **opt-in**: Call `mrb.DefineRegexp()` / `mrb.DefineIO()` to add them. See [Optional Classes](#optional-classes-opt-in).
-
 ## Table of Contents
 
 - [Installation](#installation)
