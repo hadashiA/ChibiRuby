@@ -13,10 +13,11 @@ The extension itself ships no binary — it only tells Zed:
 That's the entirety of it. The actual debug server lives in your Unity (or other
 .NET) host process via `new MRubyDapServer(...).StartAsync()`.
 
-## Dev install (current distribution)
+## Dev install
 
-The extension is not yet on the Zed extension registry. To use it, install it
-locally as a dev extension:
+The extension is in the process of being submitted to the
+[Zed extension registry](https://github.com/zed-industries/extensions). Until it
+lands there, install it locally as a dev extension:
 
 1. **Prerequisites** (one-time):
    - [Rust](https://rustup.rs) toolchain
@@ -72,7 +73,7 @@ locally as a dev extension:
 
 ## Roadmap
 
-- Submit to [zed-industries/extensions](https://github.com/zed-industries/extensions)
-  once the API surface stabilizes — then no Rust toolchain / dev install dance.
+- Land on the [Zed extension registry](https://github.com/zed-industries/extensions)
+  so the Rust toolchain / dev-install dance is no longer required.
 - Add scenario auto-creation (`dap_config_to_scenario`) so users without a
   `debug.json` can still start a session via the Zed UI.

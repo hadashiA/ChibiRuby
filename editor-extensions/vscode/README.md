@@ -1,144 +1,93 @@
 # ChibiRuby Debugger (VSCode)
 
-DAP-based debug adapter for [ChibiRuby](https://github.com/hadashiA/ChibiRuby). Pause at
-`binding.irb`, inspect locals, and evaluate arbitrary Ruby in the Debug Console.
+DAP-based debug adapter for [ChibiRuby](https://github.com/hadashiA/ChibiRuby).
+Set breakpoints in `.rb` files, inspect locals, and evaluate arbitrary Ruby in
+the Debug Console.
 
-## Phase 1 capabilities
+## Install
 
-- Suspend at `binding.irb`
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/hadashiA.chibiruby-debugger?label=Marketplace)](https://marketplace.visualstudio.com/items?itemName=hadashiA.chibiruby-debugger)
+
+```
+code --install-extension hadashiA.chibiruby-debugger
+```
+
+Or search **"ChibiRuby Debugger"** in the Extensions panel.
+
+## Capabilities
+
+- **Line breakpoints** in `.rb` files — click the gutter or press **F9**
 - Evaluate Ruby expressions in the suspended binding (Debug Console / Watch / Hover)
 - View `self` and locals in the Variables pane
 - Continue / terminate
+- `binding.irb` as an inline pause (also supported, useful when you can't easily
+  set a gutter breakpoint — e.g. generated code)
 
-Not yet supported (Phase 2): line breakpoints, step over/into/out, source-map line
-display in the call stack. The stack frame currently shows line 1 as a placeholder.
+Not yet supported: launch mode (run a `.rb` file from VSCode), step
+over/into/out.
 
 ---
 
-## Starting a debug session without launch.json
+## Quick start (attach to an embedded host)
 
-For ad-hoc attach against a running host, two zero-config paths are available:
+The extension supports **attach mode** only. Your C# / Unity host embeds
+ChibiRuby and opens a TCP listener via `new MRubyDapServer(...).StartAsync()`;
+VSCode connects over TCP, sends your breakpoints, and execution halts when a
+breakpoint hits (or at any `binding.irb` call).
 
-- **Command Palette**: `Cmd+Shift+P` → **"ChibiRuby: Attach to running host"** → type a port
-  (default 4711) → Enter. The session starts immediately.
-- **Run-and-Debug picker**: with no `.vscode/launch.json` present, opening the Run-and-Debug
-  panel offers **"ChibiRuby: Attach to embedded host (4711)"** via the dynamic-configuration
-  list. One click starts the session.
+See [`sandbox/SampleDebuggerEmbedded/`](../../sandbox/SampleDebuggerEmbedded/)
+for a complete working host you can run with `dotnet run`.
 
-Both routes assume `MRubyDapTcpServer.Listen(...)` is already running on the chosen port
-in your host process. If you need a non-default host/port or want to switch frequently,
-write a `launch.json` (see below).
+### Zero-config attach
 
-## Two modes
+Two paths skip the `launch.json` boilerplate:
 
-### Attach mode (typical for embedded hosts)
+- **Command Palette**: `Cmd+Shift+P` → **"ChibiRuby: Attach to running host"** →
+  type a port (default 4711) → Enter. The session starts immediately.
+- **Run-and-Debug picker**: with no `.vscode/launch.json` present, opening the
+  Run-and-Debug panel offers **"ChibiRuby: Attach to embedded host (4711)"** via
+  the dynamic-configuration list. One click starts the session.
 
-Your C# / Unity host has its own startup and embeds ChibiRuby for scripting. It exposes a
-DAP listener via `MRubyDapTcpServer.Listen(...)`. You launch the host first; VSCode
-attaches over TCP.
+Both routes assume `MRubyDapServer` is already listening on the chosen port. If
+you need a non-default host/port or want to switch frequently, write a
+`launch.json`.
+
+### With launch.json
 
 `.vscode/launch.json`:
 
 ```json
 {
-  "type": "chibiruby",
-  "request": "attach",
-  "name": "ChibiRuby: Attach",
-  "host": "127.0.0.1",
-  "port": 4711
-}
-```
-
-See `sandbox/SampleDebuggerEmbedded/` for a complete working host.
-
-### Launch mode (single .rb file)
-
-VSCode spawns `mruby-debug` as a child process; the adapter loads & runs the script
-itself. Useful for one-off scripts without writing host code.
-
-```json
-{
-  "type": "chibiruby",
-  "request": "launch",
-  "name": "ChibiRuby: Debug current file",
-  "program": "${file}"
-}
-```
-
----
-
-## Setup (local development)
-
-### 1. Build the DAP adapter (`mruby-debug`)
-
-From the repo root:
-
-```sh
-dotnet build -c Release src/ChibiRuby.Debugger.Cli/ChibiRuby.Debugger.Cli.csproj
-```
-
-You have two ways to make the adapter discoverable to VSCode:
-
-#### Option A — `dotnet tool` install (clean, but requires a re-install on each rebuild)
-
-```sh
-cd src/ChibiRuby.Debugger.Cli
-dotnet pack -c Release
-dotnet tool install -g --add-source ./nupkg ChibiRuby.Debugger.Cli
-# `mruby-debug` is now on your PATH (~/.dotnet/tools/mruby-debug)
-```
-
-The default `adapterCommand: "mruby-debug"` in the extension will resolve via PATH.
-
-#### Option B — point the extension directly at the build output (fast iteration)
-
-In your `.vscode/launch.json`:
-
-```json
-{
-  "type": "chibiruby",
-  "request": "launch",
-  "name": "Debug current file (local build)",
-  "program": "${file}",
-  "adapterCommand": "dotnet",
-  "adapterArgs": [
-    "/abs/path/to/ChibiRuby-Debugger/src/ChibiRuby.Debugger.Cli/bin/Debug/net9.0/ChibiRuby.Debugger.Cli.dll"
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chibiruby",
+      "request": "attach",
+      "name": "ChibiRuby: Attach",
+      "host": "127.0.0.1",
+      "port": 4711
+    }
   ]
 }
 ```
 
-No re-install needed; just `dotnet build` after each change.
+Start the host, then press **F5** in VSCode.
 
-### 2. Sideload the VSCode extension
+### Try it with the sample host
 
-From this directory (`editor-extensions/vscode/`):
+1. Open the workspace [`sandbox/SampleDebuggerEmbedded/`](../../sandbox/SampleDebuggerEmbedded/)
+   in VSCode (it ships with a ready `launch.json`).
+2. Open the script (e.g. `scenarios/quest.rb`) and click the gutter on any line
+   to set a breakpoint.
+3. Start the sample host in a terminal:
 
-```sh
-# One-time: install @vscode/vsce
-npm install -g @vscode/vsce
+   ```sh
+   dotnet run --project sandbox/SampleDebuggerEmbedded
+   ```
 
-# Package the extension into a .vsix
-vsce package
-# -> chibiruby-debugger-0.1.0.vsix
+4. Press **F5** in VSCode to attach. Execution halts at your breakpoint.
 
-# Install into your VSCode
-code --install-extension chibiruby-debugger-0.1.0.vsix
-```
-
-Alternatively, **Extension Development Host** for live iteration on the extension itself:
-
-```sh
-code editor-extensions/vscode
-# In the opened window, press F5 — a second VSCode window opens with the
-# extension loaded. Open a .rb file there and start debugging.
-```
-
-### 3. Try it
-
-Open `editor-extensions/vscode/examples/sample.rb` in VSCode, press **F5**, choose
-the **ChibiRuby: Debug current file** configuration when prompted.
-
-Execution should halt at the `binding.irb` line. In the **Debug Console**, type:
+In the **Debug Console**, try evaluating expressions against the current binding:
 
 ```
 > greeting.upcase
@@ -149,22 +98,18 @@ Execution should halt at the `binding.irb` line. In the **Debug Console**, type:
 "Object"
 ```
 
-Hit **Continue** (F5) to finish the script.
+Hit **Continue** (F5) to resume.
 
 ---
 
 ## launch.json reference
 
-```json
-{
-  "type": "chibiruby",
-  "request": "launch",
-  "name": "ChibiRuby",
-  "program": "${file}",            // Required. .rb file to execute.
-  "adapterCommand": "mruby-debug", // Optional. Executable that speaks DAP on stdio.
-  "adapterArgs": []                 // Optional. Args prepended to the adapter command.
-}
-```
+| Field   | Required | Default       | Notes                                                          |
+|---------|----------|---------------|----------------------------------------------------------------|
+| `type`  | yes      | —             | Must be `"chibiruby"`.                                         |
+| `request` | yes    | —             | Must be `"attach"` (launch mode not yet supported).            |
+| `host`  | no       | `127.0.0.1`   | Hostname / IP `MRubyDapServer` is bound to.                    |
+| `port`  | no       | `4711`        | TCP port `MRubyDapServer` is listening on.                     |
 
 ### Variables surface
 
@@ -177,5 +122,39 @@ The Debug Console / Watch pane can use any of:
 | `self.foo`, `self.class`                       | Self-bound calls work because eval'd code runs via `obj.instance_eval(&proc)`. |
 | `raise "x"`                                    | The error is reported in the response; the host program is unaffected. |
 
-A Phase 2 release will hook the compiler's `Upper` context so bare identifiers resolve
-to outer locals natively.
+A future release will hook the compiler's `Upper` context so bare identifiers
+resolve to outer locals natively.
+
+---
+
+## Contributing — dev install
+
+If you're hacking on the extension itself:
+
+### Extension Development Host (live iteration)
+
+```sh
+code editor-extensions/vscode
+# Press F5 in the opened window — a second VSCode window starts with the
+# extension loaded. Open a .rb file there and start debugging.
+```
+
+### Package & sideload a .vsix
+
+```sh
+# One-time:
+npm install -g @vscode/vsce
+
+cd editor-extensions/vscode
+vsce package
+# -> chibiruby-debugger-<version>.vsix
+
+code --install-extension chibiruby-debugger-*.vsix
+```
+
+### Publish to Marketplace
+
+Releases are cut by the [`release` workflow](../../.github/workflows/release.yaml),
+which packages and publishes to Marketplace when run with `dry-run: false`.
+Requires the `VSCE_PAT` repository secret (Azure DevOps PAT, Marketplace →
+Manage scope).

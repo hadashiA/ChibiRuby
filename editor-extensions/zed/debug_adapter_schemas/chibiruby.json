@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ChibiRuby Debug Adapter Configuration",
+  "description": "Schema for `.zed/debug.json` entries with adapter \"chibiruby\". Connects over TCP to MRubyDapServer running inside a host process (Unity or any .NET app).",
+  "type": "object",
+  "properties": {
+    "request": {
+      "type": "string",
+      "description": "DAP session kind. ChibiRuby only supports `attach` (the MRubyDapServer is embedded in the host and we connect to it). `launch` is forwarded but not yet honored.",
+      "enum": ["attach", "launch"],
+      "default": "attach"
+    },
+    "tcp_connection": {
+      "type": "object",
+      "description": "Where to reach the embedded MRubyDapServer.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Hostname or IP the server is bound to. Use a LAN IP to attach from another machine (e.g. iPhone on the same Wi-Fi).",
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "integer",
+          "description": "TCP port the server is listening on. Must match the port passed to `new MRubyDapServer(..., port: ...)` on the host.",
+          "default": 4711,
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Connect timeout in milliseconds. Falls back to Zed's default if omitted.",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
