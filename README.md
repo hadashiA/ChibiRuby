@@ -1,6 +1,6 @@
 # ChibiRuby
 
-ChibiRuby is a pure C# [mruby](https://github.com/mruby/mruby) virtual machine implementation  It combines high Ruby-level compatibility with the performance and extensibility of modern C#.
+ChibiRuby is a pure C# [mruby](https://github.com/mruby/mruby) virtual machine implementation. It combines high Ruby-level compatibility with the performance and extensibility of modern C#.
 
 Easily embed Ruby into Unity or .NET—empowering users to script game logic while keeping your core engine in C#.
 
@@ -9,31 +9,20 @@ Easily embed Ruby into Unity or .NET—empowering users to script game logic whi
 
 ## Why mruby?
 
-Ruby's elegant, expressive syntax makes it ideal for building DSLs (Domain-Specific Languages). Game designers and scenario writers can describe complex game logic — event triggers, dialogue trees, AI behavior — in clean, readable scripts without wrestling with C-like syntax.
+Ruby's clean, expressive syntax makes it perfect for building DSLs. Game designers and scenario writers can describe game logic — event triggers, dialogue trees, and AI behavior — in simple, readable scripts.
 
 ```ruby
 # Example: game event DSL
-scene :throne_room_betrayal do
-  sequence do
-    camera.focus_on :king, over: 1.2.seconds
-    king.say "You have served me well, knight."
-    wait 0.5.seconds
-    advisor.move_to :behind_king
-    advisor.say "Too well, perhaps."
+with(:Yogoroza) do
+  talk "Who are you?"
+  motion :suprize
+end
 
-    choice do
-      option "Draw your sword" do
-        player.equip :longsword
-        goto :combat_phase
-      end
-
-      option "Kneel" do
-        player.animate :kneel
-        king.say "Loyalty. How rare."
-        complete_scene
-      end
-    end
-  end
+with(:BlackCat) do
+  talk "It's you, isn't it."
+  motion :laugh
+  talk "You seem to be gradually forgetting who you are."
+  talk "Isn't that right?"
 end
 ```
 
