@@ -337,7 +337,7 @@ dotnet add package ChibiRuby.Compiler
 If you also want the Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, additionally install the Unity package. Open Window > Package Manager, click [+] > Add package from git URL, and enter:
 
 ```
-https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Compiler.Unity#1.0.0
+https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Compiler.Unity#1.1.0
 ```
 
 See [Unity AssetImporter](#unity-assetimporter) for details.
@@ -1574,7 +1574,7 @@ By introducing the following packages, serialization of Unity-specific types wil
 Open the Package Manager window by selecting Window > Package Manager, then click on [+] > Add package from git URL and enter the following URL:
 
 ```
-https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Serializer.Unity#1.0.0
+https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Serializer.Unity#1.1.0
 ```
 
 | mruby                                | C#  |
