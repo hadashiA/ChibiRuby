@@ -28,6 +28,8 @@ public sealed class RFiber : RObject
     readonly MRubyContext context = new();
     readonly MRubyState state;
     readonly MultiConsumerValueTaskNotifier<MRubyValue> resumeSource = new();
+    readonly TaskCompletionSource<MRubyValue> terminationSource =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     internal RFiber(MRubyState state, RClass c) : base(MRubyVType.Fiber, c)
     {
@@ -48,17 +50,17 @@ public sealed class RFiber : RObject
         return resumeSource.WaitAsync(cancellation);
     }
 
-    public async ValueTask<MRubyValue> WaitForTerminateAsync(CancellationToken cancellation = default)
+    public ValueTask<MRubyValue> WaitForTerminateAsync(CancellationToken cancellation = default)
     {
-        // Wait for fiber completion
-        MRubyValue result = default;
-        while (IsAlive)
+        var task = terminationSource.Task;
+        if (cancellation.CanBeCanceled)
         {
-            var wait = WaitForResumeAsync(cancellation);
-            if (wait.IsCompleted) continue;
-            result = await wait;
+            cancellation.Register(() =>
+            {
+                terminationSource.TrySetCanceled(cancellation);
+            });
         }
-        return result;
+        return new ValueTask<MRubyValue>(task);
     }
 
     public async IAsyncEnumerable<MRubyValue> AsAsyncEnumerable([EnumeratorCancellation] CancellationToken cancellation = default)
@@ -302,11 +304,19 @@ public sealed class RFiber : RObject
                 if (pending is not null) state.Raise(pending);
             }
 
+            if (context.State == FiberState.Terminated)
+            {
+                terminationSource.TrySetResult(result);
+            }
             resumeSource.SetResult(result);
             return result;
         }
         catch (Exception ex)
         {
+            if (context.State == FiberState.Terminated)
+            {
+                terminationSource.TrySetException(ex);
+            }
             resumeSource.SetException(ex);
             throw;
         }
