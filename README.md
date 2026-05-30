@@ -70,6 +70,10 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
         - [Option B: Using Compiler library (runtime compile)](#option-b-using-compiler-library-runtime-compile)
         - [Irep](#irep)
         - [Compiler Reference](#compiler-reference)
+    - [MRubyValue](#mrubyvalue)
+        - [Symbol/String](#symbolstring)
+        - [Array/Hash](#arrayhash)
+        - [Embedded custom C# data into MRubyValue](#embedded-custom-c-data-into-mrubyvalue)
     - [Define ruby class/module/method by C#](#define-ruby-classmodulemethod-by-c)
         - [Error handling & validation in C# methods](#error-handling--validation-in-c-methods)
         - [Constants](#constants)
@@ -78,10 +82,6 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
         - [Type conversion & introspection](#type-conversion--introspection)
         - [Instance variables / class variables / global variables](#instance-variables--class-variables--global-variables)
         - [Clone / Dup / Freeze](#clone--dup--freeze)
-    - [MRubyValue](#mrubyvalue)
-        - [Symbol/String](#symbolstring)
-        - [Array/Hash](#arrayhash)
-        - [Embedded custom C# data into MRubyValue](#embedded-custom-c-data-into-mrubyvalue)
 - [Optional Classes (opt-in)](#optional-classes-opt-in)
     - [Regexp](#regexp)
     - [IO / File](#io--file)
@@ -409,6 +409,250 @@ var src = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "script
 compiler.LoadSourceCode(src); // re-evaluates, replacing previous definitions
 ```
 
+### `MRubyValue`
+
+`MRubyValue` represents a Ruby value. It is returned from methods like `LoadBytecode`, `Execute`, `Send`, etc.
+
+```cs
+value.IsNil //=> true if `nil`
+value.IsInteger //=> true if integer
+value.IsFloat //=> true if float
+value.IsSymbol //=> true if Symbol
+value.IsObject //=> true if any allocated object type
+
+value.VType //=> get known ruby-type as C# enum.
+
+value.IntegerValue //=> get as C# Int64
+value.FloatValue //=> get as C# float
+value.SymbolValue //=> get as `Symbol`
+
+value.As<RString>() //=> get as internal String representation
+value.As<RArray>() //=> get as internal Array representation
+value.As<RHash>() //=> get as internal Hash representation
+
+// pattern matching
+if (value.Object is RString str)
+{
+    // ...
+}
+
+switch (value)
+{
+    case { IsInteger: true }:
+        // ...
+        break;
+    case { Object: RString str }:
+        // ...
+        break;
+}
+
+// Creating MRubyValue
+var intValue = new MRubyValue(100);
+var floatValue = new MRubyValue(1.234f);
+var objValue = new MRubyValue(str);
+
+// Implicit conversions are available — useful when passing arguments
+mrb.Send(obj, mrb.Intern("method"u8), 42);      // int → MRubyValue
+mrb.Send(obj, mrb.Intern("method"u8), 3.14);    // double → MRubyValue
+mrb.Send(obj, mrb.Intern("method"u8), true);    // bool → MRubyValue
+mrb.Send(obj, mrb.Intern("method"u8), sym);     // Symbol → MRubyValue
+mrb.Send(obj, mrb.Intern("method"u8), rstring); // RObject → MRubyValue
+
+// Static constants
+MRubyValue.Nil   // Ruby nil
+MRubyValue.True  // Ruby true
+MRubyValue.False // Ruby false
+
+// Boolean / truthiness
+value.BoolValue //=> C# bool
+value.Truthy    //=> true unless nil or false (Ruby semantics)
+value.Falsy     //=> true if nil or false
+```
+
+#### Symbol/String
+
+The string representation within mruby is utf8.
+Therefore, to generate a ruby string from C#, [Utf8StringInterpolation](https://github.com/Cysharp/Utf8StringInterpolation) is used internally.
+
+
+```cs
+// Create string literal.
+var str1 = mrb.NewString("HOGE HOGE"u8); // use u8 literal (C# 11 or newer)
+var str2 = mrb.NewString($"FOO BAR"); // use string interpolation
+
+var x = 123;
+var str3 = mrb.NewString($"x={x}");
+
+// wrap MRubyValue..
+MRubyValue strValue = str1;
+```
+
+There is a concept in mruby similar to String called `Symbol`.
+Like String, it is created using utf8 strings, but internally it is a uint integer.
+Symbols are usually used for method IDs and class IDs.
+
+To create a symbol from C#, use `Intern`.
+
+```cs
+// symbol literal
+var sym1 = mrb.Intern("sym");
+
+// create symbol from string interporation
+var x = 123;
+var sym2 = mrb.Intern($"sym{x}");
+
+// symbol to utf8 bytes
+mrb.NameOf(sym1); //=> "sym"u8
+mrb.NameOf(sym2); //=> "sym123"u8
+
+// create symbol from string
+var sym2 = mrb.AsSymbol(mrb.NewString($"hoge"));
+```
+
+> [!NOTE]
+> Both `Intern("str")` and `Intern("str"u8)` are valid, but the u8 literal is faster. We recommend using the u8 literal whenever possible.
+
+`RString` also provides methods for in-place manipulation and direct UTF-8 byte access:
+
+```cs
+var str = mrb.NewString("hello"u8);
+
+// UTF-8 byte access
+ReadOnlySpan<byte> bytes = str.AsSpan(); // raw UTF-8 bytes
+
+// In-place modification
+str.Concat(" world"u8);  // append bytes
+str.Upcase();             // "HELLO WORLD"
+str.Downcase();           // "hello world"
+str.Capitalize();         // "Hello world"
+str.Chomp();              // remove trailing newline
+str.Chop();               // remove last character
+```
+
+#### Array/Hash
+
+`RArray` and `RHash` are the internal representations of Ruby's `Array` and `Hash`.
+
+```cs
+// Create array
+var array = mrb.NewArray(3); // with capacity
+var array2 = mrb.NewArray(1, 2, 3);
+
+// Access elements (supports negative indices)
+var first = array2[0];   //=> 1
+var last  = array2[-1];  //=> 3
+
+// Add elements
+array.Push(100);
+array.Push(200);
+
+// Get length
+array.Length //=> 2
+
+// Iterate over elements
+foreach (var item in array)
+{
+    Console.WriteLine(item.IntegerValue);
+}
+
+// Pop / Shift
+if (array.TryPop(out var popped)) { /* ... */ }
+var shifted = array.Shift(); // remove and return first element
+
+// Extract RArray from MRubyValue
+var value = mrb.LoadBytecode(bytecode); // returns MRubyValue
+var arr = value.As<RArray>();
+```
+
+```cs
+// Create hash
+var hash = mrb.NewHash();
+
+// Set values (key can be any MRubyValue — Symbol, String, Integer, etc.)
+hash[mrb.Intern("name"u8)] = mrb.NewString("Alice"u8);
+hash[mrb.Intern("age"u8)]  = 30;
+
+// Get values
+var name = hash[mrb.Intern("name"u8)];
+
+// Check existence
+hash.ContainsKey(mrb.Intern("name"u8)); //=> true
+hash.TryGetValue(mrb.Intern("age"u8), out var age); //=> true, age = 30
+
+// Get length
+hash.Length //=> 2
+
+// Iterate over key-value pairs
+foreach (var kv in hash)
+{
+    // kv.Key, kv.Value are MRubyValue
+}
+
+// Delete
+hash.TryDelete(mrb.Intern("age"u8), out var deleted);
+
+// Extract RHash from MRubyValue
+var hashValue = mrb.LoadBytecode(bytecode);
+var h = hashValue.As<RHash>();
+```
+
+#### Embedded custom C# data into MRubyValue
+
+You can stuff any C# object into an `MRubyValue` via `RData`. The `RData.Data` property accepts any `object` and can be freely get/set from C#.
+
+This is useful when calling C# functionality from Ruby methods defined in C#.
+
+```cs
+class YourCustomClass
+{
+    public string Value { get; set; }
+}
+
+var csharpInstance = new YourCustomClass { Value = "abcde" };
+
+var mrb = MRubyState.Create();
+
+var data = new RData(csharpInstance);
+mrb.SetConst(mrb.Intern("MYDATA"u8), mrb.ObjectClass, data);
+
+// Use custom data from ruby
+mrb.DefineMethod(mrb.ObjectClass, mrb.Intern("from_csharp_data"u8), (_, self) =>
+{
+    var dataValue = mrb.GetConst(mrb.Intern("MYDATA"u8), mrb.ObjectClass);
+    var csharpInstance = dataValue.As<RData>().Data as YourCustomClass;
+    // ...
+});
+```
+
+#### Embedded custom C# data with ruby class
+
+```cs
+// Instances of classes that specify `MRubyVType.CSharpData` have `self` as RData.
+var yourClass = mrb.DefineClass(mrb.Intern("MyCustomClass"u8), mrb.ObjectClass, MRubyVType.CSharpData);
+
+// Define custom `initialize` with C# data
+mrb.DefineMethod(yourClass, mrb.Intern("initialize"u8), (s, self) =>
+{
+    if (self.Object is RData x)
+    {
+        x.Data = new YourCustomClass { Value = "abcde" };
+    }
+    return self;
+});
+
+// Use custom C# data
+mrb.DefineMethod(yourClass, mrb.Intern("foo_method"u8), (s, self) =>
+{
+    if (self.Object is RData { Data: YourCustomClass csharpInstance })
+    {
+        // Use C# data..
+        csharpInstance.Value = "fghij";
+    }
+    // ...
+});
+
+```
+
 ### Define ruby class/module/method by C#
 
 ```cs
@@ -691,250 +935,6 @@ var duped = mrb.DupObject(value);
 var str = mrb.NewString("immutable"u8);
 str.MarkAsFrozen();
 str.IsFrozen //=> true
-```
-
-### `MRubyValue`
-
-`MRubyValue` represents a Ruby value. It is returned from methods like `LoadBytecode`, `Execute`, `Send`, etc.
-
-```cs
-value.IsNil //=> true if `nil`
-value.IsInteger //=> true if integer
-value.IsFloat //=> true if float
-value.IsSymbol //=> true if Symbol
-value.IsObject //=> true if any allocated object type
-
-value.VType //=> get known ruby-type as C# enum.
-
-value.IntegerValue //=> get as C# Int64
-value.FloatValue //=> get as C# float
-value.SymbolValue //=> get as `Symbol`
-
-value.As<RString>() //=> get as internal String representation
-value.As<RArray>() //=> get as internal Array representation
-value.As<RHash>() //=> get as internal Hash representation
-
-// pattern matching
-if (value.Object is RString str)
-{
-    // ...
-}
-
-switch (value)
-{
-    case { IsInteger: true }:
-        // ...
-        break;
-    case { Object: RString str }:
-        // ...
-        break;
-}
-
-// Creating MRubyValue
-var intValue = new MRubyValue(100);
-var floatValue = new MRubyValue(1.234f);
-var objValue = new MRubyValue(str);
-
-// Implicit conversions are available — useful when passing arguments
-mrb.Send(obj, mrb.Intern("method"u8), 42);       // int → MRubyValue
-mrb.Send(obj, mrb.Intern("method"u8), 3.14);      // double → MRubyValue
-mrb.Send(obj, mrb.Intern("method"u8), true);       // bool → MRubyValue
-mrb.Send(obj, mrb.Intern("method"u8), sym);        // Symbol → MRubyValue
-mrb.Send(obj, mrb.Intern("method"u8), rstring);    // RObject → MRubyValue
-
-// Static constants
-MRubyValue.Nil   // Ruby nil
-MRubyValue.True  // Ruby true
-MRubyValue.False // Ruby false
-
-// Boolean / truthiness
-value.BoolValue //=> C# bool
-value.Truthy    //=> true unless nil or false (Ruby semantics)
-value.Falsy     //=> true if nil or false
-```
-
-#### Symbol/String
-
-The string representation within mruby is utf8.
-Therefore, to generate a ruby string from C#, [Utf8StringInterpolation](https://github.com/Cysharp/Utf8StringInterpolation) is used internally.
-
-
-```cs
-// Create string literal.
-var str1 = mrb.NewString("HOGE HOGE"u8); // use u8 literal (C# 11 or newer)
-var str2 = mrb.NewString($"FOO BAR"); // use string interpolation
-
-var x = 123;
-var str3 = mrb.NewString($"x={x}");
-
-// wrap MRubyValue..
-MRubyValue strValue = str1;
-```
-
-There is a concept in mruby similar to String called `Symbol`.
-Like String, it is created using utf8 strings, but internally it is a uint integer.
-Symbols are usually used for method IDs and class IDs.
-
-To create a symbol from C#, use `Intern`.
-
-```cs
-// symbol literal
-var sym1 = mrb.Intern("sym");
-
-// create symbol from string interporation
-var x = 123;
-var sym2 = mrb.Intern($"sym{x}");
-
-// symbol to utf8 bytes
-mrb.NameOf(sym1); //=> "sym"u8
-mrb.NameOf(sym2); //=> "sym123"u8
-
-// create symbol from string
-var sym2 = mrb.AsSymbol(mrb.NewString($"hoge"));
-```
-
-> [!NOTE]
-> Both `Intern("str")` and `Intern("str"u8)` are valid, but the u8 literal is faster. We recommend using the u8 literal whenever possible.
-
-`RString` also provides methods for in-place manipulation and direct UTF-8 byte access:
-
-```cs
-var str = mrb.NewString("hello"u8);
-
-// UTF-8 byte access
-ReadOnlySpan<byte> bytes = str.AsSpan(); // raw UTF-8 bytes
-
-// In-place modification
-str.Concat(" world"u8);  // append bytes
-str.Upcase();             // "HELLO WORLD"
-str.Downcase();           // "hello world"
-str.Capitalize();         // "Hello world"
-str.Chomp();              // remove trailing newline
-str.Chop();               // remove last character
-```
-
-#### Array/Hash
-
-`RArray` and `RHash` are the internal representations of Ruby's `Array` and `Hash`.
-
-```cs
-// Create array
-var array = mrb.NewArray(3); // with capacity
-var array2 = mrb.NewArray(1, 2, 3);
-
-// Access elements (supports negative indices)
-var first = array2[0];   //=> 1
-var last  = array2[-1];  //=> 3
-
-// Add elements
-array.Push(100);
-array.Push(200);
-
-// Get length
-array.Length //=> 2
-
-// Iterate over elements
-foreach (var item in array)
-{
-    Console.WriteLine(item.IntegerValue);
-}
-
-// Pop / Shift
-if (array.TryPop(out var popped)) { /* ... */ }
-var shifted = array.Shift(); // remove and return first element
-
-// Extract RArray from MRubyValue
-var value = mrb.LoadBytecode(bytecode); // returns MRubyValue
-var arr = value.As<RArray>();
-```
-
-```cs
-// Create hash
-var hash = mrb.NewHash();
-
-// Set values (key can be any MRubyValue — Symbol, String, Integer, etc.)
-hash[mrb.Intern("name"u8)] = mrb.NewString("Alice"u8);
-hash[mrb.Intern("age"u8)]  = 30;
-
-// Get values
-var name = hash[mrb.Intern("name"u8)];
-
-// Check existence
-hash.ContainsKey(mrb.Intern("name"u8)); //=> true
-hash.TryGetValue(mrb.Intern("age"u8), out var age); //=> true, age = 30
-
-// Get length
-hash.Length //=> 2
-
-// Iterate over key-value pairs
-foreach (var kv in hash)
-{
-    // kv.Key, kv.Value are MRubyValue
-}
-
-// Delete
-hash.TryDelete(mrb.Intern("age"u8), out var deleted);
-
-// Extract RHash from MRubyValue
-var hashValue = mrb.LoadBytecode(bytecode);
-var h = hashValue.As<RHash>();
-```
-
-#### Embedded custom C# data into MRubyValue
-
-You can stuff any C# object into an `MRubyValue` via `RData`. The `RData.Data` property accepts any `object` and can be freely get/set from C#.
-
-This is useful when calling C# functionality from Ruby methods defined in C#.
-
-```cs
-class YourCustomClass
-{
-    public string Value { get; set; }
-}
-
-var csharpInstance = new YourCustomClass { Value = "abcde" };
-
-var mrb = MRubyState.Create();
-
-var data = new RData(csharpInstance);
-mrb.SetConst(mrb.Intern("MYDATA"u8), mrb.ObjectClass, data);
-
-// Use custom data from ruby
-mrb.DefineMethod(mrb.ObjectClass, mrb.Intern("from_csharp_data"u8), (_, self) =>
-{
-    var dataValue = mrb.GetConst(mrb.Intern("MYDATA"u8), mrb.ObjectClass);
-    var csharpInstance = dataValue.As<RData>().Data as YourCustomClass;
-    // ...
-});
-```
-
-#### Embedded custom C# data with ruby class
-
-```cs
-// Instances of classes that specify `MRubyVType.CSharpData` have `self` as RData.
-var yourClass = mrb.DefineClass(mrb.Intern("MyCustomClass"u8), mrb.ObjectClass, MRubyVType.CSharpData);
-
-// Define custom `initialize` with C# data
-mrb.DefineMethod(yourClass, mrb.Intern("initialize"u8), (s, self) =>
-{
-    if (self.Object is RData x)
-    {
-        x.Data = new YourCustomClass { Value = "abcde" };
-    }
-    return self;
-});
-
-// Use custom C# data
-mrb.DefineMethod(yourClass, mrb.Intern("foo_method"u8), (s, self) =>
-{
-    if (self.Object is RData { Data: YourCustomClass csharpInstance })
-    {
-        // Use C# data..
-        csharpInstance.Value = "fghij";
-    }
-    // ...
-});
-
 ```
 
 
