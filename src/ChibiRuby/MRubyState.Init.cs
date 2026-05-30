@@ -796,6 +796,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(responseClass, Intern("server_error?"u8), HttpResponseMembers.ServerErrorQ);
         DefineMethod(responseClass, Intern("error?"u8), HttpResponseMembers.ErrorQ);
         DefineMethod(responseClass, Intern("ensure_success_status!"u8), HttpResponseMembers.EnsureSuccessStatusBang);
+        DefineMethod(responseClass, Intern("json"u8), HttpResponseMembers.Json);
         DefineMethod(responseClass, Intern("inspect"u8), HttpResponseMembers.Inspect);
         DefineMethod(responseClass, Intern("to_s"u8), HttpResponseMembers.ToS);
 
@@ -818,6 +819,59 @@ public partial class MRubyState : IDisposable
         DefineMethod(bodyClass, Intern("empty?"u8), HttpBodyMembers.EmptyQ);
         DefineMethod(bodyClass, Intern("each"u8), HttpBodyMembers.Each);
         DefineMethod(bodyClass, Intern("inspect"u8), HttpBodyMembers.Inspect);
+    }
+
+    /// <summary>
+    /// Registers the optional Ruby <c>JSON</c> module (matching the API of
+    /// stdlib <c>json</c>) and its error hierarchy
+    /// (<c>JSON::JSONError</c> / <c>JSON::ParserError</c> /
+    /// <c>JSON::GeneratorError</c> / <c>JSON::NestingError</c>). Also adds
+    /// <c>#to_json</c> instance methods to <c>Hash</c>, <c>Array</c>,
+    /// <c>String</c>, <c>Integer</c>, <c>Float</c>, <c>TrueClass</c>,
+    /// <c>FalseClass</c>, <c>NilClass</c>, and <c>Symbol</c>. Not called by
+    /// <see cref="Create()"/>; invoke explicitly when the host wants JSON
+    /// support.
+    /// <para>
+    /// Implementation is built on <see cref="System.Text.Json.Utf8JsonReader"/>
+    /// / <see cref="System.Text.Json.Utf8JsonWriter"/>. JSON numbers that fit
+    /// <c>Int64</c> become <c>Integer</c>; those that overflow fall back to
+    /// <c>Float</c>. <c>obj.to_json</c> is dispatched for any non-builtin
+    /// value during encoding so user-defined classes can serialise themselves.
+    /// </para>
+    /// </summary>
+    public void DefineJson()
+    {
+        var jsonModule = DefineModule(Intern("JSON"u8), ObjectClass);
+
+        // Error hierarchy: JSONError < StandardError; ParserError < JSONError;
+        // GeneratorError < JSONError; NestingError < ParserError (CRuby
+        // models NestingError under ParserError specifically).
+        var jsonError = DefineClass(Intern("JSONError"u8), StandardErrorClass, outer: jsonModule);
+        var parserError = DefineClass(Intern("ParserError"u8), jsonError, outer: jsonModule);
+        DefineClass(Intern("GeneratorError"u8), jsonError, outer: jsonModule);
+        DefineClass(Intern("NestingError"u8), parserError, outer: jsonModule);
+
+        // Module-level methods
+        DefineClassMethod(jsonModule, Intern("parse"u8), JsonMembers.Parse);
+        DefineClassMethod(jsonModule, Intern("generate"u8), JsonMembers.Generate);
+        DefineClassMethod(jsonModule, Intern("pretty_generate"u8), JsonMembers.PrettyGenerate);
+        DefineClassMethod(jsonModule, Intern("dump"u8), JsonMembers.Dump);
+        DefineClassMethod(jsonModule, Intern("load"u8), JsonMembers.Load);
+
+        // #to_json on builtin types. Defined here rather than in each
+        // Members file so the whole JSON surface stays colocated; trades off
+        // a tiny rbs-generator blind-spot (these don't appear in
+        // hash.rbs/array.rbs/…) for one-stop maintenance.
+        var toJson = Intern("to_json"u8);
+        DefineMethod(HashClass, toJson, JsonMembers.HashToJson);
+        DefineMethod(ArrayClass, toJson, JsonMembers.ArrayToJson);
+        DefineMethod(StringClass, toJson, JsonMembers.StringToJson);
+        DefineMethod(IntegerClass, toJson, JsonMembers.IntegerToJson);
+        DefineMethod(FloatClass, toJson, JsonMembers.FloatToJson);
+        DefineMethod(TrueClass, toJson, JsonMembers.TrueToJson);
+        DefineMethod(FalseClass, toJson, JsonMembers.FalseToJson);
+        DefineMethod(NilClass, toJson, JsonMembers.NilToJson);
+        DefineMethod(SymbolClass, toJson, JsonMembers.SymbolToJson);
     }
 
     void InitObjectExt()

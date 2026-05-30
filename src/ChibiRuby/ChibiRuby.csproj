@@ -25,6 +25,9 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <!-- System.Text.Json is OOB on net8+ but needs an explicit package
+             on netstandard2.1 (used by JSON.parse / JSON.generate). -->
+        <PackageReference Include="System.Text.Json" Version="9.0.0" />
 <!--        <PackageReference Include="System.Buffers" Version="4.6.0" />-->
 <!--        <PackageReference Include="System.Memory" Version="4.6.0" />-->
 <!--        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />-->

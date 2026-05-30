@@ -218,10 +218,10 @@ internal static class MRubyHttpExecutor
             opts.FormEntries = ReadStringMap(mrb, formValue, "form");
         }
 
-        if (mrb.TryGetKeywordArgument(mrb.Intern("json"u8), out _))
+        if (mrb.TryGetKeywordArgument(mrb.Intern("json"u8), out var jsonValue))
         {
-            mrb.Raise(Names.ArgumentError,
-                "HTTP json: option is not supported in this build; pass body: with a pre-serialized String instead"u8);
+            opts.BodyBytes = EncodeJsonBody(mrb, jsonValue);
+            opts.JsonContentType = true;
         }
 
         if (mrb.TryGetKeywordArgument(mrb.Intern("timeout"u8), out var timeoutValue))
@@ -366,6 +366,9 @@ internal static class MRubyHttpExecutor
         public List<KeyValuePair<string, string>>? FormEntries;
         public TimeSpan? OperationTimeout;
         public (string User, string Password)? BasicAuth;
+        /// <summary>Set when <c>json:</c> was used; we then attach
+        /// <c>Content-Type: application/json</c> after the request is built.</summary>
+        public bool JsonContentType;
     }
 
     static MRubyHttpRequestPlan BuildPlan(HttpMethod method, Uri uri, CallOptions opts)
@@ -386,9 +389,37 @@ internal static class MRubyHttpExecutor
         else if (opts.BodyBytes is { } body)
         {
             plan.Content = new ByteArrayContent(body);
+            if (opts.JsonContentType)
+            {
+                plan.Content.Headers.ContentType =
+                    new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
+            }
         }
 
         return plan;
+    }
+
+    /// <summary>
+    /// Resolves the optional <c>JSON</c> module and dispatches
+    /// <c>JSON.generate(value)</c>. Raises <c>NotImplementedError</c> if
+    /// <see cref="MRubyState.DefineJson"/> hasn't been called — keeps the
+    /// HTTP/JSON dependency soft so each module remains opt-in independently.
+    /// </summary>
+    static byte[] EncodeJsonBody(MRubyState mrb, MRubyValue value)
+    {
+        if (!mrb.TryGetConst(mrb.Intern("JSON"u8), out var jsonConst) ||
+            jsonConst.VType != MRubyVType.Module)
+        {
+            mrb.Raise(mrb.GetExceptionClass(mrb.Intern("NotImplementedError"u8)),
+                "json: option requires the JSON module — call MRubyState.DefineJson() to enable it"u8);
+        }
+        var rendered = mrb.Send(jsonConst, mrb.Intern("generate"u8), value);
+        if (rendered.Object is not RString s)
+        {
+            mrb.Raise(Names.TypeError, "JSON.generate did not return a String"u8);
+            return null!;
+        }
+        return s.AsSpan().ToArray();
     }
 
     static Uri AppendQuery(Uri baseUri, List<KeyValuePair<string, string>> extras)

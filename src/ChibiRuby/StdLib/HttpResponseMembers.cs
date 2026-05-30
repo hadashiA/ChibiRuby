@@ -24,6 +24,10 @@ internal sealed class MRubyHttpResponseData
     /// <summary>Same idea for the body.</summary>
     public MRubyValue BodyValue { get; set; }
 
+    /// <summary>Cached <c>JSON.parse(body)</c> result. Populated lazily on the
+    /// first call to <c>#json</c>; nil sentinel cleared on access.</summary>
+    public MRubyValue? JsonCache;
+
     public MRubyHttpResponseData(
         int status,
         string uri,
@@ -164,6 +168,33 @@ static class HttpResponseMembers
         var errorClass = mrb.GetConst(mrb.Intern("Error"u8), httpModule).As<RClass>();
         mrb.Raise(errorClass, mrb.NewString($"HTTP {data.Status} for {data.Uri}"));
         return MRubyValue.Nil; // unreachable
+    }
+
+    /// <summary>
+    /// <c>response.json</c> — lazily parse the body as JSON. The result is
+    /// cached on the response so repeated calls are O(1). Requires the
+    /// optional <c>JSON</c> module to be enabled via
+    /// <c>MRubyState.DefineJson()</c>; otherwise raises
+    /// <c>NotImplementedError</c>. Body parse failures raise
+    /// <c>JSON::ParserError</c>.
+    /// </summary>
+    [RubyDef("() -> untyped")]
+    public static MRubyValue Json(MRubyState mrb, MRubyValue self)
+    {
+        var data = GetData(mrb, self);
+        if (data.JsonCache is { } cached) return cached;
+
+        if (!mrb.TryGetConst(mrb.Intern("JSON"u8), out var jsonConst) ||
+            jsonConst.VType != MRubyVType.Module)
+        {
+            mrb.Raise(mrb.GetExceptionClass(mrb.Intern("NotImplementedError"u8)),
+                "HTTP::Response#json requires the JSON module — call MRubyState.DefineJson() to enable it"u8);
+        }
+
+        var bodyString = new MRubyValue(mrb.NewString(data.Body.Bytes));
+        var parsed = mrb.Send(jsonConst, mrb.Intern("parse"u8), bodyString);
+        data.JsonCache = parsed;
+        return parsed;
     }
 
     /// <summary><c>response.inspect</c> — debug summary (status, uri, byte length).</summary>
