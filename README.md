@@ -1,17 +1,16 @@
 # ChibiRuby
 
-ChibiRuby is a pure C# [mruby](https://github.com/mruby/mruby) virtual machine implementation. It combines high Ruby-level compatibility with the performance and extensibility of modern C#.
+ChibiRuby is a pure C# implementation of the [mruby](https://github.com/mruby/mruby) virtual machine. It lets Unity and .NET applications run Ruby scripts with the performance and extensibility of modern C#.
 
-Easily embed Ruby into Unity or .NET—empowering users to script game logic while keeping your core engine in C#.
+It is useful for game scripting, embedded DSLs, scenario logic, and runtime-configurable behavior.
 
 > [!NOTE]
 > [VitalRouter.MRuby](https://github.com/hadashiA/VitalRouter) provides a high-level framework for integrating ChibiRuby with Unity (and .NET), including command routing and script lifecycle management.
 
 > [!NOTE]
-> This project was named MRubyCS before version 1.0. Now, it has restarted under the name ChibiRuby.
- 
+> The project has since been restarted as ChibiRuby; before v1.0, it was known as MRubyCS.
 
-## Why mruby?
+## Why mruby for scripting?
 
 Ruby's clean, expressive syntax makes it perfect for building DSLs. Game designers and scenario writers can describe game logic — event triggers, dialogue trees, and AI behavior — in simple, readable scripts.
 
@@ -19,7 +18,7 @@ Ruby's clean, expressive syntax makes it perfect for building DSLs. Game designe
 # Example: game event DSL
 with(:Yogoroza) do
   talk "Who are you?"
-  motion :suprize
+  motion :surprise
 end
 
 with(:BlackCat) do
@@ -35,8 +34,8 @@ end
 
 ## Features
 
-- Support mruby 4.0 bytecode.
-- **Pure C# implementation/Zero native dependencies mruby VM** — runs anywhere Unity/.NET runs. No per-platform native builds to maintain.
+- Supports mruby 4.0 bytecode.
+- **Pure C# mruby VM with zero native dependencies** — runs anywhere Unity/.NET runs. No per-platform native builds to maintain.
 - **High performance** — leverages .NET JIT, GC, and modern C# optimizations with minimal overhead.
 - **Ruby compatible** — all opcodes implemented; passes mruby's official test suite
   - [Syntax](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/syntax.rb), [Literals](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/literals.rb), [Lang](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/lang.rb), [Methods](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/methods.rb), [Module](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/module.rb), [Exception](https://github.com/hadashiA/ChibiRuby/blob/main/tests/ChibiRuby.Tests/ruby/test/exception.rb), ...
@@ -48,6 +47,43 @@ end
 - **Fiber & async/await integration** — suspend Ruby execution and await C# async methods without blocking threads.
 - **Debugger (DAP)** — line breakpoints, stepping, locals view, and expression evaluation. Attach from VSCode / JetBrains / Zed to a running Unity or .NET host over TCP. See [Debugger](#debugger).
 - **Prism-based compiler** — uses [mruby-compiler2](https://github.com/picoruby/mruby-compiler2), the next-generation mruby compiler built on [Prism](https://github.com/ruby/prism) (the official CRuby parser), for more accurate and modern Ruby syntax support.
+
+## Quick Start
+
+In a .NET project, install the runtime and compiler packages:
+
+```bash
+dotnet add package ChibiRuby
+dotnet add package ChibiRuby.Compiler
+```
+
+Then compile and execute Ruby source from C#:
+
+```cs
+using ChibiRuby;
+using ChibiRuby.Compiler;
+
+using var mrb = MRubyState.Create();
+using var compiler = MRubyCompiler.Create(mrb);
+
+var result = compiler.LoadSourceCode("""
+    def fibonacci(n)
+      return n if n <= 1
+      fibonacci(n - 1) + fibonacci(n - 2)
+    end
+
+    fibonacci 10
+    """u8);
+
+Console.WriteLine(result.IntegerValue); // 55
+```
+
+For production builds, prefer compiling Ruby files to `.mrb` bytecode ahead of time:
+
+```bash
+dotnet tool install -g ChibiRuby.Cli
+chibiruby compile fibonacci.rb -o fibonacci.mrb
+```
 
 ## Performance
 
@@ -73,13 +109,13 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 - [Basic Usage](#basic-usage)
     - [Compiling and Executing Ruby Code](#compiling-and-executing-ruby-code)
         - [Option A: Pre-compile bytecode](#option-a-pre-compile-bytecode)
-        - [Option B: Using Compiler library (runtime compile)](#option-b-using-compiler-library-runtime-compile)
+        - [Option B: Use the Compiler Library at Runtime](#option-b-use-the-compiler-library-at-runtime)
         - [Irep](#irep)
         - [Compiler Reference](#compiler-reference)
-    - [Define ruby class/module/method by C#](#define-ruby-classmodulemethod-by-c)
+    - [Define Ruby classes, modules, and methods from C#](#define-ruby-classes-modules-and-methods-from-c)
         - [Error handling & validation in C# methods](#error-handling--validation-in-c-methods)
         - [Constants](#constants)
-    - [Call ruby method from C# side](#call-ruby-method-from-c-side)
+    - [Call Ruby Methods from C#](#call-ruby-methods-from-c)
         - [Send with block / keyword arguments](#send-with-block--keyword-arguments)
         - [Type conversion & introspection](#type-conversion--introspection)
         - [Instance variables / class variables / global variables](#instance-variables--class-variables--global-variables)
@@ -97,7 +133,6 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
     - [With a scheduler installed](#with-a-scheduler-installed)
     - [Defining async Ruby methods with `Await`](#defining-async-ruby-methods-with-await)
     - [Low-level: `Suspend` + `FiberContinuation`](#low-level-suspend--fibercontinuation)
-    - [Thread routing (`SynchronizationContext`)](#thread-routing-synchronizationcontext)
     - [Custom Schedulers (subclassing)](#custom-schedulers-subclassing)
 - [Debugger](#debugger)
     - [Host setup](#host-setup)
@@ -117,12 +152,12 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 
 ### NuGet
 
-| Package   | Description                                                                       | Latest version |
-|:----------|:----------------------------------------------------------------------------------|----------------|
-| ChibiRuby   | Main package. A mruby vm implementation.                                          | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby)](https://www.nuget.org/packages/ChibiRuby) |
-| ChibiRuby.Compiler | Compile ruby source code utility. (Native binding)                                | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler)](https://www.nuget.org/packages/ChibiRuby.Compiler)   |
-| ChibiRuby.Cli | dotnet tool with subcommands (e.g. `compile`) for ChibiRuby workflows               | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Cli)](https://www.nuget.org/packages/ChibiRuby.Cli) |
-| ChibiRuby.Serializer  | Converting Ruby and C# Objects Between Each Other                                 | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Serializer)](https://www.nuget.org/packages/ChibiRuby.Serializer)  |
+| Package                 | Description                                                                       | Latest version |
+|:------------------------|:----------------------------------------------------------------------------------|----------------|
+| ChibiRuby               | Runtime package: a pure C# mruby VM.                                              | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby)](https://www.nuget.org/packages/ChibiRuby) |
+| ChibiRuby.Compiler      | Ruby source compiler utility (native binding).                                    | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler)](https://www.nuget.org/packages/ChibiRuby.Compiler)   |
+| ChibiRuby.Cli           | dotnet tool with subcommands (e.g. `compile`) for ChibiRuby workflows             | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Cli)](https://www.nuget.org/packages/ChibiRuby.Cli) |
+| ChibiRuby.Serializer    | Converts between Ruby and C# objects                                              | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Serializer)](https://www.nuget.org/packages/ChibiRuby.Serializer)  |
 | ChibiRuby.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger)](https://www.nuget.org/packages/ChibiRuby.Debugger) |
 | ChibiRuby.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger)        | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger.Dap)](https://www.nuget.org/packages/ChibiRuby.Debugger.Dap) |
 
@@ -229,7 +264,7 @@ var result = mrb.LoadBytecode(bytecode);
 result.IntegerValue //=> 55
 ```
 
-#### Option B: Using Compiler library (runtime compile)
+#### Option B: Use the Compiler Library at Runtime
 
 ```bash
 dotnet add package ChibiRuby
@@ -415,7 +450,7 @@ var src = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "script
 compiler.LoadSourceCode(src); // re-evaluates, replacing previous definitions
 ```
 
-### Define ruby class/module/method by C#
+### Define Ruby classes, modules, and methods from C#
 
 ```cs
 var classA = mrb.DefineClass(mrb.Intern("A"u8), c =>
@@ -460,7 +495,7 @@ var classA = mrb.DefineClass(mrb.Intern("A"u8), c =>
         var restArguments = mrb.GetRestArgumentsAfter(0);
         for (var i = 0; i < restArguments.Length; i++)
         {
-            Console.WriteLine($"rest arg({i}: {restArguments[i]})");
+            Console.WriteLine($"rest arg({i}): {restArguments[i]}");
         }
     });
 });
@@ -561,7 +596,7 @@ if (mrb.TryGetConst(mrb.Intern("MAX_SIZE"u8), out var constValue))
 }
 ```
 
-### Call ruby method from C# side
+### Call Ruby Methods from C#
 
 Use `mrb.Send()` to call Ruby methods from C#:
 
@@ -710,7 +745,7 @@ value.IsFloat //=> true if float
 value.IsSymbol //=> true if Symbol
 value.IsObject //=> true if any allocated object type
 
-value.VType //=> get known ruby-type as C# enum.
+value.VType //=> get known Ruby type as C# enum.
 
 value.IntegerValue //=> get as C# Int64
 value.FloatValue //=> get as C# float
@@ -761,8 +796,8 @@ value.Falsy     //=> true if nil or false
 
 #### Symbol/String
 
-The string representation within mruby is utf8.
-Therefore, to generate a ruby string from C#, [Utf8StringInterpolation](https://github.com/Cysharp/Utf8StringInterpolation) is used internally.
+The string representation within mruby is UTF-8.
+Therefore, to generate a Ruby string from C#, [Utf8StringInterpolation](https://github.com/Cysharp/Utf8StringInterpolation) is used internally.
 
 
 ```cs
@@ -778,24 +813,24 @@ MRubyValue strValue = str1;
 ```
 
 There is a concept in mruby similar to String called `Symbol`.
-Like String, it is created using utf8 strings, but internally it is a uint integer.
+Like String, it is created using UTF-8 strings, but internally it is a uint integer.
 Symbols are usually used for method IDs and class IDs.
 
 To create a symbol from C#, use `Intern`.
 
 ```cs
-// symbol literal
+// Symbol literal
 var sym1 = mrb.Intern("sym");
 
-// create symbol from string interporation
+// Create a symbol from string interpolation
 var x = 123;
 var sym2 = mrb.Intern($"sym{x}");
 
-// symbol to utf8 bytes
+// Symbol to UTF-8 bytes
 mrb.NameOf(sym1); //=> "sym"u8
 mrb.NameOf(sym2); //=> "sym123"u8
 
-// create symbol from string
+// Create a symbol from a string
 var sym2 = mrb.AsSymbol(mrb.NewString($"hoge"));
 ```
 
@@ -811,12 +846,12 @@ var str = mrb.NewString("hello"u8);
 ReadOnlySpan<byte> bytes = str.AsSpan(); // raw UTF-8 bytes
 
 // In-place modification
-str.Concat(" world"u8);  // append bytes
+str.Concat(" world"u8);   // Append bytes
 str.Upcase();             // "HELLO WORLD"
 str.Downcase();           // "hello world"
 str.Capitalize();         // "Hello world"
-str.Chomp();              // remove trailing newline
-str.Chop();               // remove last character
+str.Chomp();              // Remove trailing newline
+str.Chop();               // Remove last character
 ```
 
 #### Array/Hash
@@ -905,7 +940,7 @@ var mrb = MRubyState.Create();
 var data = new RData(csharpInstance);
 mrb.SetConst(mrb.Intern("MYDATA"u8), mrb.ObjectClass, data);
 
-// Use custom data from ruby
+// Use custom data from Ruby
 mrb.DefineMethod(mrb.ObjectClass, mrb.Intern("from_csharp_data"u8), (_, self) =>
 {
     var dataValue = mrb.GetConst(mrb.Intern("MYDATA"u8), mrb.ObjectClass);
@@ -914,7 +949,7 @@ mrb.DefineMethod(mrb.ObjectClass, mrb.Intern("from_csharp_data"u8), (_, self) =>
 });
 ```
 
-#### Embedded custom C# data with ruby class
+#### Embedded custom C# data with Ruby class
 
 ```cs
 // Instances of classes that specify `MRubyVType.CSharpData` have `self` as RData.
@@ -1071,7 +1106,7 @@ var code = """
 
 var fiber = compiler.LoadSourceCodeAsFiber(code);
 
-// `LoadSourceCodeAsFiber` is same as:
+// `LoadSourceCodeAsFiber` is the same as:
 // using var compilation = compiler.Compile(code);
 // var proc = mrb.CreateProc(compilation.ToIrep());
 // var fiber = mrb.CreateFiber(proc);
@@ -1272,7 +1307,7 @@ var fiber = compiler.LoadSourceCodeAsFiber("""
 
 fiber.Resume();
 await fiber.WaitForTerminateAsync();
-// `sleep`, `pass` did not block any thread; the scheduler wake the fiber.
+// `sleep`, `pass` did not block any thread; the scheduler wakes the fiber.
 ```
 
 > [!NOTE]
@@ -1553,7 +1588,7 @@ MRubyValue mrubyStringValue = MRubyValueSerializer.Serialize("hoge fuga", mrb);
 mrb.Send(mrubyStringValue, mrb.Intern("upcase"u8)); //=> MRubyValue("UPCASE")
 ```
 
-### Builtin Supported types
+### Built-in supported types
 
 The following C# types and MRubyValue type conversions are supported natively:
 
@@ -1561,10 +1596,10 @@ The following C# types and MRubyValue type conversions are supported natively:
 |-----------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Integer` | `int`, `uint`, `long`, `ulong`, `short`, `ushort`, `byte`, `sbyte`, `char`                                                                                                                                                                                                                                                                                                                |
 | `Float`   | `float`, `double`, `decimal`                                                                                                                                                                                                                                                                                                                                                            |
-| `Array`   | `T`, `List<>`, `T[,]`, `T[,]`, `T[,,]`, <br />`Tuple<...>`, `ValueTuple<...>`, <br />, `Stack<>`, `Queue<>`, `LinkedList<>`, `HashSet<>`, `SortedSet<>`, <br />`Collection<>`, `BlockingCollection<>`, <br />`ConcurrentQueue<>`, `ConcurrentStack<>`, `ConcurrentBag<>`, <br />`IEnumerable<>`, `ICollection<>`, `IReadOnlyCollection<>`, <br />`IList<>`, `IReadOnlyList<>`, `ISet<>` |
+| `Array`   | `T`, `List<>`, `T[,]`, `T[,,]`, <br />`Tuple<...>`, `ValueTuple<...>`, <br />, `Stack<>`, `Queue<>`, `LinkedList<>`, `HashSet<>`, `SortedSet<>`, <br />`Collection<>`, `BlockingCollection<>`, <br />`ConcurrentQueue<>`, `ConcurrentStack<>`, `ConcurrentBag<>`, <br />`IEnumerable<>`, `ICollection<>`, `IReadOnlyCollection<>`, <br />`IList<>`, `IReadOnlyList<>`, `ISet<>` |
 | `Hash`    | `Dictionary<,>`, `SortedDictionary<,>`, `ConcurrentDictionary<,>`, <br />`IDictionary<,>`, `IReadOnlyDictionary<,>`                                                                                                                                                                                                                                                                     |
 | `String`  | `string`, `byte[]`                                                                                                                                                                                                                                                                                                                                                                      |
-| `Symbol`  | `Enum`
+| `Symbol`  | `Enum` |
 | `nil`     | `T?`, `Nullable<T>`                                                                                                                                                                                                                                                                                                                                                                     |
 
 #### Unity-specific types
@@ -1648,8 +1683,8 @@ props[mrb.Intern("foo_bar"u8)] //=> 4567
 The list of properties specified by mruby is assigned to the C# member names that match the key names.
 
 Note:
-- The names on the ruby side are converted to CamelCase.
-   - Example: ruby's `foo_bar` maps to C#'s `FooBar`.
+- The names on the Ruby side are converted to CamelCase.
+   - Example: Ruby's `foo_bar` maps to C#'s `FooBar`.
 - The values of C# enums are serialized as Ruby symbols.
     - Example: `Season.Summer` becomes Ruby's `:summer`.
 
@@ -1763,6 +1798,6 @@ deserialized.Y //=> 222
 deserialized.Z //=> 333
 ```
 
-## LICENSE
+## License
 
 MIT
