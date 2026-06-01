@@ -31,46 +31,58 @@ class Commands
         var state = MRubyState.Create();
         var inputBytes = File.ReadAllBytes(inputFile);
 
-        if (dump)
+        try
         {
-            Irep irep;
-            if (IsBytecode(inputFile, inputBytes))
+            if (dump)
             {
-                irep = state.ParseBytecode(inputBytes);
+                Irep irep;
+                if (IsBytecode(inputFile, inputBytes))
+                {
+                    irep = state.ParseBytecode(inputBytes);
+                }
+                else
+                {
+                    var compiler = MRubyCompiler.Create(state);
+                    using var compilation = compiler.Compile(inputBytes);
+                    irep = state.ParseBytecode(compilation.AsBytecode());
+                }
+
+                var bufferWriter = new ArrayBufferWriter<byte>();
+                DumpIrepRecursive(state, irep, bufferWriter);
+
+                using var outputStream = output is null or "-"
+                    ? Console.OpenStandardOutput()
+                    : File.Create(output);
+                outputStream.Write(bufferWriter.WrittenSpan);
             }
             else
             {
                 var compiler = MRubyCompiler.Create(state);
                 using var compilation = compiler.Compile(inputBytes);
-                irep = state.ParseBytecode(compilation.AsBytecode());
+
+                // Resolve the bytecode before opening the destination so a compile error
+                // doesn't leave behind a truncated/empty output file.
+                var bytecode = compilation.AsBytecode().ToArray();
+
+                using var outputStream = output == "-"
+                    ? Console.OpenStandardOutput()
+                    : File.Create(output ?? GetDefaultOutputPath(inputFile, format));
+
+                switch (format)
+                {
+                    case OutputFormat.binary:
+                        outputStream.Write(bytecode);
+                        break;
+                    case OutputFormat.csharp:
+                        WriteCSharpOutput(outputStream, bytecode, csharpNamespace, csharpClassName);
+                        break;
+                }
             }
-
-            var bufferWriter = new ArrayBufferWriter<byte>();
-            DumpIrepRecursive(state, irep, bufferWriter);
-
-            using var outputStream = output is null or "-"
-                ? Console.OpenStandardOutput()
-                : File.Create(output);
-            outputStream.Write(bufferWriter.WrittenSpan);
         }
-        else
+        catch (MRubyCompileException ex)
         {
-            var compiler = MRubyCompiler.Create(state);
-            using var compilation = compiler.Compile(inputBytes);
-
-            using var outputStream = output == "-"
-                ? Console.OpenStandardOutput()
-                : File.Create(output ?? GetDefaultOutputPath(inputFile, format));
-
-            switch (format)
-            {
-                case OutputFormat.binary:
-                    outputStream.Write(compilation.AsBytecode());
-                    break;
-                case OutputFormat.csharp:
-                    WriteCSharpOutput(outputStream, compilation.AsBytecode(), csharpNamespace, csharpClassName);
-                    break;
-            }
+            Console.Error.WriteLine($"{inputFile}: {ex.Message}");
+            Environment.Exit(1);
         }
     }
 
