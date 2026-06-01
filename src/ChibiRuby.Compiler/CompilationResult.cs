@@ -49,7 +49,18 @@ public class CompilationResult : IDisposable
 
     public unsafe ReadOnlySpan<byte> AsBytecode()
     {
+        if (HasError || bytecodeDataPtr == IntPtr.Zero || bytecodeLength <= 0)
+        {
+            throw new MRubyCompileException(FormatDiagnostics());
+        }
         return new ReadOnlySpan<byte>((byte*)bytecodeDataPtr, bytecodeLength);
+    }
+
+    string FormatDiagnostics()
+    {
+        return Diagnostics.Count > 0
+            ? string.Join(Environment.NewLine, Diagnostics)
+            : "Ruby compilation failed (no diagnostics available).";
     }
 
     public ReadOnlySpan<byte> AsSpan() => AsBytecode();

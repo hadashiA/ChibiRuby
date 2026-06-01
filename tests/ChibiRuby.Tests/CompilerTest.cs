@@ -51,6 +51,33 @@ public class CompilerTest
         Assert.Throws<MRubyCompileException>(() => compiler.LoadSourceCode(utf32WithBom));
     }
 
+    [Test]
+    public void SyntaxError_ThrowsCompileExceptionWithDiagnostics()
+    {
+        // A bare endless range in a `when` clause is a syntax error (in CRuby too).
+        // The compiler must surface the diagnostic, not hand back empty bytecode that
+        // later blows up in the RiteParser with an opaque "Binary size is too short".
+        const string source = """
+                              case x
+                              when 10..
+                                puts "hi"
+                              end
+                              """;
+
+        var ex = Assert.Throws<MRubyCompileException>(() => compiler.LoadSourceCode(source));
+        Assert.That(ex!.Message, Does.Contain("when"));
+        Assert.That(ex.Message, Does.Not.Contain("Binary size is too short"));
+    }
+
+    [Test]
+    public void SyntaxError_CompilationResultReportsError()
+    {
+        using var compilation = compiler.Compile("when 10..\n  puts 1\n"u8);
+        Assert.That(compilation.HasError, Is.True);
+        Assert.That(compilation.Diagnostics, Is.Not.Empty);
+        Assert.Throws<MRubyCompileException>(() => _ = compilation.AsBytecode().Length);
+    }
+
     static byte[] Encode(string sourceCode, Encoding encoding)
     {
         using var ms = new MemoryStream();
