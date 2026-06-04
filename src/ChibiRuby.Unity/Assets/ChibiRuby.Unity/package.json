@@ -1,0 +1,12 @@
+{
+  "name": "jp.hadashikick.chibiruby-unity",
+  "displayName": "ChibiRuby.Unity",
+  "version": "1.2.2",
+  "unity": "6000.0",
+  "description": "Unity integrations for ChibiRuby (player-loop driven fiber scheduler, etc.)",
+  "keywords": ["mruby", "ruby"],
+  "license": "MIT",
+  "documentationUrl": "https://github.com/hadashiA/ChibiRuby",
+  "changelogUrl": "https://github.com/hadashiA/ChibiRuby/releases",
+  "licensesUrl": "https://github.com/hadashiA/ChibiRuby/blob/master/LICENSE"
+}
