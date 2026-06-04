@@ -127,13 +127,11 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
     - [With a scheduler installed](#with-a-scheduler-installed)
     - [Defining async Ruby methods with `Await`](#defining-async-ruby-methods-with-await)
     - [Low-level: `Suspend` + `FiberContinuation`](#low-level-suspend--fibercontinuation)
+    - [Unity (`UnityFiberScheduler`)](#unity-unityfiberscheduler)
     - [Custom Schedulers (subclassing)](#custom-schedulers-subclassing)
 - [Debugger](#debugger)
     - [Host setup](#host-setup)
-    - [Editor setup](#editor-setup)
-        - [VSCode](#vscode)
-        - [Rider / IntelliJ](#rider--intellij)
-        - [Zed](#zed)
+    - [Editor setup](#editor-setup) (VSCode / Rider / Zed)
     - [Setting breakpoints](#setting-breakpoints)
 - [Serializer](#serializer)
 
@@ -1387,45 +1385,31 @@ Mechanics:
 > [!TIP]
 > Prefer `Await` when the body fits as a single `async` lambda. Drop to `Suspend` only when you need to hand the continuation to external code that completes asynchronously without an awaitable surface.
 
+### Unity (`UnityFiberScheduler`)
+
+The [`ChibiRuby.Unity`](src/ChibiRuby.Unity/Assets/ChibiRuby.Unity) package ships a player-loop driven scheduler. `Kernel#sleep` and `Thread.pass` route through Unity's `Awaitable` (`WaitForSecondsAsync` / `NextFrameAsync`) instead of `Task.Delay` / `Task.Yield`, so fibers resume on the main Unity thread at the next frame boundary. Parking uses `AwaitableCompletionSource<T>` (pool-backed) rather than `TaskCompletionSource<T>` to keep allocations down.
+
+```cs
+using ChibiRuby;
+using ChibiRuby.Unity;
+
+var mrb = MRubyState.Create();
+mrb.UseUnityFiberScheduler();   // == mrb.UseFiberScheduler(new UnityFiberScheduler())
+```
+
+When the scheduler is `Dispose`d (e.g. on scene unload / `MonoBehaviour.OnDestroy`), any in-flight `WaitForSecondsAsync` / `NextFrameAsync` is cancelled via the base `DisposalToken`, parked fibers are resumed with `nil`, and the scheduler's own dictionary of `AwaitableCompletionSource` entries is drained.
+
+Install via the Unity Package Manager (Window > Package Manager > **+** > Add package from git URL):
+
+```
+https://github.com/hadashiA/ChibiRuby.git?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Unity#1.2.2
+```
+
+See [`UnityFiberScheduler.cs`](src/ChibiRuby.Unity/Assets/ChibiRuby.Unity/Runtime/UnityFiberScheduler.cs) for the implementation.
+
 ### Custom Schedulers (subclassing)
 
-`MRubyFiberScheduler` is a concrete class — host customization is done by subclassing and overriding `KernelSleep` / `Yield` / `Suspend` as needed. The default implementations cover most hosts; subclass only when you need different timer behavior or a custom yield primitive.
-
-
-Override example — `UnityFiberScheduler` that routes `sleep` / `Thread.pass` through Unity's `Awaitable` instead of `Task.Delay` / `Task.Yield`. This keeps fiber resumes on the player loop (main thread):
-
-```cs
-using UnityEngine;
-using System;
-using System.Threading;
-using ChibiRuby;
-
-class UnityFiberScheduler : MRubyFiberScheduler
-{
-    public override void KernelSleep(TimeSpan duration, CancellationToken cancellationToken = default)
-    {
-        Await(async _ =>
-        {
-            await Awaitable.WaitForSecondsAsync((float)duration.TotalSeconds, cancellationToken);
-            return MRubyValue.Nil;
-        });
-    }
-
-    public override void Yield(CancellationToken cancellationToken = default)
-    {
-        if (cancellationToken.IsCancellationRequested) return;
-        Await(async _ =>
-        {
-            await Awaitable.NextFrameAsync(cancellationToken);
-            return MRubyValue.Nil;
-        });
-    }
-}
-```
-
-```cs
-mrb.UseFiberScheduler(new UnityFiberScheduler());
-```
+`MRubyFiberScheduler` is a concrete class — host customization is done by subclassing and overriding `KernelSleep` / `Yield` / `Suspend` as needed. The default implementations cover most hosts; subclass only when you need different timer behavior, a custom yield primitive, or an alternative parking mechanism (e.g. `AwaitableCompletionSource` as in `UnityFiberScheduler`).
 
 Contract:
 
@@ -1433,8 +1417,9 @@ Contract:
 - **No Ruby re-entrancy.** Hooks must not call back into Ruby code (no `state.Send`, no synchronous `fiber.Resume`). `fiber.Yield()` is the one expected call into the VM — it unwinds rather than invokes.
 - **Exceptions are deliverable to Ruby.** Any exception inside `Await`'s body is wrapped and delivered as a Ruby exception on resume; surrounding `begin/rescue` catches it.
 - **No double-parking.** A fiber is only parked under one wait at a time. `Suspend` throws `InvalidOperationException` on a re-park; subclass overrides should preserve this.
+- **Honor `DisposalToken`.** Link your own `CancellationToken`s with `DisposalToken` so in-flight waits unwind cleanly when the scheduler is disposed.
 
-See [`MRubyFiberScheduler.cs`](src/ChibiRuby/MRubyFiberScheduler.cs) for the complete reference implementation.
+See [`MRubyFiberScheduler.cs`](src/ChibiRuby/MRubyFiberScheduler.cs) for the reference implementation and [`UnityFiberScheduler.cs`](src/ChibiRuby.Unity/Assets/ChibiRuby.Unity/Runtime/UnityFiberScheduler.cs) for a complete subclass example.
 
 ## Debugger
 
@@ -1472,7 +1457,8 @@ End-to-end demos: [`sandbox/SampleDebuggerEmbedded`](./sandbox/SampleDebuggerEmb
 
 VSCode and Zed need a small extension to register the `chibiruby` debug type; Rider needs the LSP4IJ plugin from the JetBrains Marketplace. Pick your editor:
 
-#### VSCode
+<details>
+<summary><b>VSCode</b></summary>
 
 1. **Install the extension** — download `chibiruby-debugger-*.vsix` from the [latest release](https://github.com/hadashiA/ChibiRuby/releases/latest), then install it via either:
    - **VSCode UI**: Extensions panel → `...` menu → **Install from VSIX…** → pick the downloaded file.
@@ -1496,7 +1482,10 @@ VSCode and Zed need a small extension to register the `chibiruby` debug type; Ri
    ```
 3. Start the host so `MRubyDapServer` is listening, then press **F5** in VSCode.
 
-#### Rider / IntelliJ
+</details>
+
+<details>
+<summary><b>Rider / IntelliJ</b></summary>
 
 1. **Install [LSP4IJ](https://plugins.jetbrains.com/plugin/23257-lsp4ij)** (Settings → Plugins → Marketplace → search "LSP4IJ" → Install). Restart the IDE if prompted. The plugin provides both LSP and DAP integration.
 2. **Add a Debug Adapter Protocol run configuration**:
@@ -1512,7 +1501,10 @@ VSCode and Zed need a small extension to register the `chibiruby` debug type; Ri
 
 3. Start the host, then run the configuration in **Debug** mode.
 
-#### Zed
+</details>
+
+<details>
+<summary><b>Zed</b></summary>
 
 1. **Prerequisites** (one-time):
    - [Rust](https://rustup.rs) toolchain.
@@ -1533,6 +1525,8 @@ VSCode and Zed need a small extension to register the `chibiruby` debug type; Ri
    ]
    ```
 4. Start the host, then open Zed's debug panel (`cmd-shift-d`), pick **Attach to ChibiRuby**, and run.
+
+</details>
 
 ### Setting breakpoints
 
