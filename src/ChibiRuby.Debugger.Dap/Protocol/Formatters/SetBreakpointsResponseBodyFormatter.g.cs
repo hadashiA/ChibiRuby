@@ -30,15 +30,18 @@ static partial class SetBreakpointsResponseBodyFormatter
                     
                     {
                         tokenizer.ReadStartArray();
-                        var list_Breakpoints = new global::System.Collections.Generic.List<Breakpoint>();
+                        var buf_Breakpoints = global::System.Array.Empty<Breakpoint>();
+                        var count_Breakpoints = 0;
                         while (!tokenizer.TryReadEndArray())
                         {
+                            if (count_Breakpoints == buf_Breakpoints.Length) global::System.Array.Resize(ref buf_Breakpoints, buf_Breakpoints.Length == 0 ? 4 : buf_Breakpoints.Length * 2);
                             tokenizer.ReadStartObject();
                             var elem = new Breakpoint();
                             BreakpointFormatter.ReadInto(ref tokenizer, elem, options);
-                            list_Breakpoints.Add(elem);
+                            buf_Breakpoints[count_Breakpoints++] = elem;
                         }
-                        __v_Breakpoints = list_Breakpoints.ToArray();
+                        if (count_Breakpoints != buf_Breakpoints.Length) global::System.Array.Resize(ref buf_Breakpoints, count_Breakpoints);
+                        __v_Breakpoints = buf_Breakpoints;
                     }
                     else
                     

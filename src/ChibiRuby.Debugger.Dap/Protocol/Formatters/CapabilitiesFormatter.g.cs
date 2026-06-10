@@ -79,15 +79,18 @@ static partial class CapabilitiesFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_BreakpointModes = new global::System.Collections.Generic.List<BreakpointMode>();
+                            var buf_BreakpointModes = global::System.Array.Empty<BreakpointMode>();
+                            var count_BreakpointModes = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
+                                if (count_BreakpointModes == buf_BreakpointModes.Length) global::System.Array.Resize(ref buf_BreakpointModes, buf_BreakpointModes.Length == 0 ? 4 : buf_BreakpointModes.Length * 2);
                                 tokenizer.ReadStartObject();
                                 var elem = new BreakpointMode();
                                 BreakpointModeFormatter.ReadInto(ref tokenizer, elem, options);
-                                list_BreakpointModes.Add(elem);
+                                buf_BreakpointModes[count_BreakpointModes++] = elem;
                             }
-                            value.BreakpointModes = list_BreakpointModes.ToArray();
+                            if (count_BreakpointModes != buf_BreakpointModes.Length) global::System.Array.Resize(ref buf_BreakpointModes, count_BreakpointModes);
+                            value.BreakpointModes = buf_BreakpointModes;
                         }
                     }
                     else
@@ -287,15 +290,18 @@ static partial class CapabilitiesFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_AdditionalModuleColumns = new global::System.Collections.Generic.List<ColumnDescriptor>();
+                            var buf_AdditionalModuleColumns = global::System.Array.Empty<ColumnDescriptor>();
+                            var count_AdditionalModuleColumns = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
+                                if (count_AdditionalModuleColumns == buf_AdditionalModuleColumns.Length) global::System.Array.Resize(ref buf_AdditionalModuleColumns, buf_AdditionalModuleColumns.Length == 0 ? 4 : buf_AdditionalModuleColumns.Length * 2);
                                 tokenizer.ReadStartObject();
                                 var elem = new ColumnDescriptor();
                                 ColumnDescriptorFormatter.ReadInto(ref tokenizer, elem, options);
-                                list_AdditionalModuleColumns.Add(elem);
+                                buf_AdditionalModuleColumns[count_AdditionalModuleColumns++] = elem;
                             }
-                            value.AdditionalModuleColumns = list_AdditionalModuleColumns.ToArray();
+                            if (count_AdditionalModuleColumns != buf_AdditionalModuleColumns.Length) global::System.Array.Resize(ref buf_AdditionalModuleColumns, count_AdditionalModuleColumns);
+                            value.AdditionalModuleColumns = buf_AdditionalModuleColumns;
                         }
                     }
                     else if (__name.SequenceEqual("supportsDataBreakpoints"u8))
@@ -424,15 +430,18 @@ static partial class CapabilitiesFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_ExceptionBreakpointFilters = new global::System.Collections.Generic.List<ExceptionBreakpointsFilter>();
+                            var buf_ExceptionBreakpointFilters = global::System.Array.Empty<ExceptionBreakpointsFilter>();
+                            var count_ExceptionBreakpointFilters = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
+                                if (count_ExceptionBreakpointFilters == buf_ExceptionBreakpointFilters.Length) global::System.Array.Resize(ref buf_ExceptionBreakpointFilters, buf_ExceptionBreakpointFilters.Length == 0 ? 4 : buf_ExceptionBreakpointFilters.Length * 2);
                                 tokenizer.ReadStartObject();
                                 var elem = new ExceptionBreakpointsFilter();
                                 ExceptionBreakpointsFilterFormatter.ReadInto(ref tokenizer, elem, options);
-                                list_ExceptionBreakpointFilters.Add(elem);
+                                buf_ExceptionBreakpointFilters[count_ExceptionBreakpointFilters++] = elem;
                             }
-                            value.ExceptionBreakpointFilters = list_ExceptionBreakpointFilters.ToArray();
+                            if (count_ExceptionBreakpointFilters != buf_ExceptionBreakpointFilters.Length) global::System.Array.Resize(ref buf_ExceptionBreakpointFilters, count_ExceptionBreakpointFilters);
+                            value.ExceptionBreakpointFilters = buf_ExceptionBreakpointFilters;
                         }
                     }
                     else if (__name.SequenceEqual("supportsGotoTargetsRequest"u8))
@@ -519,12 +528,15 @@ static partial class CapabilitiesFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_CompletionTriggerCharacters = new global::System.Collections.Generic.List<string>();
+                            var buf_CompletionTriggerCharacters = global::System.Array.Empty<string>();
+                            var count_CompletionTriggerCharacters = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
-                                list_CompletionTriggerCharacters.Add(tokenizer.ReadString());
+                                if (count_CompletionTriggerCharacters == buf_CompletionTriggerCharacters.Length) global::System.Array.Resize(ref buf_CompletionTriggerCharacters, buf_CompletionTriggerCharacters.Length == 0 ? 4 : buf_CompletionTriggerCharacters.Length * 2);
+                                buf_CompletionTriggerCharacters[count_CompletionTriggerCharacters++] = tokenizer.ReadString();
                             }
-                            value.CompletionTriggerCharacters = list_CompletionTriggerCharacters.ToArray();
+                            if (count_CompletionTriggerCharacters != buf_CompletionTriggerCharacters.Length) global::System.Array.Resize(ref buf_CompletionTriggerCharacters, count_CompletionTriggerCharacters);
+                            value.CompletionTriggerCharacters = buf_CompletionTriggerCharacters;
                         }
                     }
                     else if (__name.SequenceEqual("supportedChecksumAlgorithms"u8))
@@ -538,12 +550,15 @@ static partial class CapabilitiesFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_SupportedChecksumAlgorithms = new global::System.Collections.Generic.List<ChecksumAlgorithm>();
+                            var buf_SupportedChecksumAlgorithms = global::System.Array.Empty<ChecksumAlgorithm>();
+                            var count_SupportedChecksumAlgorithms = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
-                                list_SupportedChecksumAlgorithms.Add(ChecksumAlgorithmFormatter.ReadValue(ref tokenizer));
+                                if (count_SupportedChecksumAlgorithms == buf_SupportedChecksumAlgorithms.Length) global::System.Array.Resize(ref buf_SupportedChecksumAlgorithms, buf_SupportedChecksumAlgorithms.Length == 0 ? 4 : buf_SupportedChecksumAlgorithms.Length * 2);
+                                buf_SupportedChecksumAlgorithms[count_SupportedChecksumAlgorithms++] = ChecksumAlgorithmFormatter.ReadValue(ref tokenizer);
                             }
-                            value.SupportedChecksumAlgorithms = list_SupportedChecksumAlgorithms.ToArray();
+                            if (count_SupportedChecksumAlgorithms != buf_SupportedChecksumAlgorithms.Length) global::System.Array.Resize(ref buf_SupportedChecksumAlgorithms, count_SupportedChecksumAlgorithms);
+                            value.SupportedChecksumAlgorithms = buf_SupportedChecksumAlgorithms;
                         }
                     }
                     else if (__name.SequenceEqual("supportsSteppingGranularity"u8))

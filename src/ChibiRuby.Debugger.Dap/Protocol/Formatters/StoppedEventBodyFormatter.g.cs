@@ -120,12 +120,15 @@ static partial class StoppedEventBodyFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_HitBreakpointIds = new global::System.Collections.Generic.List<int>();
+                            var buf_HitBreakpointIds = global::System.Array.Empty<int>();
+                            var count_HitBreakpointIds = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
-                                list_HitBreakpointIds.Add(tokenizer.ReadInt32());
+                                if (count_HitBreakpointIds == buf_HitBreakpointIds.Length) global::System.Array.Resize(ref buf_HitBreakpointIds, buf_HitBreakpointIds.Length == 0 ? 4 : buf_HitBreakpointIds.Length * 2);
+                                buf_HitBreakpointIds[count_HitBreakpointIds++] = tokenizer.ReadInt32();
                             }
-                            value.HitBreakpointIds = list_HitBreakpointIds.ToArray();
+                            if (count_HitBreakpointIds != buf_HitBreakpointIds.Length) global::System.Array.Resize(ref buf_HitBreakpointIds, count_HitBreakpointIds);
+                            value.HitBreakpointIds = buf_HitBreakpointIds;
                         }
                     }
                     else

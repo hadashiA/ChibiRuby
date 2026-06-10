@@ -41,12 +41,15 @@ static partial class SetBreakpointsArgumentsFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_Lines = new global::System.Collections.Generic.List<ulong>();
+                            var buf_Lines = global::System.Array.Empty<ulong>();
+                            var count_Lines = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
-                                list_Lines.Add(tokenizer.ReadUInt64());
+                                if (count_Lines == buf_Lines.Length) global::System.Array.Resize(ref buf_Lines, buf_Lines.Length == 0 ? 4 : buf_Lines.Length * 2);
+                                buf_Lines[count_Lines++] = tokenizer.ReadUInt64();
                             }
-                            value.Lines = list_Lines.ToArray();
+                            if (count_Lines != buf_Lines.Length) global::System.Array.Resize(ref buf_Lines, count_Lines);
+                            value.Lines = buf_Lines;
                         }
                     }
                     else
@@ -84,15 +87,18 @@ static partial class SetBreakpointsArgumentsFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_Breakpoints = new global::System.Collections.Generic.List<SourceBreakpoint>();
+                            var buf_Breakpoints = global::System.Array.Empty<SourceBreakpoint>();
+                            var count_Breakpoints = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
+                                if (count_Breakpoints == buf_Breakpoints.Length) global::System.Array.Resize(ref buf_Breakpoints, buf_Breakpoints.Length == 0 ? 4 : buf_Breakpoints.Length * 2);
                                 tokenizer.ReadStartObject();
                                 var elem = new SourceBreakpoint();
                                 SourceBreakpointFormatter.ReadInto(ref tokenizer, elem, options);
-                                list_Breakpoints.Add(elem);
+                                buf_Breakpoints[count_Breakpoints++] = elem;
                             }
-                            value.Breakpoints = list_Breakpoints.ToArray();
+                            if (count_Breakpoints != buf_Breakpoints.Length) global::System.Array.Resize(ref buf_Breakpoints, count_Breakpoints);
+                            value.Breakpoints = buf_Breakpoints;
                         }
                     }
                     else
