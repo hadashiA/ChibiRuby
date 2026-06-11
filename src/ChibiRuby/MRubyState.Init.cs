@@ -41,7 +41,8 @@ public partial class MRubyState : IDisposable
         state.InitTime();
         state.InitRandom();
 
-        // IO / File are opt-in: call `state.DefineIO()` to enable them.
+        // IO / File / HTTP / JSON are opt-in: install the ChibiRuby.NIO
+        // package and call state.DefineIO() / DefineHttp() / DefineJson().
 
         return state;
     }
@@ -62,8 +63,6 @@ public partial class MRubyState : IDisposable
     public RClass NilClass { get; private set; } = default!;
     public RClass SymbolClass { get; private set; } = default!;
     public RClass FiberClass { get; private set; } = default!;
-    public RClass IOClass { get; private set; } = default!;
-    public RClass FileClass { get; private set; } = default!;
     public RClass KernelModule { get; private set; } = default!;
     public RClass ExceptionClass { get; private set; } = default!;
     public RClass StandardErrorClass { get; private set; } = default!;
@@ -715,30 +714,6 @@ public partial class MRubyState : IDisposable
         // (notably Thread.pass) that fan out to the fiber scheduler.
         var threadClass = DefineClass(Intern("Thread"u8), ObjectClass, MRubyVType.Object);
         DefineClassMethod(threadClass, Intern("pass"u8), ThreadMembers.Pass);
-    }
-
-    /// <summary>
-    /// Registers Ruby <c>IO</c>, <c>File</c>, and <c>IOError</c> classes
-    /// along with their built-in methods. Not called by <see cref="Create()"/>;
-    /// invoke explicitly when the host wants Ruby code to access streams or
-    /// the filesystem. Idempotent — calling more than once redefines.
-    /// </summary>
-    public void DefineIO()
-    {
-        IOClass = DefineClass(Intern("IO"u8), ObjectClass, MRubyVType.Object);
-        DefineMethod(IOClass, Intern("read"u8), IOMembers.Read);
-        DefineMethod(IOClass, Intern("write"u8), IOMembers.Write);
-        DefineMethod(IOClass, Intern("close"u8), IOMembers.Close);
-        DefineMethod(IOClass, Intern("closed?"u8), IOMembers.ClosedQ);
-
-        FileClass = DefineClass(Intern("File"u8), IOClass, MRubyVType.Object);
-        DefineClassMethod(FileClass, Intern("open"u8), FileMembers.Open);
-        DefineClassMethod(FileClass, Intern("read"u8), FileMembers.Read);
-        DefineClassMethod(FileClass, Intern("write"u8), FileMembers.Write);
-        DefineClassMethod(FileClass, Intern("exist?"u8), FileMembers.ExistQ);
-        DefineClassMethod(FileClass, Intern("exists?"u8), FileMembers.ExistQ);
-
-        DefineClass(Intern("IOError"u8), StandardErrorClass);
     }
 
     void InitObjectExt()

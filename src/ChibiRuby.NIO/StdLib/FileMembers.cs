@@ -16,13 +16,9 @@ static class FileMembers
 {
     /// <summary>
     /// <c>File.open(path, mode = "r")</c> -- open the file, return an
-    /// <see cref="RFile"/>. The <b>block form</b>
-    /// (<c>File.open(path) { |f| ... }</c> with auto-close) is implemented
-    /// in Ruby on top of this method (see <c>StdLib/lib.rb</c>) so the
-    /// block can <c>yield</c>/<c>sleep</c>/<c>I/O</c> without crossing a
-    /// C# stack frame (<see cref="MRubyState.EnsureValidFiberBoundary"/>).
+    /// <see cref="RFile"/>.
     /// </summary>
-    [RubyDef("(String, ?String) -> File | (String, ?String) { (File) -> untyped } -> untyped")]
+    [RubyDef("(String, ?String) -> File")]
     public static MRubyValue Open(MRubyState state, MRubyValue self)
     {
         var path = PathArg(state);
@@ -40,7 +36,8 @@ static class FileMembers
             FileShare.ReadWrite,
             bufferSize: 4096,
             useAsync: useAsync);
-        var rfile = new RFile(state.FileClass, stream, path);
+        var fileClass = state.GetConst(state.Intern("File"u8)).As<RClass>();
+        var rfile = new RFile(fileClass, stream, path);
         return new MRubyValue(rfile);
     }
 
