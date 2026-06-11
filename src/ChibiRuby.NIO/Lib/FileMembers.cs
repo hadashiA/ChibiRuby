@@ -3,7 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Text;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>
 /// Filesystem I/O -- a subclass of <c>IO</c> for reading and writing files on

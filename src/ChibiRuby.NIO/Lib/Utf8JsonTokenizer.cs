@@ -4,7 +4,7 @@ using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>Raised on malformed input; translated to <c>JSON::ParserError</c>.</summary>
 internal sealed class MRubyJsonFormatException(string message, int position, int line, int column)

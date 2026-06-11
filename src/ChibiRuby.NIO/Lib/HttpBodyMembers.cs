@@ -1,6 +1,6 @@
 using System;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>Buffered response body bytes plus Content-Type. The wrapper class leaves room for future streaming.</summary>
 internal sealed class MRubyHttpBodyData

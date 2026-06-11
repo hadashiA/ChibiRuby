@@ -2,7 +2,7 @@ using System;
 using System.Buffers;
 using System.Buffers.Text;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>JSON writer over <see cref="ArrayBufferWriter{T}"/>; comma placement is handled by a single separator flag.</summary>
 /// <remarks>Non-ASCII UTF-8 passes through verbatim — only quotes, backslash, and control chars are escaped.</remarks>

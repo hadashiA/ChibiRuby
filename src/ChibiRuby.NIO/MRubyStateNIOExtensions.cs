@@ -1,4 +1,4 @@
-using ChibiRuby.StdLib;
+using ChibiRuby.NIO;
 
 namespace ChibiRuby;
 

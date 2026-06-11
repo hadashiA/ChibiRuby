@@ -1,6 +1,6 @@
 using System;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>Backing data for <c>HTTP::Response</c>; wrapper values are pre-allocated so accessors have stable identity.</summary>
 internal sealed class MRubyHttpResponseData

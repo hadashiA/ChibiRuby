@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>Process-wide <see cref="HttpClient"/> singleton (avoids socket exhaustion); all per-request state lives on the request message.</summary>
 internal static class MRubyHttpClientHolder

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>Ordered (name, value) pair list with case-insensitive lookup; duplicate names (Set-Cookie etc.) are preserved.</summary>
 internal sealed class MRubyHttpHeadersData

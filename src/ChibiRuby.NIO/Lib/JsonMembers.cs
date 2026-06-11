@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Buffers.Text;
 using System.Text;
 
-namespace ChibiRuby.StdLib;
+namespace ChibiRuby.NIO;
 
 /// <summary>Ruby <c>JSON</c> module (stdlib-compatible API) backed by <see cref="Utf8JsonTokenizer"/> / <see cref="Utf8JsonValueWriter"/>.</summary>
 /// <remarks>
