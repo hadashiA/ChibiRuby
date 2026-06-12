@@ -332,14 +332,23 @@ internal static class RbsGenerator
                 when ma.Expression is IdentifierNameSyntax ns && ns.Identifier.ValueText == "Names":
                 return knownSymbols.TryGetValue(ma.Name.Identifier.ValueText, out var sym) ? sym : null;
 
+            // Both `Intern("...")` (inside MRubyState) and `mrb.Intern("...")`
+            // (extension-method packages such as ChibiRuby.NIO).
             case InvocationExpressionSyntax invoke
-                when invoke.Expression is IdentifierNameSyntax fn && fn.Identifier.ValueText == "Intern"
+                when InvocationNameOf(invoke) == "Intern"
                      && invoke.ArgumentList.Arguments.Count == 1
                      && invoke.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax lit:
                 return lit.Token.ValueText;
         }
         return null;
     }
+
+    static string? InvocationNameOf(InvocationExpressionSyntax invoke) => invoke.Expression switch
+    {
+        IdentifierNameSyntax id => id.Identifier.ValueText,
+        MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText,
+        _ => null
+    };
 
     static void Emit(SourceProductionContext spc, ImmutableArray<RubyTypeInfo> types, ImmutableArray<MethodBinding> bindings, ImmutableArray<IncludeBinding> includes, List<RbsBlock> rbBlocks, string outputDir)
     {
@@ -454,7 +463,11 @@ internal static class RbsGenerator
 
             sb.AppendLine("end");
 
-            var fileName = ToSnake(type.RubyName) + ".rbs";
+            // For nested names like "HTTP::Session", sanitize "::" to "__" in
+            // the file name so we don't emit colons into paths (illegal on
+            // Windows, awkward elsewhere). The class header keeps the full
+            // "HTTP::Session" name, which is valid RBS syntax.
+            var fileName = ToSnake(type.RubyName.Replace("::", "__")) + ".rbs";
             emittedNames.Add(type.RubyName);
             var fullPath = Path.Combine(outputDir, fileName);
             try
@@ -892,10 +905,45 @@ internal static class RbsGenerator
     static IEnumerable<string> ClassExprCandidates(string rubyName, bool isModule)
     {
         var suffix = isModule ? "Module" : "Class";
-        var lower = rubyName.Length > 0 ? char.ToLowerInvariant(rubyName[0]) + rubyName.Substring(1) : rubyName;
+        static string LowerFirst(string s) => s.Length > 0 ? char.ToLowerInvariant(s[0]) + s.Substring(1) : s;
+        // For acronyms like "HTTP" — lower-camelCase becomes "http", not "hTTP".
+        // Mirrors the heuristic devs actually use when naming local vars.
+        static string LowerAcronymPrefix(string s)
+        {
+            if (s.Length == 0) return s;
+            // Find the first run of consecutive uppercase letters at the start.
+            var i = 0;
+            while (i < s.Length && char.IsUpper(s[i])) i++;
+            if (i <= 1) return LowerFirst(s);
+            // If we ended in the middle of a word (next is lowercase), keep
+            // the last uppercase letter as the start of that word.
+            var prefix = i < s.Length && char.IsLower(s[i]) ? i - 1 : i;
+            if (prefix == 0) return s;
+            return s.Substring(0, prefix).ToLowerInvariant() + s.Substring(prefix);
+        }
+
         yield return rubyName;
         yield return rubyName + suffix;
-        yield return lower + suffix;
+        yield return LowerFirst(rubyName) + suffix;
+        // Acronym-aware variant for names like "HTTP" → variable "httpModule".
+        var acronymed = LowerAcronymPrefix(rubyName);
+        if (acronymed != rubyName && acronymed != LowerFirst(rubyName))
+        {
+            yield return acronymed + suffix;
+        }
+
+        // For nested names like "HTTP::Session", the runtime variable is
+        // typically named after the leaf ("sessionClass"), not the FQN.
+        // Yield the leaf-derived candidates so DefineMethod(sessionClass, …)
+        // bindings still resolve to this type.
+        var lastSep = rubyName.LastIndexOf("::", StringComparison.Ordinal);
+        if (lastSep >= 0)
+        {
+            var leaf = rubyName.Substring(lastSep + 2);
+            yield return leaf;
+            yield return leaf + suffix;
+            yield return LowerFirst(leaf) + suffix;
+        }
     }
 
     static string PickPrimaryName(List<string> names)

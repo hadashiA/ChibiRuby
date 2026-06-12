@@ -4,7 +4,7 @@ using ChibiRuby.Compiler;
 // Helper to write u8 byte arrays from interpolated raw strings.
 // Interpolated + raw + u8 isn't legal C#, so we explicit-encode.
 
-namespace ChibiRuby.Tests;
+namespace ChibiRuby.NIO.Tests;
 
 [TestFixture]
 public class IoTest

@@ -43,7 +43,10 @@ end
   - Enumerable extensions (mruby-enum-ext): see [`sig/enumerable.rbs`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/enumerable.rbs)
   - **Optional (opt-in)** — see [Optional Classes](#optional-classes-opt-in)
       - [`Regexp`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/regexp.rbs) / [`MatchData`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/match_data.rbs) (via `mrb.DefineRegexp()`)
-      - [`IO`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
+      - With the **ChibiRuby.NIO** package:
+          - [`IO`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/io.rbs) / [`File`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/file.rbs) / `IOError` (via `mrb.DefineIO()`)
+          - [`HTTP`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/http.rbs) client (via `mrb.DefineHttp()`)
+          - [`JSON`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/json.rbs) (via `mrb.DefineJson()`)
 - **Fiber & async/await integration** — suspend Ruby execution and await C# async methods without blocking threads.
 - **Debugger (DAP)** — line breakpoints, stepping, locals view, and expression evaluation. Attach from VSCode / JetBrains / Zed to a running Unity or .NET host over TCP. See [Debugger](#debugger).
 - **Prism-based compiler** — uses [mruby-compiler2](https://github.com/picoruby/mruby-compiler2), the next-generation mruby compiler built on [Prism](https://github.com/ruby/prism) (the official CRuby parser), for more accurate and modern Ruby syntax support.
@@ -121,6 +124,8 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 - [Optional Classes (opt-in)](#optional-classes-opt-in)
     - [Regexp](#regexp)
     - [IO / File](#io--file)
+    - [HTTP](#http)
+    - [JSON](#json)
 - [Fiber (Coroutine)](#fiber-coroutine)
 - [Define async Ruby method (FiberScheduler)](#define-async-ruby-method-fiberscheduler)
     - [Default behavior (no scheduler)](#default-behavior-no-scheduler)
@@ -147,6 +152,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 | Package                 | Description                                                                       | Latest version |
 |:------------------------|:----------------------------------------------------------------------------------|----------------|
 | ChibiRuby               | Runtime package: a pure C# mruby VM.                                              | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby)](https://www.nuget.org/packages/ChibiRuby) |
+| ChibiRuby.NIO           | Optional `IO` / `File` / `HTTP` / `JSON` modules — see [Optional Classes](#optional-classes-opt-in) | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.NIO)](https://www.nuget.org/packages/ChibiRuby.NIO) |
 | ChibiRuby.Compiler      | Ruby source compiler utility (native binding).                                    | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler)](https://www.nuget.org/packages/ChibiRuby.Compiler)   |
 | ChibiRuby.Cli           | dotnet tool with subcommands (e.g. `compile`) for ChibiRuby workflows             | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Cli)](https://www.nuget.org/packages/ChibiRuby.Cli) |
 | ChibiRuby.Serializer    | Converts between Ruby and C# objects                                              | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Serializer)](https://www.nuget.org/packages/ChibiRuby.Serializer)  |
@@ -165,6 +171,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 2. Install following packages via NuGetForUnity
     - Utf8StringInterpolation
     - ChibiRuby
+    - (Optional) ChibiRuby.NIO — `IO` / `File` / `HTTP` / `JSON` modules. No extra dependencies.
     - (Optional) ChibiRuby.Compiler — runtime Ruby compiler. Native binaries (macOS, Linux, Windows, Android, iOS, WebGL) ship inside the NuGet package.
     - (Optional) ChibiRuby.Serializer
 3. (Optional) For an Editor extension that auto-imports `.rb` / `.mrb` files as `TextAsset` subassets, install `ChibiRuby.Compiler` Unity package as well — see [Unity AssetImporter](#unity-assetimporter).
@@ -973,20 +980,26 @@ mrb.DefineMethod(yourClass, mrb.Intern("foo_method"u8), (s, self) =>
 
 ## Optional Classes (opt-in)
 
-Some bundled classes are **not** registered by `MRubyState.Create()` so that embedding hosts only pay for the surface area they actually need. Enable them explicitly per `MRubyState` instance:
+Some classes are **not** registered by `MRubyState.Create()` so that embedding hosts only pay for the surface area they actually need. Enable them explicitly per `MRubyState` instance:
 
-| Enable with | Adds |
-|---|---|
-| `mrb.DefineRegexp()` | [`Regexp`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/regexp.rbs), [`MatchData`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/match_data.rbs), and regexp-related `String` methods (`=~` / `match` / `sub` / `gsub` / `scan` / `index`) |
-| `mrb.DefineIO()` | [`IO`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/io.rbs), [`File`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/file.rbs), `IOError` |
+| Package | Enable with | Adds |
+|---|---|---|
+| ChibiRuby (built-in) | `mrb.DefineRegexp()` | [`Regexp`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/regexp.rbs), [`MatchData`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/match_data.rbs), and regexp-related `String` methods (`=~` / `match` / `sub` / `gsub` / `scan` / `index`) |
+| [ChibiRuby.NIO](https://www.nuget.org/packages/ChibiRuby.NIO) | `mrb.DefineIO()` | [`IO`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/io.rbs), [`File`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/file.rbs), `IOError` |
+| [ChibiRuby.NIO](https://www.nuget.org/packages/ChibiRuby.NIO) | `mrb.DefineHttp()` | [`HTTP`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/http.rbs) module, [`HTTP::Response`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/http__response.rbs) / [`Headers`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/http__headers.rbs) / [`Body`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/http__body.rbs), `HTTP::Error` / `TimeoutError` / `ConnectionError` |
+| [ChibiRuby.NIO](https://www.nuget.org/packages/ChibiRuby.NIO) | `mrb.DefineJson()` | [`JSON`](https://github.com/hadashiA/ChibiRuby/blob/main/sig/json.rbs) module (stdlib-compatible), `#to_json` on builtin types, `JSON::ParserError` / `GeneratorError` / `NestingError` |
 
-Both calls are idempotent and must be made **before** compiling/running Ruby code that references the classes.
+The `IO` / `File`, `HTTP`, and `JSON` modules live in the separate **ChibiRuby.NIO** NuGet package so that hosts embedding Ruby with no OS access (the default posture) don't ship file or network code at all. The package has no dependencies beyond ChibiRuby itself; the `Define*` methods become available as extension methods on `MRubyState`.
+
+All calls are idempotent and must be made **before** compiling/running Ruby code that references the classes.
 
 ```cs
 using var mrb = MRubyState.Create(x =>
 {
-    x.DefineRegexp();
-    x.DefineIO();
+    x.DefineRegexp();   // built into ChibiRuby
+    x.DefineIO();       // requires ChibiRuby.NIO
+    x.DefineHttp();     // requires ChibiRuby.NIO
+    x.DefineJson();     // requires ChibiRuby.NIO
 });
 ```
 
@@ -1046,6 +1059,62 @@ compiler.LoadSourceCode("""
 ```
 
 When a `FiberScheduler` is installed, `IO`/`File` reads and writes route through `MRubyFiberScheduler.Await` so the host thread isn't blocked on stream I/O. See [Defining async Ruby methods with `Await`](#defining-async-ruby-methods-with-await) for the same mechanism applied to host-defined methods.
+
+### HTTP
+
+An HTTP client built on .NET `HttpClient`, with an API inspired by [httpx](https://github.com/HoneyryderChuck/httpx). One-shot verb methods take per-request keyword options and return an `HTTP::Response`.
+
+```cs
+using var mrb = MRubyState.Create(x =>
+{
+    x.DefineHttp();
+});
+
+using var compiler = MRubyCompiler.Create(mrb);
+
+compiler.LoadSourceCode("""
+    resp = HTTP.get("https://example.com", headers: { "user-agent" => "myapp/1.0" })
+    resp.status                 # => 200
+    resp.headers["content-type"]
+    resp.body.to_s
+
+    HTTP.post("https://example.com/things", form: { "name" => "alice" })
+    HTTP.get("https://example.com/search", params: { "q" => "ruby" }, timeout: 5)
+    HTTP.get("https://example.com", basic_auth: ["user", "pass"])
+    """u8);
+```
+
+Error behavior follows `HttpClient`: 4xx/5xx responses do **not** raise — check `resp.success?` / `resp.error?`, or call `resp.ensure_success_status!` to raise `HTTP::Error` explicitly. Transport failures raise `HTTP::ConnectionError`; timeouts raise `HTTP::TimeoutError`.
+
+When a `FiberScheduler` is installed, requests issued inside a fiber park the fiber instead of blocking the host thread — the same mechanism as `IO`/`File` above.
+
+### JSON
+
+A `JSON` module compatible with Ruby's bundled `json` stdlib, implemented with a dependency-free UTF-8 parser/writer.
+
+```cs
+using var mrb = MRubyState.Create(x =>
+{
+    x.DefineJson();
+});
+
+using var compiler = MRubyCompiler.Create(mrb);
+
+compiler.LoadSourceCode("""
+    obj = JSON.parse('{"name":"alice","tags":["admin"]}')
+    obj["name"]                          # => "alice"
+
+    JSON.parse('{"a":1}', symbolize_names: true)   # => {a: 1}
+
+    JSON.generate({ "x" => 1, "y" => [true, nil] })  # => '{"x":1,"y":[true,null]}'
+    JSON.pretty_generate({ "a" => 1 })
+    { a: 1 }.to_json                     # => '{"a":1}'
+    """u8);
+```
+
+JSON numbers that fit `Int64` parse as `Integer`; larger ones fall back to `Float`. During encoding, `obj.to_json` is dispatched for non-builtin values, so user-defined classes can serialize themselves by implementing `to_json`.
+
+When both `DefineHttp()` and `DefineJson()` are enabled, they compose: `HTTP.post(url, json: obj)` encodes the request body via `JSON.generate` (with `Content-Type: application/json`), and `resp.json` parses the response body lazily with caching.
 
 
 ## Fiber (Coroutine)
