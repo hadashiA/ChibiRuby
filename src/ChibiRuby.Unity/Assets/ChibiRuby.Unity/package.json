@@ -1,7 +1,7 @@
 {
   "name": "jp.hadashikick.chibiruby-unity",
   "displayName": "ChibiRuby.Unity",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "unity": "6000.0",
   "description": "Unity integrations for ChibiRuby (player-loop driven fiber scheduler, etc.)",
   "keywords": ["mruby", "ruby"],
