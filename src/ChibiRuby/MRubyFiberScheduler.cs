@@ -257,7 +257,7 @@ public class MRubyFiberScheduler : IDisposable
             entry.TrySetException(exception);
     }
 
-    static void TryResume(RFiber fiber, MRubyValue value)
+    protected static void TryResume(RFiber fiber, MRubyValue value)
     {
         if (!fiber.IsAlive) return;
         // Exceptions are routed via resumeSource for WaitForTerminate observers;
@@ -266,7 +266,7 @@ public class MRubyFiberScheduler : IDisposable
         catch { }
     }
 
-    static void TryResumeWithException(RFiber fiber, Exception ex)
+    protected static void TryResumeWithException(RFiber fiber, Exception ex)
     {
         if (!fiber.IsAlive) return;
         try
@@ -282,7 +282,7 @@ public class MRubyFiberScheduler : IDisposable
     }
 
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    static void ThrowAlreadyParked(RFiber fiber, string op) =>
+    protected static void ThrowAlreadyParked(RFiber fiber, string op) =>
         throw new InvalidOperationException(
             $"{op}: fiber is already parked under this scheduler. Each park must be matched by Resume/SetCancelled/SetException/cancel before another can be issued.");
 

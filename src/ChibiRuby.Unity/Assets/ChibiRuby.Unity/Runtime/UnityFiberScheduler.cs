@@ -108,13 +108,13 @@ namespace ChibiRuby.Unity
             }
         }
 
-        protected internal override void SetResult(RFiber fiber, MRubyValue value)
+        protected override void SetResult(RFiber fiber, MRubyValue value)
         {
             if (parkedFibers.TryRemove(fiber, out var entry))
                 entry.TrySetResult(value);
         }
 
-        protected internal override void SetCancelled(RFiber fiber, CancellationToken cancellationToken)
+        protected override void SetCancelled(RFiber fiber, CancellationToken cancellationToken)
         {
             // AwaitableCompletionSource has no token-preserving overload; the token
             // is discarded here but the cancel still resumes the fiber with nil.
@@ -122,7 +122,7 @@ namespace ChibiRuby.Unity
                 entry.TrySetCanceled();
         }
 
-        protected internal override void SetException(RFiber fiber, Exception exception)
+        protected override void SetException(RFiber fiber, Exception exception)
         {
             if (parkedFibers.TryRemove(fiber, out var entry))
                 entry.TrySetException(exception);
