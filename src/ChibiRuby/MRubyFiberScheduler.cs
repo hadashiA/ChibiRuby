@@ -11,18 +11,10 @@ namespace ChibiRuby;
 /// operations through it. Idempotency is delegated to the underlying
 /// parking entry (one-shot).
 /// </summary>
-public readonly struct FiberContinuation
+public readonly struct FiberContinuation(MRubyFiberScheduler scheduler, RFiber fiber)
 {
-    readonly MRubyFiberScheduler scheduler;
-
     /// <summary>The fiber this continuation will resume.</summary>
-    public RFiber Fiber { get; }
-
-    internal FiberContinuation(MRubyFiberScheduler scheduler, RFiber fiber)
-    {
-        this.scheduler = scheduler;
-        Fiber = fiber;
-    }
+    public RFiber Fiber { get; } = fiber;
 
     /// <summary>
     /// Resume the suspended fiber with <paramref name="value"/>.
@@ -265,7 +257,7 @@ public class MRubyFiberScheduler : IDisposable
             entry.TrySetException(exception);
     }
 
-    protected static void TryResume(RFiber fiber, MRubyValue value)
+    static void TryResume(RFiber fiber, MRubyValue value)
     {
         if (!fiber.IsAlive) return;
         // Exceptions are routed via resumeSource for WaitForTerminate observers;
@@ -274,7 +266,7 @@ public class MRubyFiberScheduler : IDisposable
         catch { }
     }
 
-    protected static void TryResumeWithException(RFiber fiber, Exception ex)
+    static void TryResumeWithException(RFiber fiber, Exception ex)
     {
         if (!fiber.IsAlive) return;
         try
@@ -290,7 +282,7 @@ public class MRubyFiberScheduler : IDisposable
     }
 
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    protected static void ThrowAlreadyParked(RFiber fiber, string op) =>
+    static void ThrowAlreadyParked(RFiber fiber, string op) =>
         throw new InvalidOperationException(
             $"{op}: fiber is already parked under this scheduler. Each park must be matched by Resume/SetCancelled/SetException/cancel before another can be issued.");
 

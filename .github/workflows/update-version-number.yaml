@@ -79,6 +79,7 @@ jobs:
           ruby -i -pe 'gsub(%r{(https://github.com/hadashiA/ChibiRuby.git\?path=src/ChibiRuby.Unity/Assets/ChibiRuby.Serializer.Unity#)[\d\.]+}, %q{\1${{ steps.configure.outputs.git-tag }}})' README.md
       - name: Update package.json ${{ steps.configure.outputs.git-tag }}
         run: |
+          ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' src/ChibiRuby.Unity/Assets/ChibiRuby.Unity/package.json
           ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' src/ChibiRuby.Unity/Assets/ChibiRuby.Compiler.Unity/package.json
           ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' src/ChibiRuby.Unity/Assets/ChibiRuby.Serializer.Unity/package.json
           ruby -i -pe 'gsub(/"version"\s*:\s*"([\w\.-]+)"/, %q{"version": "${{ steps.configure.outputs.git-tag }}"})' editor-extensions/vscode/package.json
