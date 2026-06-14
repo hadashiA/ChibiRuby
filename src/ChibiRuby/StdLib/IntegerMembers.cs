@@ -394,6 +394,32 @@ static class IntegerMembers
         return default;
     }
 
+    /// <summary>
+    /// Returns the bit at the given offset, using Ruby's infinite two's-complement integer semantics.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 5[0]     # => 1
+    /// 5[1]     # => 0
+    /// (-1)[64] # => 1
+    /// </code>
+    /// </example>
+    [RubyDef("(Numeric) -> Integer")]
+    public static MRubyValue OpAref(MRubyState state, MRubyValue self)
+    {
+        var value = state.AsInteger(self);
+        var offset = state.AsInteger(state.GetArgumentAt(0));
+        if (offset < 0)
+        {
+            return 0;
+        }
+        if (offset > 8 * sizeof(long) - 1)
+        {
+            return value < 0 ? 1 : 0;
+        }
+        return (value >> (int)offset) & 1;
+    }
+
 
     /// <summary>
     /// Returns the string representation of <c>self</c> in the given base (default 10).
@@ -443,6 +469,18 @@ static class IntegerMembers
     /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue OpMinus(MRubyState state, MRubyValue self) => -self.IntegerValue;
+
+    /// <summary>
+    /// Returns the bitwise complement of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// ~0 # => -1
+    /// ~2 # => -3
+    /// </code>
+    /// </example>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue OpNeg(MRubyState state, MRubyValue self) => ~state.AsInteger(self);
 
     /// <summary>
     /// Returns the absolute value of <c>self</c>.
@@ -826,7 +864,7 @@ static class IntegerMembers
         if (width < 0)
         {
             /* rshift */
-            if (width == long.MinValue || -width >= (sizeof(long) - 1))
+            if (width == long.MinValue || -width > numericShiftWidthMax)
             {
                 if (val < 0)
                 {

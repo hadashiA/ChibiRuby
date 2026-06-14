@@ -194,6 +194,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(BasicObjectClass, Names.OpEq, BasicObjectMembers.OpEq);
         DefineMethod(BasicObjectClass, Intern("__id__"u8), BasicObjectMembers.Id);
         DefineMethod(BasicObjectClass, Intern("__send__"u8), BasicObjectMembers.Send);
+        DefineMethod(BasicObjectClass, Intern("send"u8), BasicObjectMembers.Send);
         DefineMethod(BasicObjectClass, Names.QEqual, BasicObjectMembers.OpEq);
         DefineMethod(BasicObjectClass, Names.InstanceEval, BasicObjectMembers.InstanceEval);
         DefineMethod(BasicObjectClass, Names.SingletonMethodAdded, MRubyMethod.Nop);
@@ -432,6 +433,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(IntegerClass, Names.OpMod, IntegerMembers.Mod);
         DefineMethod(IntegerClass, Names.OpPlus, IntegerMembers.OpPlus);
         DefineMethod(IntegerClass, Names.OpMinus, IntegerMembers.OpMinus);
+        DefineMethod(IntegerClass, Names.OpNeg, IntegerMembers.OpNeg);
         DefineMethod(IntegerClass, Intern("div"u8), IntegerMembers.IntDiv);
         DefineMethod(IntegerClass, Intern("fdiv"u8), IntegerMembers.FDiv);
         DefineMethod(IntegerClass, Intern("abs"u8), IntegerMembers.Abs);
@@ -455,6 +457,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(IntegerClass, Names.OpXor, IntegerMembers.OpXor);
         DefineMethod(IntegerClass, Names.OpLShift, IntegerMembers.OpLShift);
         DefineMethod(IntegerClass, Names.OpRShift, IntegerMembers.OpRShift);
+        DefineMethod(IntegerClass, Names.OpAref, IntegerMembers.OpAref);
         DefineMethod(IntegerClass, Names.OpCmp, NumericMembers.OpCmp);
         DefineMethod(IntegerClass, Names.OpLt, NumericMembers.OpLt);
         DefineMethod(IntegerClass, Names.OpLe, NumericMembers.OpLe);

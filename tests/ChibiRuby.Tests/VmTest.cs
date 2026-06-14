@@ -449,6 +449,122 @@ public class VmTest
         Assert.That(mrb.Stringify(result).ToString(), Is.EqualTo("verbose=true mode=fast"));
     }
 
+    [Test]
+    public void RubySend_DispatchesRubyMethodWithMultipleArguments()
+    {
+        var result = Exec("""
+                          class SenderProbe
+                            attr_reader :seen
+
+                            def target(a, b)
+                              @seen = [a, b]
+                              123
+                            end
+
+                            def call_target
+                              send(:target, true, false)
+                            end
+                          end
+
+                          probe = SenderProbe.new
+                          [probe.call_target, probe.seen]
+                          """u8).As<RArray>();
+
+        Assert.That(result[0], Is.EqualTo(new MRubyValue(123)));
+
+        var seen = result[1].As<RArray>();
+        Assert.That(seen[0], Is.EqualTo(MRubyValue.True));
+        Assert.That(seen[1], Is.EqualTo(MRubyValue.False));
+    }
+
+    [Test]
+    public void RubySend_ResumesNestedSendToUnderscoreNamedMethod()
+    {
+        var result = Exec("""
+                          class UnderscoreNestedSendProbe
+                            attr_reader :events
+
+                            def initialize
+                              @events = []
+                              @_a = 0
+                              @data = 0
+                              @_p_c = 0
+                            end
+
+                            def imm(_read, _write)
+                              @events << :imm
+                              @data = 1
+                            end
+
+                            def _adc
+                              @events << :_adc
+                              tmp = @_a + @data + @_p_c
+                              @_p_v = ~(@_a ^ @data) & (@_a ^ tmp) & 0x80
+                              @_a = tmp & 0xff
+                              @_p_c = tmp[8]
+                            end
+
+                            def r_op(instr, mode)
+                              send(mode, true, false)
+                              send(instr)
+                            end
+
+                            def run
+                              __send__(:r_op, :_adc, :imm)
+                              @events << :post
+                              [@events, @_a, @data, @_p_c]
+                            end
+                          end
+
+                          UnderscoreNestedSendProbe.new.run
+                          """u8).As<RArray>();
+
+        var events = result[0].As<RArray>();
+        Assert.That(events.Length, Is.EqualTo(3));
+        Assert.That(events[0].SymbolValue, Is.EqualTo(mrb.Intern("imm"u8)));
+        Assert.That(events[1].SymbolValue, Is.EqualTo(mrb.Intern("_adc"u8)));
+        Assert.That(events[2].SymbolValue, Is.EqualTo(mrb.Intern("post"u8)));
+        Assert.That(result[1], Is.EqualTo(new MRubyValue(1)));
+        Assert.That(result[2], Is.EqualTo(new MRubyValue(1)));
+        Assert.That(result[3], Is.EqualTo(new MRubyValue(0)));
+    }
+
+    [Test]
+    public void ArgAry_ForwardsSuperArgumentsWithRestAndPost()
+    {
+        var result = Exec("""
+                          class ArgAryBase
+                            def count_rest(a, *rest, b)
+                              rest.size
+                            end
+                          end
+
+                          class ArgAryChild < ArgAryBase
+                            def count_rest(a, *rest, b)
+                              super
+                            end
+                          end
+
+                          ArgAryChild.new.count_rest(1, 2, 3, 4)
+                          """u8);
+
+        Assert.That(result, Is.EqualTo(new MRubyValue(2)));
+    }
+
+    [Test]
+    public void InstanceVariableGetSet()
+    {
+        var result = Exec("""
+                          obj = Object.new
+                          set = obj.instance_variable_set(:@x, 42)
+                          get = obj.instance_variable_get(:@x)
+                          removed = obj.remove_instance_variable(:@x)
+                          set == 42 && get == 42 && removed == 42 && obj.instance_variable_get(:@x).nil?
+                          """u8);
+
+        Assert.That(result, Is.EqualTo(MRubyValue.True));
+    }
+
     MRubyValue Exec(ReadOnlySpan<byte> code)
     {
         using var compilation = compiler.Compile(code);
