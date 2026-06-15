@@ -121,7 +121,7 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
     {
         var currentLength = Length;
         MakeModifiable(currentLength + 1, true);
-        data[currentLength] = newItem;
+        data[offset + currentLength] = newItem;
     }
 
     public bool TryPop(out MRubyValue value)

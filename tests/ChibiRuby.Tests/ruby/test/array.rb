@@ -262,6 +262,16 @@ assert('Array#push', '15.2.12.5.22') do
 
   assert_equal([1,2,3,4], a)
   assert_equal([1,2,3,4], b)
+
+  a = [1,2,3]
+  a.shift
+  assert_equal([2,3,4], a.push(4))
+end
+
+assert('Array#<< after shift') do
+  a = [1,2,3]
+  a.shift
+  assert_equal([2,3,4], a << 4)
 end
 
 assert('Array#replace', '15.2.12.5.23') do
