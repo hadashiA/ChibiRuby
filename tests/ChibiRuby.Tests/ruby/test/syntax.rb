@@ -351,6 +351,23 @@ assert('Splat and multiple assignment from variable') do
 
   assert_equal 1, b
   assert_equal [2, 3], c
+
+  source = [1, 2, 3, 4]
+  head, *rest, tail = source
+  source[1] = 20
+  rest[0] = 30
+  assert_equal 1, head
+  assert_equal 4, tail
+  assert_equal [1, 20, 3, 4], source
+  assert_equal [30, 3], rest
+
+  class MultipleAssignmentArraySubclass < Array
+  end
+  subclass_source = MultipleAssignmentArraySubclass[1, 2, 3]
+  first, *subclass_rest = subclass_source
+  assert_equal 1, first
+  assert_equal [2, 3], subclass_rest
+  assert_equal Array, subclass_rest.class
 end
 
 assert('Splat and multiple assignment from variables') do
