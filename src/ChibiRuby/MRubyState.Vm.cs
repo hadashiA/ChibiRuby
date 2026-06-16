@@ -1781,6 +1781,70 @@ partial class MRubyState
                             callInfo.KeywordArgumentCount = (byte)((bb.B >> 4) & 0xf);
                         }
                     }
+                    case OpCode.ArgAry:
+                    {
+                        Markers.ArgAry();
+
+                        bs = OperandBS.Read(ref sequence, ref callInfo.ProgramCounter);
+                        var bits = (ushort)bs.B;
+                        var m1 = (bits >> 11) & 0x3f;
+                        var r = (bits >> 10) & 0x1;
+                        var m2 = (bits >> 5) & 0x1f;
+                        var kd = (bits >> 4) & 0x1;
+                        var lv = bits & 0xf;
+
+                        Span<MRubyValue> sourceStack;
+                        if (lv == 0)
+                        {
+                            sourceStack = Context.Stack.AsSpan(callInfo.StackPointer + 1);
+                        }
+                        else
+                        {
+                            var env = callInfo.Proc?.FindUpperEnvTo(lv - 1);
+                            if (env is null || env.Stack.Length <= m1 + r + m2 + 1)
+                            {
+                                Raise(Names.NoMethodError, "super called outside of method"u8);
+                            }
+                            sourceStack = env!.Stack[1..];
+                        }
+
+                        var result = r == 0
+                            ? NewArray(sourceStack.Slice(0, m1 + m2))
+                            : NewArrayFromArgumentArray(sourceStack, m1, m2);
+
+                        Unsafe.Add(ref registers, bs.A) = result;
+                        if (kd != 0)
+                        {
+                            Unsafe.Add(ref registers, bs.A + 1) = sourceStack[m1 + r + m2];
+                            Unsafe.Add(ref registers, bs.A + 2) = sourceStack[m1 + r + m2 + 1];
+                        }
+
+                        goto Next;
+
+                        RArray NewArrayFromArgumentArray(Span<MRubyValue> sourceStack, int m1, int m2)
+                        {
+                            var rest = sourceStack[m1].Object as RArray;
+                            var resultLength = m1 + (rest?.Length ?? 0) + m2;
+                            var array = NewArray(resultLength);
+
+                            if (m1 > 0)
+                            {
+                                array.PushRange(sourceStack[..m1]);
+                            }
+
+                            if (rest is not null)
+                            {
+                                array.PushRange(rest.AsSpan());
+                            }
+
+                            if (m2 > 0)
+                            {
+                                array.PushRange(sourceStack.Slice(m1 + 1, m2));
+                            }
+
+                            return array;
+                        }
+                    }
                     case OpCode.Enter:
                     {
                         Markers.Enter();
