@@ -1,14 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace ChibiRuby.Compiler
-{
-class MrbStateHandle : SafeHandle
-{
-    public MrbStateHandle(IntPtr invalidHandleValue) : base(invalidHandleValue, true)
-    {
-    }
+namespace ChibiRuby.Compiler;
 
+class MrbStateHandle(IntPtr invalidHandleValue) : SafeHandle(invalidHandleValue, true)
+{
     public static unsafe MrbStateHandle Create()
     {
         var ptr = NativeMethods.MrbOpen();
@@ -25,5 +21,4 @@ class MrbStateHandle : SafeHandle
         NativeMethods.MrbClose(DangerousGetPtr());
         return true;
     }
-}
 }
