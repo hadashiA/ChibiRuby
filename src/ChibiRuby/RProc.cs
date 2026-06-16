@@ -145,4 +145,3 @@ public class RProc(Irep irep, int programCounter, RClass procClass) : RObject(MR
         return HashCode.Combine(Upper, Scope);
     }
 }
-

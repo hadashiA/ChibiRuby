@@ -740,8 +740,8 @@ partial class MRubyState
                         var valueB = Unsafe.Add(ref registerA, 1);
                         switch (registerA.Object)
                         {
-                            case RArray array when valueB.IsInteger && array.Class == ArrayClass:
-                                registerA = array[(int)valueB.IntegerValue];
+                            case RArray array when valueB.IsFixnum && array.Class == ArrayClass:
+                                registerA = array[(int)valueB.FixnumValue];
                                 goto Next;
                             case RHash hash when hash.Class == HashClass:
                                 registerA = hash.GetValueOrDefault(valueB, this);
@@ -799,9 +799,9 @@ partial class MRubyState
                         var setVal = Unsafe.Add(ref registerA, 2);
                         switch (registerA.Object)
                         {
-                            case RArray array when keyVal.IsInteger && array.Class == ArrayClass
+                            case RArray array when keyVal.IsFixnum && array.Class == ArrayClass
                                                                     && !array.HasFlag(MRubyObjectFlags.Frozen):
-                                array[(int)keyVal.IntegerValue] = setVal;
+                                array.Set((int)keyVal.FixnumValue, setVal);
                                 registerA = setVal;
                                 goto Next;
                             case RHash hash when hash.Class == HashClass
@@ -2345,7 +2345,7 @@ partial class MRubyState
                         Markers.ASet();
                         bbb = OperandBBB.Read(ref sequence, ref callInfo.ProgramCounter);
                         var array = Unsafe.Add(ref registers, bbb.B).As<RArray>();
-                        array[bbb.C] = Unsafe.Add(ref registers, bbb.A);
+                        array.Set(bbb.C, Unsafe.Add(ref registers, bbb.A));
                         goto Next;
                     }
                     case OpCode.APost:
@@ -2366,8 +2366,7 @@ partial class MRubyState
                             [MethodImpl(MethodImplOptions.NoInlining)]
                             static void APostShort(MRubyState state, RArray array, OperandBBB bbb, int pre, int post, ref MRubyValue registerA)
                             {
-                                var slice = array.AsSpan().Slice(bbb.B, array.Length - pre - post);
-                                registerA = state.NewArray(slice);
+                                registerA = state.NewSharedArray(array, bbb.B, array.Length - pre - post);
                                 registerA = ref Unsafe.Add(ref registerA, 1);
                                 while (post-- > 0)
                                 {
