@@ -301,10 +301,12 @@ partial class MRubyState
         ref var entry = ref methodCache[index];
         if (entry.Class == c && entry.MethodId == methodId)
         {
+            DispatchProfiler.CacheHit();
             method = entry.Method;
             imp = entry.DefiningClass!;
             return true;
         }
+        DispatchProfiler.CacheMiss();
         if (c.TryFindMethod(methodId, out method, out imp))
         {
             entry.Class = c;
@@ -320,6 +322,12 @@ partial class MRubyState
     {
         Array.Clear(methodCache, 0, methodCache.Length);
     }
+
+    /// <summary>Reset dispatch counters (no-op unless built with DISPATCH_PROFILE). See <see cref="DispatchProfiler"/>.</summary>
+    public void ResetDispatchProfile() => DispatchProfiler.Reset();
+
+    /// <summary>Render the collected dispatch breakdown. See <see cref="DispatchProfiler"/>.</summary>
+    public string DumpDispatchProfile(int topN = 25) => DispatchProfiler.Report(this, topN);
 
     void PrepareSingletonClass(RObject obj)
     {
@@ -465,4 +473,3 @@ partial class MRubyState
         return clone;
     }
 }
-

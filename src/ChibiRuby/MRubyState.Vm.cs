@@ -390,6 +390,7 @@ partial class MRubyState
         {
             method = PrepareMethodMissing(ref callInfo, self, methodId);
         }
+        DispatchProfiler.SendMeta(method.Kind, methodId);
 
         if (callInfo.ArgumentPacked)
         {
@@ -1626,6 +1627,7 @@ partial class MRubyState
 
                         callInfo.Scope = receiverClass;
                         callInfo.Proc = method.Proc;
+                        DispatchProfiler.Send(method.Kind, methodId);
 
                         // var block = stack[blockArgumentOffset];
                         // if (!block.IsNil) EnsureValueIsBlock(block);
@@ -1668,7 +1670,6 @@ partial class MRubyState
                             static bool CallCSharpFunc(MRubyState state, MRubyMethod method, MRubyValue self, ref Irep irep, out MRubyValue result)
                             {
                                 result = method.Invoke(state, self);
-
                                 ref var callInfo = ref state.Context.CurrentCallInfo;
                                 var keepContext = callInfo.KeepContext;
                                 var callerType = callInfo.CallerType;
