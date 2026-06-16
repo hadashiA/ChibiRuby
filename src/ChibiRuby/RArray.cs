@@ -3,7 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+#if NET7_0_OR_GREATER
+using static System.Runtime.InteropServices.MemoryMarshal;
+#else
+using static ChibiRuby.Internal.MemoryMarshalEx;
+#endif
 
 namespace ChibiRuby;
 
@@ -37,7 +41,7 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
         set
         {
             MakeModifiable(index + 1, index >= Length);
-            Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(data), offset + index) = value;
+            Unsafe.Add(ref GetArrayDataReference(data), offset + index) = value;
         }
     }
 
@@ -55,12 +59,12 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
             {
                 MakeModifiable(length);
             }
-            Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(data), offset + index) = value;
+            Unsafe.Add(ref GetArrayDataReference(data), offset + index) = value;
             return;
         }
 
         MakeModifiable(index + 1, index >= length);
-        Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(data), offset + index) = value;
+        Unsafe.Add(ref GetArrayDataReference(data), offset + index) = value;
     }
 
     MRubyValue[] data;
