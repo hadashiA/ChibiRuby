@@ -30,6 +30,12 @@ partial class MRubyState
 
     public RArray NewArray(params ReadOnlySpan<MRubyValue> values) => new(values, ArrayClass);
 
+    internal RArray NewArray(RArray source, int start, int length) =>
+        source.CopySubSequence(start, length, ArrayClass);
+
+    internal RArray NewSharedArray(RArray source, int start, int length) =>
+        source.SharedSubSequence(start, length, ArrayClass);
+
     public RHash NewHash(int capacity = 4) => new(
         capacity,
         HashKeyEqualityComparer,
@@ -473,6 +479,16 @@ partial class MRubyState
         }
 
         var originalLength = array.Length;
+        if (length == newValues.Length && start >= 0 && end <= originalLength)
+        {
+            array.MakeModifiable(originalLength);
+            if (length > 0)
+            {
+                newValues.CopyTo(array.AsSpan(start, length));
+            }
+            return;
+        }
+
         if (start >= originalLength)
         {
             length = start + newValues.Length;

@@ -262,6 +262,10 @@ assert('Array#push', '15.2.12.5.22') do
 
   assert_equal([1,2,3,4], a)
   assert_equal([1,2,3,4], b)
+
+  a.shift
+  a.push(5)
+  assert_equal([2,3,4,5], a)
 end
 
 assert('Array#replace', '15.2.12.5.23') do
@@ -368,6 +372,29 @@ assert('Array#slice', '15.2.12.5.29') do
   assert_nil(a.slice(10, -3))
   assert_equal([], a.slice(10..7))
   assert_equal(b, a)
+
+  # Slices are allowed to share storage internally, but writes on either side
+  # must detach before mutating.
+  parent = [0, 1, 2, 3, 4]
+  child = parent.slice(1, 3)
+  nested = child.slice(1, 2)
+  assert_equal([2, 3], nested)
+  parent[2] = 20
+  assert_equal([1, 2, 3], child)
+  nested[0] = 30
+  assert_equal([0, 1, 20, 3, 4], parent)
+  assert_equal([1, 2, 3], child)
+  assert_equal([30, 3], nested)
+
+  shifted = [0, 1, 2, 3, 4]
+  shifted.shift
+  shifted_dup = shifted.dup
+  shifted_slice = shifted.slice(1, 2)
+  assert_equal([1, 2, 3, 4], shifted_dup)
+  assert_equal([2, 3], shifted_slice)
+  shifted_dup[0] = 10
+  shifted_slice[0] = 20
+  assert_equal([1, 2, 3, 4], shifted)
 end
 
 assert('Array#unshift', '15.2.12.5.30') do
