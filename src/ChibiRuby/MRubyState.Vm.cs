@@ -195,6 +195,73 @@ partial class MRubyState
         }
     }
 
+    internal MRubyValue CallResolvedMethod(
+        MRubyValue self,
+        Symbol methodId,
+        MRubyMethod method,
+        RClass owner,
+        ReadOnlySpan<MRubyValue> args,
+        ReadOnlySpan<KeyValuePair<Symbol, MRubyValue>> kargs,
+        RProc? block)
+    {
+        ref var currentCallInfo = ref Context.CurrentCallInfo;
+        var nextStackPointer = currentCallInfo.StackPointer + currentCallInfo.NumberOfRegisters;
+
+        var stackSize = MRubyCallInfo.CalculateBlockArgumentOffset(
+            args.Length,
+            kargs.IsEmpty ? 0 : MRubyCallInfo.CallMaxArgs) + 1;
+        Context.ExtendStack(nextStackPointer + stackSize);
+
+        var nextStack = Context.Stack.AsSpan(nextStackPointer);
+        ref var nextCallInfo = ref Context.PushCallStack();
+        nextCallInfo.StackPointer = nextStackPointer;
+        nextCallInfo.Scope = owner;
+        nextCallInfo.ArgumentCount = (byte)args.Length;
+        nextCallInfo.KeywordArgumentCount = (byte)kargs.Length;
+        nextCallInfo.MethodId = methodId;
+
+        nextStack[0] = self;
+        if (!args.IsEmpty)
+        {
+            if (args.Length >= MRubyCallInfo.CallMaxArgs)
+            {
+                throw new NotImplementedException();
+            }
+            args.CopyTo(nextStack[1..]);
+        }
+
+        if (!kargs.IsEmpty)
+        {
+            var kargOffset = MRubyCallInfo.CalculateKeywordArgumentOffset(args.Length, kargs.Length);
+            var kdict = NewHash(kargs.Length);
+            foreach (var (key, value) in kargs)
+            {
+                kdict.Add(key, value);
+            }
+
+            nextStack[kargOffset] = kdict;
+            nextCallInfo.MarkAsKeywordArgumentPacked();
+        }
+
+        nextStack[stackSize - 1] = block != null ? new MRubyValue(block) : default;
+        nextCallInfo.Proc = method.Proc;
+
+        if (method.Kind == MRubyMethodKind.CSharpFunc)
+        {
+            nextCallInfo.CallerType = CallerType.MethodCalled;
+            nextCallInfo.ProgramCounter = 0;
+
+            var result = method.Invoke(this, self);
+            Context.PopCallStack();
+            return result;
+        }
+
+        var irepProc = nextCallInfo.Proc!;
+        nextCallInfo.CallerType = CallerType.VmExecuted;
+        nextCallInfo.ProgramCounter = irepProc.ProgramCounter;
+        return Execute(irepProc.Irep, irepProc.ProgramCounter, nextCallInfo.BlockArgumentOffset + 1);
+    }
+
     public MRubyValue YieldWithClass(
         RClass c,
         MRubyValue self,

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace ChibiRuby;
 
@@ -36,8 +37,30 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
         set
         {
             MakeModifiable(index + 1, index >= Length);
-            data[offset + index] = value;
+            Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(data), offset + index) = value;
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Set(int index, MRubyValue value)
+    {
+        if (index < 0)
+        {
+            index += Length;
+        }
+        var length = Length;
+        if ((uint)index < (uint)length)
+        {
+            if (!dataOwned)
+            {
+                MakeModifiable(length);
+            }
+            Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(data), offset + index) = value;
+            return;
+        }
+
+        MakeModifiable(index + 1, index >= length);
+        Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(data), offset + index) = value;
     }
 
     MRubyValue[] data;
