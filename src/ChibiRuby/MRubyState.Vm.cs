@@ -394,17 +394,59 @@ partial class MRubyState
         if (callInfo.ArgumentPacked)
         {
             var packedArgv = registers[0].As<RArray>();
-            registers[0] = packedArgv.SubSequence(1, packedArgv.Length - 1);
+            var nextArgumentCount = packedArgv.Length - 1;
+            if (callInfo.KeywordArgumentCount == 0 && nextArgumentCount < MRubyCallInfo.CallMaxArgs)
+            {
+                var block = Context.Stack[callInfo.StackPointer + callInfo.BlockArgumentOffset];
+                Context.ExtendStack(
+                    callInfo.StackPointer +
+                    MRubyCallInfo.CalculateBlockArgumentOffset(nextArgumentCount, 0) + 1);
+                registers = Context.Stack.AsSpan(callInfo.StackPointer + 1);
+                packedArgv.AsSpan(1, nextArgumentCount).CopyTo(registers);
+                callInfo.ArgumentCount = (byte)nextArgumentCount;
+                registers[callInfo.ArgumentCount] = block;
+            }
+            else
+            {
+                registers[0] = packedArgv.SubSequence(1, nextArgumentCount);
+            }
         }
         else
         {
-            registers[1..].CopyTo(registers); // copy args
-            registers[callInfo.ArgumentCount] = registers[callInfo.ArgumentCount + 1]; // copy kargs or blocka
-            if (callInfo.KeywordArgumentCount > 0)
+            var argumentCount = callInfo.ArgumentCount;
+            if (callInfo.KeywordArgumentCount == 0)
             {
-                registers[callInfo.ArgumentCount + 1] = registers[callInfo.ArgumentCount + 2]; // copy block
+                switch (argumentCount)
+                {
+                    case 1:
+                        registers[0] = registers[1];
+                        break;
+                    case 2:
+                        registers[0] = registers[1];
+                        registers[1] = registers[2];
+                        break;
+                    case 3:
+                        registers[0] = registers[1];
+                        registers[1] = registers[2];
+                        registers[2] = registers[3];
+                        break;
+                    case 4:
+                        registers[0] = registers[1];
+                        registers[1] = registers[2];
+                        registers[2] = registers[3];
+                        registers[3] = registers[4];
+                        break;
+                    default:
+                        registers.Slice(1, argumentCount).CopyTo(registers);
+                        break;
+                }
             }
-            callInfo.ArgumentCount--; // remove
+            else
+            {
+                var slotsToMove = callInfo.BlockArgumentOffset - 1;
+                registers.Slice(1, slotsToMove).CopyTo(registers);
+            }
+            callInfo.ArgumentCount = (byte)(argumentCount - 1); // remove method name
         }
 
         // var block = stack[blockArgumentOffset];
