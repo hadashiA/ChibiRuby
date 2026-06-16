@@ -394,17 +394,36 @@ partial class MRubyState
         if (callInfo.ArgumentPacked)
         {
             var packedArgv = registers[0].As<RArray>();
-            registers[0] = packedArgv.SubSequence(1, packedArgv.Length - 1);
+            var nextArgumentCount = packedArgv.Length - 1;
+            if (callInfo.KeywordArgumentCount == 0 && nextArgumentCount < MRubyCallInfo.CallMaxArgs)
+            {
+                var block = Context.Stack[callInfo.StackPointer + callInfo.BlockArgumentOffset];
+                Context.ExtendStack(
+                    callInfo.StackPointer +
+                    MRubyCallInfo.CalculateBlockArgumentOffset(nextArgumentCount, 0) + 1);
+                registers = Context.Stack.AsSpan(callInfo.StackPointer + 1);
+                packedArgv.AsSpan(1, nextArgumentCount).CopyTo(registers);
+                callInfo.ArgumentCount = (byte)nextArgumentCount;
+                registers[callInfo.ArgumentCount] = block;
+            }
+            else
+            {
+                registers[0] = packedArgv.SubSequence(1, nextArgumentCount);
+            }
         }
         else
         {
-            registers[1..].CopyTo(registers); // copy args
-            registers[callInfo.ArgumentCount] = registers[callInfo.ArgumentCount + 1]; // copy kargs or blocka
-            if (callInfo.KeywordArgumentCount > 0)
+            // __send__/send: drop the method name in register[0] by shifting the remaining args
+            var argumentCount = callInfo.ArgumentCount;
+            var slots = callInfo.KeywordArgumentCount == 0
+                ? argumentCount
+                : callInfo.BlockArgumentOffset - 1;
+            ref var head = ref MemoryMarshal.GetReference(registers);
+            for (var i = 0; i < slots; i++)
             {
-                registers[callInfo.ArgumentCount + 1] = registers[callInfo.ArgumentCount + 2]; // copy block
+                Unsafe.Add(ref head, i) = Unsafe.Add(ref head, i + 1);
             }
-            callInfo.ArgumentCount--; // remove
+            callInfo.ArgumentCount = (byte)(argumentCount - 1); // remove method name
         }
 
         // var block = stack[blockArgumentOffset];
