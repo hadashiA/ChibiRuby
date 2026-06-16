@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 
-namespace ChibiRuby.Compiler
-{
+namespace ChibiRuby.Compiler;
+
 public class CompilationResult : IDisposable
 {
     public IReadOnlyList<DiagnosticsDescriptor> Diagnostics { get; }
@@ -10,7 +10,6 @@ public class CompilationResult : IDisposable
     public bool HasError => contextHandle.HasError;
 
     readonly MRubyState mrb;
-    readonly MrbStateHandle stateHandle;
     readonly MrcCContextHandle contextHandle;
     readonly IntPtr bytecodeDataPtr;
     readonly int bytecodeLength;
@@ -18,26 +17,20 @@ public class CompilationResult : IDisposable
 
     internal CompilationResult(
         MRubyState mrb,
-        MrbStateHandle stateHandle,
         MrcCContextHandle contextHandle,
         IntPtr bytecodeDataPtr,
         int bytecodeLength)
     {
         this.mrb = mrb;
-        this.stateHandle = stateHandle;
         this.contextHandle = contextHandle;
         this.bytecodeDataPtr = bytecodeDataPtr;
         this.bytecodeLength = bytecodeLength;
         Diagnostics = contextHandle.GetDiagnostics();
     }
 
-    internal CompilationResult(
-        MRubyState mrb,
-        MrbStateHandle stateHandle,
-        MrcCContextHandle contextHandle)
+    internal CompilationResult(MRubyState mrb, MrcCContextHandle contextHandle)
     {
         this.mrb = mrb;
-        this.stateHandle = stateHandle;
         this.contextHandle = contextHandle;
         Diagnostics = contextHandle.GetDiagnostics();
     }
@@ -89,5 +82,4 @@ public class CompilationResult : IDisposable
         contextHandle.Dispose();
         disposed = true;
     }
-}
 }

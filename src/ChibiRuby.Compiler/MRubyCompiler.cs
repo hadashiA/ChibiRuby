@@ -11,6 +11,8 @@ namespace ChibiRuby.Compiler
     public record MRubyCompileOptions
     {
         public static MRubyCompileOptions Default { get; set; } = new();
+
+        public bool EnableDebugInfo { get; set; } = true;
     }
 
     public class MRubyCompiler : IDisposable
@@ -21,19 +23,19 @@ namespace ChibiRuby.Compiler
             return new MRubyCompiler(mrb, compilerStateHandle, options);
         }
 
-        public MRubyState State => mruby;
+        public MRubyState State => mrubyState;
 
-        readonly MRubyState mruby;
+        readonly MRubyState mrubyState;
         readonly MrbStateHandle compileStateHandle;
         readonly MRubyCompileOptions options;
         bool disposed;
 
         MRubyCompiler(
-            MRubyState mruby,
+            MRubyState mrubyState,
             MrbStateHandle compileStateHandle,
             MRubyCompileOptions? options = null)
         {
-            this.mruby = mruby;
+            this.mrubyState = mrubyState;
             this.compileStateHandle = compileStateHandle;
             this.options = options ?? MRubyCompileOptions.Default;
         }
@@ -46,19 +48,22 @@ namespace ChibiRuby.Compiler
         public MRubyValue LoadSourceCodeFile(string path)
         {
             using var compilation = CompileFile(path);
-            return mruby.LoadBytecode(compilation.AsBytecode());
+            return mrubyState.LoadBytecode(compilation.AsBytecode());
         }
 
-        public async Task<MRubyValue> LoadSourceCodeFileAsync(string path, CancellationToken cancellationToken = default)
+        public async Task<MRubyValue> LoadSourceCodeFileAsync(
+            string path,
+            MRubyCompileOptions? options = null,
+            CancellationToken? cancellationToken = default)
         {
-            using var compilation = await CompileFileAsync(path, cancellationToken);
-            return mruby.LoadBytecode(compilation.AsBytecode());
+            using var compilation = await CompileFileAsync(path, options, cancellationToken.GetValueOrDefault());
+            return mrubyState.LoadBytecode(compilation.AsBytecode());
         }
 
         public MRubyValue LoadSourceCode(ReadOnlySpan<byte> utf8Source)
         {
             using var compilation = Compile(utf8Source);
-            return mruby.LoadBytecode(compilation.AsBytecode());
+            return mrubyState.LoadBytecode(compilation.AsBytecode());
         }
 
         public MRubyValue LoadSourceCode(string source)
@@ -70,8 +75,8 @@ namespace ChibiRuby.Compiler
         public RFiber LoadSourceCodeAsFiber(ReadOnlySpan<byte> utf8Source)
         {
             using var compilation = Compile(utf8Source);
-            var proc = mruby.CreateProc(compilation.ToIrep());
-            return mruby.CreateFiber(proc);
+            var proc = mrubyState.CreateProc(compilation.ToIrep());
+            return mrubyState.CreateFiber(proc);
         }
 
         public RFiber LoadSourceCodeAsFiber(string source)
@@ -80,50 +85,41 @@ namespace ChibiRuby.Compiler
             return LoadSourceCodeAsFiber(utf8Source);
         }
 
-        public CompilationResult CompileFile(string filePath, bool debugInfo = true)
+        public CompilationResult CompileFile(string filePath, MRubyCompileOptions? options = null)
         {
+            options ??= this.options;
             var bytes = File.ReadAllBytes(filePath);
 
-            return Compile(bytes,
-                filename: Path.GetFullPath(filePath),
-                debugInfo: debugInfo);
+            return Compile(bytes, filename: Path.GetFullPath(filePath), options);
         }
 
-        public async Task<CompilationResult> CompileFileAsync(string filePath, CancellationToken cancellationToken = default, bool debugInfo = true)
+        public async Task<CompilationResult> CompileFileAsync(
+            string filePath,
+            MRubyCompileOptions? options = null,
+            CancellationToken cancellationToken = default)
         {
+            options ??= this.options;
             var bytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
-            return Compile(bytes,
-                filename: Path.GetFullPath(filePath),
-                debugInfo: debugInfo);
+            return Compile(bytes, filename: Path.GetFullPath(filePath), options);
         }
 
-        public CompilationResult Compile(string sourceCode, string? filename = null, bool debugInfo = true) =>
-            Compile(Encoding.UTF8.GetBytes(sourceCode), filename, debugInfo);
+        public CompilationResult Compile(string sourceCode, string? filename = null, MRubyCompileOptions? options = null) =>
+            Compile(Encoding.UTF8.GetBytes(sourceCode), filename, options);
 
         /// <summary>
         /// Compile Ruby source to <c>.mrb</c> bytecode.
         /// </summary>
-        /// <param name="utf8Source">UTF-8 encoded source bytes.</param>
-        /// <param name="filename">
-        /// Optional source file name to record in the bytecode's DBG section. When non-null
-        /// (and <paramref name="debugInfo"/> is true), tools like the debugger / Backtrace
-        /// resolve <c>pc</c> back to <c>filename:line</c>.
-        /// </param>
-        /// <param name="debugInfo">
-        /// When true (default), the bytecode includes a DBG section with line numbers. Set
-        /// to false to produce smaller bytecode for production distribution.
-        /// </param>
         public unsafe CompilationResult Compile(
             ReadOnlySpan<byte> utf8Source,
             string? filename = null,
-            bool debugInfo = true)
+            MRubyCompileOptions? options = null)
         {
             // Workaround for the crash that occurs when passing a blank to mrc
             if (utf8Source.IsEmpty)
             {
                 Span<byte> fallback = stackalloc byte[1];
                 fallback[0] = (byte)' ';
-                return Compile(fallback, filename, debugInfo);
+                return Compile(fallback, filename, options);
             }
 
             if (BomHelper.TryDetectEncoding(utf8Source, out var encoding))
@@ -158,9 +154,10 @@ namespace ChibiRuby.Compiler
                 }
             }
 
+            options ??= this.options;
             // MRB_DUMP_DEBUG_INFO == 1; include the DBG section in the serialized .mrb so
             // the C# RiteParser can recover (file, line) info for each pc.
-            var dumpFlags = (byte)(debugInfo ? 1 : 0);
+            var dumpFlags = (byte)(options.EnableDebugInfo ? 1 : 0);
 
             fixed (byte* sourcePtr = utf8Source)
             {
@@ -168,11 +165,11 @@ namespace ChibiRuby.Compiler
                 if (irepPtr == null || context.HasError)
                 {
                     // error
-                    return new CompilationResult(mruby, compileStateHandle, context);
+                    return new CompilationResult(mrubyState, context);
                 }
                 NativeMethods.MrcDumpIrep(context.DangerousGetPtr(), irepPtr, dumpFlags, &bin, &binLength);
                 NativeMethods.MrcIrepFree(context.DangerousGetPtr(), irepPtr);
-                return new CompilationResult(mruby, compileStateHandle, context, (IntPtr)bin, (int)binLength);
+                return new CompilationResult(mrubyState, context, (IntPtr)bin, (int)binLength);
             }
         }
 
