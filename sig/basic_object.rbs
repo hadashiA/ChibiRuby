@@ -29,6 +29,7 @@ class BasicObject
   #   "hello".__send__(:upcase)        # => "HELLO"
   #   [1, 2, 3].__send__(:push, 4)     # => [1, 2, 3, 4]
   def __send__: (Symbol | String, *untyped) ?{ (*untyped) -> untyped } -> untyped
+  alias send __send__
 
   # Evaluates the given block in the context of self, where self within the block refers to the receiver.
   #

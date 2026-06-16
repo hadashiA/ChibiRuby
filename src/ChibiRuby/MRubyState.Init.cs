@@ -27,6 +27,7 @@ public partial class MRubyState : IDisposable
         state.InitSymbol();
         state.InitString();
         state.InitProc();
+        state.InitMethod();
         state.InitBinding();
         state.InitException();
         state.InitNumeric();
@@ -52,6 +53,7 @@ public partial class MRubyState : IDisposable
     public RClass ClassClass { get; private set; } = default!;
     public RClass ModuleClass { get; private set; } = default!;
     public RClass ProcClass { get; private set; } = default!;
+    public RClass MethodClass { get; private set; } = default!;
     public RClass StringClass { get; private set; } = default!;
     public RClass ArrayClass { get; private set; } = default!;
     public RClass HashClass { get; private set; } = default!;
@@ -194,6 +196,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(BasicObjectClass, Names.OpEq, BasicObjectMembers.OpEq);
         DefineMethod(BasicObjectClass, Intern("__id__"u8), BasicObjectMembers.Id);
         DefineMethod(BasicObjectClass, Intern("__send__"u8), BasicObjectMembers.Send);
+        DefineMethod(BasicObjectClass, Intern("send"u8), BasicObjectMembers.Send);
         DefineMethod(BasicObjectClass, Names.QEqual, BasicObjectMembers.OpEq);
         DefineMethod(BasicObjectClass, Names.InstanceEval, BasicObjectMembers.InstanceEval);
         DefineMethod(BasicObjectClass, Names.SingletonMethodAdded, MRubyMethod.Nop);
@@ -306,11 +309,14 @@ public partial class MRubyState : IDisposable
         DefineMethod(KernelModule, Names.QKindOf, KernelMembers.KindOf);
         DefineMethod(KernelModule, Intern("iterator?"u8), KernelMembers.BlockGiven);
         DefineMethod(KernelModule, Intern("kind_of?"u8), KernelMembers.KindOf);
+        DefineMethod(KernelModule, Intern("method"u8), KernelMembers.Method);
         DefineMethod(KernelModule, Names.Nil, MRubyMethod.Nop);
         DefineMethod(KernelModule, Intern("object_id"u8), KernelMembers.ObjectId);
         DefineMethod(KernelModule, Intern("p"u8), KernelMembers.P);
         DefineMethod(KernelModule, Intern("print"u8), KernelMembers.Print);
         DefineMethod(KernelModule, Intern("sleep"u8), KernelMembers.Sleep);
+        DefineMethod(KernelModule, Intern("instance_variable_get"u8), KernelMembers.InstanceVariableGet);
+        DefineMethod(KernelModule, Intern("instance_variable_set"u8), KernelMembers.InstanceVariableSet);
         DefineMethod(KernelModule, Intern("remove_instance_variable"u8), KernelMembers.RemoveInstanceVariable);
         DefineMethod(KernelModule, Names.QRespondTo, KernelMembers.RespondTo);
         DefineMethod(KernelModule, Names.QRespondToMissing, MRubyMethod.False);
@@ -366,6 +372,20 @@ public partial class MRubyState : IDisposable
         var callMethod = new MRubyMethod(callProc);
         DefineMethod(ProcClass, Names.Call, callMethod);
         DefineMethod(ProcClass, Names.OpAref, callMethod);
+    }
+
+    void InitMethod()
+    {
+        MethodClass = DefineClass(Intern("Method"u8), ObjectClass);
+        UndefClassMethod(MethodClass, Names.New);
+
+        DefineMethod(MethodClass, Names.Call, MethodMembers.Call);
+        DefineMethod(MethodClass, Names.OpAref, MethodMembers.Call);
+        DefineMethod(MethodClass, Names.Name, MethodMembers.Name);
+        DefineMethod(MethodClass, Intern("receiver"u8), MethodMembers.Receiver);
+        DefineMethod(MethodClass, Names.OpEq, MethodMembers.Eql);
+        DefineMethod(MethodClass, Names.QEql, MethodMembers.Eql);
+        DefineMethod(MethodClass, Names.Hash, MethodMembers.Hash);
     }
 
     void InitBinding()
@@ -432,6 +452,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(IntegerClass, Names.OpMod, IntegerMembers.Mod);
         DefineMethod(IntegerClass, Names.OpPlus, IntegerMembers.OpPlus);
         DefineMethod(IntegerClass, Names.OpMinus, IntegerMembers.OpMinus);
+        DefineMethod(IntegerClass, Names.OpNeg, IntegerMembers.OpNeg);
         DefineMethod(IntegerClass, Intern("div"u8), IntegerMembers.IntDiv);
         DefineMethod(IntegerClass, Intern("fdiv"u8), IntegerMembers.FDiv);
         DefineMethod(IntegerClass, Intern("abs"u8), IntegerMembers.Abs);
@@ -455,6 +476,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(IntegerClass, Names.OpXor, IntegerMembers.OpXor);
         DefineMethod(IntegerClass, Names.OpLShift, IntegerMembers.OpLShift);
         DefineMethod(IntegerClass, Names.OpRShift, IntegerMembers.OpRShift);
+        DefineMethod(IntegerClass, Names.OpAref, IntegerMembers.OpAref);
         DefineMethod(IntegerClass, Names.OpCmp, NumericMembers.OpCmp);
         DefineMethod(IntegerClass, Names.OpLt, NumericMembers.OpLt);
         DefineMethod(IntegerClass, Names.OpLe, NumericMembers.OpLe);
@@ -597,9 +619,12 @@ public partial class MRubyState : IDisposable
         DefineMethod(ArrayClass, Intern("last"u8), ArrayMembers.Last);
         DefineMethod(ArrayClass, Intern("reverse"u8), ArrayMembers.Reverse);
         DefineMethod(ArrayClass, Intern("reverse!"u8), ArrayMembers.ReverseBang);
+        DefineMethod(ArrayClass, Intern("rotate!"u8), ArrayMembers.RotateBang);
         DefineMethod(ArrayClass, Intern("pop"u8), ArrayMembers.Pop);
         DefineMethod(ArrayClass, Intern("delete_at"u8), ArrayMembers.DeleteAt);
         DefineMethod(ArrayClass, Intern("clear"u8), ArrayMembers.Clear);
+        DefineMethod(ArrayClass, Intern("include?"u8), ArrayMembers.Include);
+        DefineMethod(ArrayClass, Intern("member?"u8), ArrayMembers.Include);
         DefineMethod(ArrayClass, Intern("index"u8), ArrayMembers.Index);
         DefineMethod(ArrayClass, Intern("rindex"u8), ArrayMembers.RIndex);
         DefineMethod(ArrayClass, Intern("join"u8), ArrayMembers.Join);

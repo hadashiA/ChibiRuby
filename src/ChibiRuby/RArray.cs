@@ -3,6 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+#if NET7_0_OR_GREATER
+using static System.Runtime.InteropServices.MemoryMarshal;
+#else
+using static ChibiRuby.Internal.MemoryMarshalEx;
+#endif
 
 namespace ChibiRuby;
 
@@ -29,15 +34,41 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
             }
             if ((uint)index < (uint)Length)
             {
-                return data[offset + index];
+                return Unsafe.Add(ref GetArrayDataReference(data), offset + index);
             }
             return MRubyValue.Nil;
         }
         set
         {
+            if (index < 0)
+            {
+                index += Length;
+            }
             MakeModifiable(index + 1, index >= Length);
-            data[offset + index] = value;
+            Unsafe.Add(ref GetArrayDataReference(data), offset + index) = value;
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Set(int index, MRubyValue value)
+    {
+        if (index < 0)
+        {
+            index += Length;
+        }
+        var length = Length;
+        if ((uint)index < (uint)length)
+        {
+            if (!dataOwned)
+            {
+                MakeModifiable(length);
+            }
+            Unsafe.Add(ref GetArrayDataReference(data), offset + index) = value;
+            return;
+        }
+
+        MakeModifiable(index + 1, index >= length);
+        Unsafe.Add(ref GetArrayDataReference(data), offset + index) = value;
     }
 
     MRubyValue[] data;
@@ -65,30 +96,31 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
     {
         Length = 0;
         offset = 0;
-        data = new MRubyValue[capacity];
+        data = capacity == 0 ? [] : new MRubyValue[capacity];
         dataOwned = true;
     }
 
     RArray(RArray shared)
-        : this(shared, 0, shared.Length)
+        : this(shared, 0, shared.Length, shared.Class)
     {
     }
 
-    RArray(RArray shared, int offset, int size) : base(MRubyVType.Array, shared.Class)
+    RArray(RArray shared, int start, int size, RClass klass) : base(MRubyVType.Array, klass)
     {
-        if (offset < 0)
+        if (start < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(offset));
+            throw new ArgumentOutOfRangeException(nameof(start));
         }
 
-        if (size > shared.Length)
+        if (size > shared.Length - start)
         {
-            size = shared.Length;
+            size = shared.Length - start;
         }
         Length = size;
-        this.offset = offset;
+        offset = shared.offset + start;
         data = shared.data;
         dataOwned = false;
+        shared.dataOwned = false;
     }
 
     public override string ToString()
@@ -101,7 +133,49 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
 
     public RArray SubSequence(int start, int length)
     {
-        return new RArray(this, start, length);
+        return CopySubSequence(start, length, Class);
+    }
+
+    internal RArray CopySubSequence(int start, int length, RClass arrayClass)
+    {
+        NormalizeSubSequence(ref start, ref length);
+        if (length <= 0)
+        {
+            return new RArray(0, arrayClass);
+        }
+        var result = new RArray(length, arrayClass)
+        {
+            Length = length
+        };
+        Array.Copy(data, offset + start, result.data, 0, length);
+        return result;
+    }
+
+    internal RArray SharedSubSequence(int start, int length, RClass arrayClass)
+    {
+        NormalizeSubSequence(ref start, ref length);
+        if (length <= 0)
+        {
+            return new RArray(0, arrayClass);
+        }
+        return new RArray(this, start, length, arrayClass);
+    }
+
+    void NormalizeSubSequence(ref int start, ref int length)
+    {
+        if (start < 0)
+        {
+            length += start;
+            start = 0;
+        }
+        if (start > Length)
+        {
+            start = Length;
+        }
+        if (length > Length - start)
+        {
+            length = Length - start;
+        }
     }
 
     public void Clear()
@@ -121,7 +195,7 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
     {
         var currentLength = Length;
         MakeModifiable(currentLength + 1, true);
-        data[currentLength] = newItem;
+        Unsafe.Add(ref GetArrayDataReference(data), offset + currentLength) = newItem;
     }
 
     public bool TryPop(out MRubyValue value)
@@ -132,7 +206,7 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
             return false;
         }
 
-        value = data[offset + Length - 1];
+        value = Unsafe.Add(ref GetArrayDataReference(data), offset + Length - 1);
         MakeModifiable(Length - 1, true);
         return true;
     }
@@ -151,10 +225,7 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
         if (Length <= 0 || n <= 0) return new RArray(0, Class);
         if (n > Length) n = Length;
 
-        var result = new RArray(this)
-        {
-            Length = n
-        };
+        var result = SharedSubSequence(0, n, Class);
         offset += n;
         Length -= n;
         return result;
@@ -173,11 +244,18 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
 
     public void Concat(RArray other)
     {
+        if (other.Length <= 0)
+        {
+            return;
+        }
+
         if (Length <= 0)
         {
             Length = other.Length;
             data = other.data;
+            offset = other.offset;
             dataOwned = false;
+            other.dataOwned = false;
             return;
         }
 
@@ -193,7 +271,8 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
         if (index < 0) index += Length;
         if (index < 0 || index >= Length) return MRubyValue.Nil;
 
-        var value = data[offset + index];
+        var value = Unsafe.Add(ref GetArrayDataReference(data), offset + index);
+        MakeModifiable(Length);
         var src = AsSpan(index + 1);
         var dst = AsSpan(index);
         src.CopyTo(dst);
@@ -203,14 +282,17 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
 
     public void CopyTo(RArray other)
     {
-        other.MakeModifiable(Length);
-        other.Length = Length;
+        if (ReferenceEquals(this, other))
+        {
+            return;
+        }
+
+        other.MakeModifiable(Length, true);
         AsSpan().CopyTo(other.AsSpan());
     }
 
     public void ReplaceTo(RArray other)
     {
-        other.Length = 0;
         CopyTo(other);
     }
 
@@ -231,40 +313,58 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void MakeModifiable(int capacity, bool expandLength = false)
     {
-        if (data.Length - offset < capacity)
+        if (capacity < 0)
         {
-            var newLength = data.Length * 2;
-            if (newLength - offset < capacity)
-            {
-                newLength = capacity;
-            }
+            throw new ArgumentOutOfRangeException(nameof(capacity));
+        }
 
-            if (dataOwned)
+        if (dataOwned)
+        {
+            if (offset == 0)
             {
-                Array.Resize(ref data, newLength);
+                if (data.Length < capacity)
+                {
+                    Array.Resize(ref data, CalculateCapacity(data.Length, capacity));
+                }
             }
-            else
+            else if (data.Length - offset < capacity)
             {
-                var newData = new MRubyValue[newLength];
-                data.AsSpan(offset).CopyTo(newData);
-                data = newData;
-                offset = 0;
-                dataOwned = true;
+                Compact(capacity, expandLength);
             }
         }
-        else if (!dataOwned)
+        else
         {
-            var newData = new MRubyValue[data.Length];
-            data.AsSpan(offset).CopyTo(newData);
-            data = newData;
-            offset = 0;
-            dataOwned = true;
+            Compact(capacity, expandLength);
         }
 
         if (expandLength)
         {
             Length = capacity;
         }
+    }
+
+    void Compact(int capacity, bool expandLength)
+    {
+        var targetLength = expandLength ? capacity : Length;
+        var copyLength = Math.Min(Length, targetLength);
+        var newData = new MRubyValue[CalculateCapacity(copyLength, capacity)];
+        if (copyLength > 0)
+        {
+            data.AsSpan(offset, copyLength).CopyTo(newData);
+        }
+        data = newData;
+        offset = 0;
+        dataOwned = true;
+    }
+
+    static int CalculateCapacity(int currentCapacity, int requiredCapacity)
+    {
+        var newCapacity = currentCapacity * 2;
+        if (newCapacity < requiredCapacity)
+        {
+            newCapacity = requiredCapacity;
+        }
+        return newCapacity;
     }
 
     public struct Enumerator(RArray source) : IEnumerator<MRubyValue>

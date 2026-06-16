@@ -68,11 +68,7 @@ public readonly struct MRubyMethod : IEquatable<MRubyMethod>
 
     public MRubyMethod WithVisibility(MRubyMethodVisibility visibility)
     {
-        if (TrivialGetterIVarSymbol.Value != 0)
-            return new MRubyMethod(body!, Kind, visibility, TrivialGetterIVarSymbol);
-        return Kind == MRubyMethodKind.RProc
-            ? new MRubyMethod(Unsafe.As<RProc>(body!), visibility)
-            : new MRubyMethod(Unsafe.As<MRubyFunc>(body!), visibility);
+        return new MRubyMethod(body!, Kind, visibility, TrivialGetterIVarSymbol);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

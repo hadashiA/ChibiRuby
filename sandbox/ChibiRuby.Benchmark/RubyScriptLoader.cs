@@ -2,12 +2,34 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using ChibiRuby.Compiler;
 
 namespace ChibiRuby.Benchmark;
 
 unsafe class RubyScriptLoader : IDisposable
 {
+    const string OptcarrotPreludeFile = "chibiruby/optcarrot_prelude.rb";
+
+    static readonly string[] OptcarrotDefinitionFiles =
+    [
+        "lib/optcarrot.rb",
+        "lib/optcarrot/opt.rb",
+        "lib/optcarrot/nes.rb",
+        "lib/optcarrot/palette.rb",
+        "lib/optcarrot/pad.rb",
+        "lib/optcarrot/driver.rb",
+        "lib/optcarrot/cpu.rb",
+        "lib/optcarrot/apu.rb",
+        "lib/optcarrot/ppu.rb",
+        "lib/optcarrot/rom.rb",
+        "lib/optcarrot/mapper/mmc1.rb",
+        "lib/optcarrot/mapper/uxrom.rb",
+        "lib/optcarrot/mapper/cnrom.rb",
+        "lib/optcarrot/mapper/mmc3.rb",
+        "lib/optcarrot/config.rb",
+    ];
+
     readonly MRubyState mrubyCSState;
     readonly MrbStateNative* mrbStateNative;
 
@@ -20,6 +42,8 @@ unsafe class RubyScriptLoader : IDisposable
     public RubyScriptLoader()
     {
         mrubyCSState = MRubyState.Create();
+        mrubyCSState.DefineIO();
+        mrubyCSState.DefineRegexp();
         RegisterMathModule(mrubyCSState);
         mrubyCSCompiler = MRubyCompiler.Create(mrubyCSState);
 
@@ -87,10 +111,27 @@ unsafe class RubyScriptLoader : IDisposable
         PreloadScript(source);
     }
 
+    public void PreloadOptcarrotBenchmark(int frames = 180, bool printResult = true)
+    {
+        var definitions = CompileChibiRubySource(BuildOptcarrotDefinitionsSource());
+        mrubyCSState.Execute(definitions);
+
+        PreloadOptcarrotRun(frames, printResult);
+    }
+
+    public void PreloadOptcarrotRun(int frames = 180, bool printResult = true)
+    {
+        currentChibiRubyIrep = CompileChibiRubySource(BuildOptcarrotRunSource(frames, printResult));
+    }
+
     public MRubyValue RunChibiRuby()
     {
         return mrubyCSState.Execute(currentChibiRubyIrep!);
     }
+
+    // public void ResetDispatchProfile() => mrubyCSState.ResetDispatchProfile();
+    //
+    // public string DumpDispatchProfile(int topN = 25) => mrubyCSState.DumpDispatchProfile(topN);
 
     public MrbValueNative RunMRubyNative()
     {
@@ -126,4 +167,136 @@ unsafe class RubyScriptLoader : IDisposable
         var path = GetAbsolutePath(Path.Join("ruby", fileName));
         return File.ReadAllBytes(path);
     }
+
+    Irep CompileChibiRubySource(string source)
+    {
+        using var compilation = mrubyCSCompiler.Compile(Encoding.UTF8.GetBytes(source));
+        return compilation.ToIrep();
+    }
+
+    static string BuildOptcarrotDefinitionsSource()
+    {
+        var builder = new StringBuilder();
+        AppendBenchmarkRubyFile(builder, OptcarrotPreludeFile);
+        foreach (var file in OptcarrotDefinitionFiles)
+        {
+            AppendOptcarrotFile(builder, file);
+        }
+        AppendOptcarrotFixups(builder);
+        return builder.ToString();
+    }
+
+    static void AppendOptcarrotFixups(StringBuilder builder)
+    {
+        builder.AppendLine();
+        builder.AppendLine("# chibiruby optcarrot fixups");
+        builder.AppendLine("module Optcarrot::Palette");
+        builder.AppendLine("  module_function :nestopia_palette, :defacto_palette");
+        builder.AppendLine("end");
+        builder.AppendLine("module Optcarrot::Driver");
+        builder.AppendLine("  module_function :load, :load_each");
+        builder.AppendLine("end");
+    }
+
+    static void AppendOptcarrotFile(StringBuilder builder, string fileName)
+    {
+        var sourcePath = GetAbsolutePath(Path.Join("ruby", "optcarrot", fileName));
+        var source = File.ReadAllText(sourcePath);
+        source = StripRequireLines(source);
+        source = TransformOptcarrotSource(source);
+
+        builder.AppendLine();
+        builder.AppendLine($"# {fileName}");
+        builder.AppendLine(source);
+    }
+
+    static void AppendBenchmarkRubyFile(StringBuilder builder, string fileName)
+    {
+        var sourcePath = GetAbsolutePath(Path.Join("ruby", fileName));
+        var source = File.ReadAllText(sourcePath);
+
+        builder.AppendLine();
+        builder.AppendLine($"# {fileName}");
+        builder.AppendLine(source);
+    }
+
+    static string StripRequireLines(string source)
+    {
+        using var reader = new StringReader(source);
+        var builder = new StringBuilder(source.Length);
+
+        while (reader.ReadLine() is { } line)
+        {
+            var trimmed = line.TrimStart();
+            if (trimmed.StartsWith("require ", StringComparison.Ordinal) ||
+                trimmed.StartsWith("require_relative ", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            builder.AppendLine(line);
+        }
+
+        return builder.ToString();
+    }
+
+    static string TransformOptcarrotSource(string source)
+    {
+        source = source.Replace(
+            "@apu = @cpu.apu = APU.new(@conf, @cpu, *@audio.spec)",
+            "audio_rate, audio_bits = @audio.spec\n      @apu = APU.new(@conf, @cpu, audio_rate, audio_bits)\n      @cpu.apu = @apu",
+            StringComparison.Ordinal);
+        source = source.Replace(
+            "@ppu = @cpu.ppu = PPU.new(@conf, @cpu, @video.palette)",
+            "@ppu = PPU.new(@conf, @cpu, @video.palette)\n      @cpu.ppu = @ppu",
+            StringComparison.Ordinal);
+        source = source.Replace(
+            "@palette = [*0..4096]",
+            "@palette = (0..4096).map { |i| i }",
+            StringComparison.Ordinal);
+        source = source.Replace(
+            "send(*DISPATCH[@opcode])",
+            "dispatch = DISPATCH[@opcode]\n" +
+            "          case dispatch.size\n" +
+            "          when 1\n" +
+            "            __send__(dispatch[0])\n" +
+            "          when 2\n" +
+            "            __send__(dispatch[0], dispatch[1])\n" +
+            "          when 3\n" +
+            "            __send__(dispatch[0], dispatch[1], dispatch[2])\n" +
+            "          else\n" +
+            "            __send__(dispatch[0], dispatch[1], dispatch[2], dispatch[3])\n" +
+            "          end",
+            StringComparison.Ordinal);
+        source = source.Replace("@buffer << @mixer.sample", "@buffer << 0", StringComparison.Ordinal);
+
+        source = source.Replace(".pack(\"C*\").sum", ".sum & 0xffff", StringComparison.Ordinal);
+        source = source.Replace(".pack('C*').sum", ".sum & 0xffff", StringComparison.Ordinal);
+
+        return source;
+    }
+
+    static string BuildOptcarrotRunSource(int frames, bool printResult)
+    {
+        var romPath = EscapeRubyString(GetAbsolutePath(Path.Join(
+            "ruby",
+            "optcarrot",
+            "examples",
+            "Lan_Master.nes")));
+        var profilingOptions = printResult
+            ? "print_fps: true, print_video_checksum: true, "
+            : "";
+        return
+            "Optcarrot::NES.new({ " +
+            "video: :none, audio: :none, input: :none, " +
+            $"frames: {frames}, " +
+            profilingOptions +
+            $"romfile: \"{romPath}\" " +
+            "}).run\n";
+    }
+
+    static string EscapeRubyString(string value) =>
+        value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal);
 }

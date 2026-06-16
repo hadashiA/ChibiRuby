@@ -13,6 +13,12 @@ static class MemoryMarshalEx
         return ref MemoryMarshal.GetReference(array.AsSpan());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<T> CreateSpan<T>(ref T reference, int length)
+    {
+        return MemoryMarshal.CreateSpan(ref reference, length);
+    }
+
     // GC
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[] AllocateUninitializedArray<T>(int length, bool pinned = false)

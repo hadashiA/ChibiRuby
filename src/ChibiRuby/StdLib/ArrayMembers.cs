@@ -101,18 +101,23 @@ static class ArrayMembers
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
 
-        var argc = state.GetArgumentCount();
-        switch (argc)
+        var args = state.GetArgumentsSpan();
+        switch (args.Length)
         {
             case 2:
-                var key = state.GetArgumentAt(0);
-                var val = state.GetArgumentAt(1);
+                var key = args[0];
+                var val = args[1];
+                if (key.IsFixnum)
+                {
+                    array.Set((int)key.FixnumValue, val);
+                    return val;
+                }
                 if (key.Object is RRange range)
                 {
                     switch (range.Calculate(array.Length, false, out var calculatedIndex, out var calculatedLength))
                     {
                         case RangeCalculateResult.TypeMismatch:
-                            array[(int)state.AsInteger(key)] = val;
+                            array.Set((int)state.AsInteger(key), val);
                             break;
                         case RangeCalculateResult.Ok:
                             state.SpliceArray(array, calculatedIndex, calculatedLength, val);
@@ -126,18 +131,20 @@ static class ArrayMembers
                 }
                 else
                 {
-                    array[(int)state.AsInteger(key)] = val;
+                    array.Set((int)state.AsInteger(key), val);
                 }
                 return val;
             case 3:
                 // a[n,m] = v
-                var n = state.GetArgumentAsIntegerAt(0);
-                var m = state.GetArgumentAsIntegerAt(1);
-                var v = state.GetArgumentAt(2);
+                var nArg = args[0];
+                var mArg = args[1];
+                var n = nArg.IsFixnum ? nArg.FixnumValue : state.AsInteger(nArg);
+                var m = mArg.IsFixnum ? mArg.FixnumValue : state.AsInteger(mArg);
+                var v = args[2];
                 state.SpliceArray(array, (int)n, (int)m, v);
                 return v;
             default:
-                state.RaiseArgumentNumberError(argc, 2, 3);
+                state.RaiseArgumentNumberError(args.Length, 2, 3);
                 return default;
         }
     }
@@ -176,6 +183,17 @@ static class ArrayMembers
     {
         var array = self.As<RArray>();
         state.EnsureNotFrozen(array);
+
+        var argc = state.GetArgumentCount();
+        if (argc == 0)
+        {
+            return self;
+        }
+        if (argc == 1)
+        {
+            array.Push(state.GetArgumentAt(0));
+            return self;
+        }
 
         var args = state.GetRestArgumentsAfter(0);
 
@@ -509,6 +527,7 @@ static class ArrayMembers
     public static MRubyValue ReverseBang(MRubyState state, MRubyValue self)
     {
         var array = self.As<RArray>();
+        state.EnsureNotFrozen(array);
         var span = array.AsSpan();
 
         var left = 0;
@@ -520,6 +539,71 @@ static class ArrayMembers
             right--;
         }
         return self;
+    }
+
+    /// <summary>
+    /// Rotates <c>self</c> in place and returns <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// a = [1, 2, 3, 4]
+    /// a.rotate!      # => [2, 3, 4, 1]
+    /// a.rotate!(-1)  # => [1, 2, 3, 4]
+    /// </code>
+    /// </example>
+    [RubyDef("(?Integer) -> self")]
+    public static MRubyValue RotateBang(MRubyState state, MRubyValue self)
+    {
+        var array = self.As<RArray>();
+        state.EnsureNotFrozen(array);
+
+        var length = array.Length;
+        if (length <= 1)
+        {
+            return self;
+        }
+
+        var count = state.TryGetArgumentAt(0, out var arg0)
+            ? state.AsInteger(arg0)
+            : 1;
+        count %= length;
+        if (count < 0)
+        {
+            count += length;
+        }
+        if (count == 0)
+        {
+            return self;
+        }
+
+        array.MakeModifiable(length);
+        var span = array.AsSpan();
+        span[..(int)count].Reverse();
+        span[(int)count..].Reverse();
+        span.Reverse();
+        return self;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> when an element compares equal to the argument using <c>==</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2, 3].include?(2)  # => true
+    /// </code>
+    /// </example>
+    [RubyDef("(untyped) -> bool")]
+    public static MRubyValue Include(MRubyState state, MRubyValue self)
+    {
+        var item = state.GetArgumentAt(0);
+        foreach (var value in self.As<RArray>().AsSpan())
+        {
+            if (state.ValueEquals(value, item))
+            {
+                return MRubyValue.True;
+            }
+        }
+        return MRubyValue.False;
     }
 
     /// <summary>

@@ -99,6 +99,13 @@ class Array[Elem] < Object
   #   a              # => [3, 2, 1]
   def reverse!: () -> self
 
+  # Rotates self in place and returns self.
+  #
+  #   a = [1, 2, 3, 4]
+  #   a.rotate!      # => [2, 3, 4, 1]
+  #   a.rotate!(-1)  # => [1, 2, 3, 4]
+  def rotate!: (?Integer) -> self
+
   # Removes and returns the last element of self, or nil when empty.
   #
   #   a = [1, 2, 3]
@@ -119,6 +126,12 @@ class Array[Elem] < Object
   #   a = [1, 2, 3]
   #   a.clear      # => []
   def clear: () -> self
+
+  # Returns true when an element compares equal to the argument using ==.
+  #
+  #   [1, 2, 3].include?(2)  # => true
+  def include?: (untyped) -> bool
+  alias member? include?
 
   # Returns the index of the first element equal to the given value, or nil when not found.
   #

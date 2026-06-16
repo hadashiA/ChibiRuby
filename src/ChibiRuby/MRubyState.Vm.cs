@@ -195,6 +195,73 @@ partial class MRubyState
         }
     }
 
+    internal MRubyValue CallResolvedMethod(
+        MRubyValue self,
+        Symbol methodId,
+        MRubyMethod method,
+        RClass owner,
+        ReadOnlySpan<MRubyValue> args,
+        ReadOnlySpan<KeyValuePair<Symbol, MRubyValue>> kargs,
+        RProc? block)
+    {
+        ref var currentCallInfo = ref Context.CurrentCallInfo;
+        var nextStackPointer = currentCallInfo.StackPointer + currentCallInfo.NumberOfRegisters;
+
+        var stackSize = MRubyCallInfo.CalculateBlockArgumentOffset(
+            args.Length,
+            kargs.IsEmpty ? 0 : MRubyCallInfo.CallMaxArgs) + 1;
+        Context.ExtendStack(nextStackPointer + stackSize);
+
+        var nextStack = Context.Stack.AsSpan(nextStackPointer);
+        ref var nextCallInfo = ref Context.PushCallStack();
+        nextCallInfo.StackPointer = nextStackPointer;
+        nextCallInfo.Scope = owner;
+        nextCallInfo.ArgumentCount = (byte)args.Length;
+        nextCallInfo.KeywordArgumentCount = (byte)kargs.Length;
+        nextCallInfo.MethodId = methodId;
+
+        nextStack[0] = self;
+        if (!args.IsEmpty)
+        {
+            if (args.Length >= MRubyCallInfo.CallMaxArgs)
+            {
+                throw new NotImplementedException();
+            }
+            args.CopyTo(nextStack[1..]);
+        }
+
+        if (!kargs.IsEmpty)
+        {
+            var kargOffset = MRubyCallInfo.CalculateKeywordArgumentOffset(args.Length, kargs.Length);
+            var kdict = NewHash(kargs.Length);
+            foreach (var (key, value) in kargs)
+            {
+                kdict.Add(key, value);
+            }
+
+            nextStack[kargOffset] = kdict;
+            nextCallInfo.MarkAsKeywordArgumentPacked();
+        }
+
+        nextStack[stackSize - 1] = block != null ? new MRubyValue(block) : default;
+        nextCallInfo.Proc = method.Proc;
+
+        if (method.Kind == MRubyMethodKind.CSharpFunc)
+        {
+            nextCallInfo.CallerType = CallerType.MethodCalled;
+            nextCallInfo.ProgramCounter = 0;
+
+            var result = method.Invoke(this, self);
+            Context.PopCallStack();
+            return result;
+        }
+
+        var irepProc = nextCallInfo.Proc!;
+        nextCallInfo.CallerType = CallerType.VmExecuted;
+        nextCallInfo.ProgramCounter = irepProc.ProgramCounter;
+        return Execute(irepProc.Irep, irepProc.ProgramCounter, nextCallInfo.BlockArgumentOffset + 1);
+    }
+
     public MRubyValue YieldWithClass(
         RClass c,
         MRubyValue self,
@@ -1712,6 +1779,70 @@ partial class MRubyState
                             callInfo.MethodId = methodId;
                             callInfo.ArgumentCount = (byte)(bb.B & 0xf);
                             callInfo.KeywordArgumentCount = (byte)((bb.B >> 4) & 0xf);
+                        }
+                    }
+                    case OpCode.ArgAry:
+                    {
+                        Markers.ArgAry();
+
+                        bs = OperandBS.Read(ref sequence, ref callInfo.ProgramCounter);
+                        var bits = (ushort)bs.B;
+                        var m1 = (bits >> 11) & 0x3f;
+                        var r = (bits >> 10) & 0x1;
+                        var m2 = (bits >> 5) & 0x1f;
+                        var kd = (bits >> 4) & 0x1;
+                        var lv = bits & 0xf;
+
+                        Span<MRubyValue> sourceStack;
+                        if (lv == 0)
+                        {
+                            sourceStack = Context.Stack.AsSpan(callInfo.StackPointer + 1);
+                        }
+                        else
+                        {
+                            var env = callInfo.Proc?.FindUpperEnvTo(lv - 1);
+                            if (env is null || env.Stack.Length <= m1 + r + m2 + 1)
+                            {
+                                Raise(Names.NoMethodError, "super called outside of method"u8);
+                            }
+                            sourceStack = env!.Stack[1..];
+                        }
+
+                        var result = r == 0
+                            ? NewArray(sourceStack.Slice(0, m1 + m2))
+                            : NewArrayFromArgumentArray(sourceStack, m1, m2);
+
+                        Unsafe.Add(ref registers, bs.A) = result;
+                        if (kd != 0)
+                        {
+                            Unsafe.Add(ref registers, bs.A + 1) = sourceStack[m1 + r + m2];
+                            Unsafe.Add(ref registers, bs.A + 2) = sourceStack[m1 + r + m2 + 1];
+                        }
+
+                        goto Next;
+
+                        RArray NewArrayFromArgumentArray(Span<MRubyValue> sourceStack, int m1, int m2)
+                        {
+                            var rest = sourceStack[m1].Object as RArray;
+                            var resultLength = m1 + (rest?.Length ?? 0) + m2;
+                            var array = NewArray(resultLength);
+
+                            if (m1 > 0)
+                            {
+                                array.PushRange(sourceStack[..m1]);
+                            }
+
+                            if (rest is not null)
+                            {
+                                array.PushRange(rest.AsSpan());
+                            }
+
+                            if (m2 > 0)
+                            {
+                                array.PushRange(sourceStack.Slice(m1 + 1, m2));
+                            }
+
+                            return array;
                         }
                     }
                     case OpCode.Enter:

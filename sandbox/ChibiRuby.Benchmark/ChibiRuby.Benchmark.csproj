@@ -17,10 +17,17 @@
         <None Include="ruby\**\*.mrb">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Include="ruby\**\*.rb">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="ruby\**\*.nes">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" />
+      <ProjectReference Include="..\..\src\ChibiRuby.NIO\ChibiRuby.NIO.csproj" />
       <ProjectReference Include="..\..\src\ChibiRuby\ChibiRuby.csproj" />
     </ItemGroup>
 

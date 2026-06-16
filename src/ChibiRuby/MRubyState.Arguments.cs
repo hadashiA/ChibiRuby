@@ -38,6 +38,14 @@ partial class MRubyState
 
     public MRubyValue GetSelf() => Context.GetSelf();
 
+    /// <summary>
+    /// Fast <c>ref</c>-based slice of the current method's positional arguments as a
+    /// <see cref="Span{T}"/> carved directly out of the VM stack. Prefer this over repeated
+    /// <see cref="GetArgumentAt"/> calls in hot C# builtins.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Span<MRubyValue> GetArgumentsSpan() => Context.GetArgumentsSpan();
+
     public ReadOnlySpan<KeyValuePair<Symbol, MRubyValue>> GetKeywordArguments() =>
         Context.GetKeywordArgs(ref Context.CurrentCallInfo);
 
