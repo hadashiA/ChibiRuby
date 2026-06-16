@@ -413,38 +413,15 @@ partial class MRubyState
         }
         else
         {
+            // __send__/send: drop the method name in register[0] by shifting the remaining args
             var argumentCount = callInfo.ArgumentCount;
-            if (callInfo.KeywordArgumentCount == 0)
+            var slots = callInfo.KeywordArgumentCount == 0
+                ? argumentCount
+                : callInfo.BlockArgumentOffset - 1;
+            ref var head = ref MemoryMarshal.GetReference(registers);
+            for (var i = 0; i < slots; i++)
             {
-                switch (argumentCount)
-                {
-                    case 1:
-                        registers[0] = registers[1];
-                        break;
-                    case 2:
-                        registers[0] = registers[1];
-                        registers[1] = registers[2];
-                        break;
-                    case 3:
-                        registers[0] = registers[1];
-                        registers[1] = registers[2];
-                        registers[2] = registers[3];
-                        break;
-                    case 4:
-                        registers[0] = registers[1];
-                        registers[1] = registers[2];
-                        registers[2] = registers[3];
-                        registers[3] = registers[4];
-                        break;
-                    default:
-                        registers.Slice(1, argumentCount).CopyTo(registers);
-                        break;
-                }
-            }
-            else
-            {
-                var slotsToMove = callInfo.BlockArgumentOffset - 1;
-                registers.Slice(1, slotsToMove).CopyTo(registers);
+                Unsafe.Add(ref head, i) = Unsafe.Add(ref head, i + 1);
             }
             callInfo.ArgumentCount = (byte)(argumentCount - 1); // remove method name
         }
