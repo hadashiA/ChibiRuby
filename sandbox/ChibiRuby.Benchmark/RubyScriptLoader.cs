@@ -129,9 +129,9 @@ unsafe class RubyScriptLoader : IDisposable
         return mrubyCSState.Execute(currentChibiRubyIrep!);
     }
 
-    public void ResetDispatchProfile() => mrubyCSState.ResetDispatchProfile();
-
-    public string DumpDispatchProfile(int topN = 25) => mrubyCSState.DumpDispatchProfile(topN);
+    // public void ResetDispatchProfile() => mrubyCSState.ResetDispatchProfile();
+    //
+    // public string DumpDispatchProfile(int topN = 25) => mrubyCSState.DumpDispatchProfile(topN);
 
     public MrbValueNative RunMRubyNative()
     {
