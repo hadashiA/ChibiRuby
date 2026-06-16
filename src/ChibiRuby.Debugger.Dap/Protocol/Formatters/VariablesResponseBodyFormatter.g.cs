@@ -30,15 +30,18 @@ static partial class VariablesResponseBodyFormatter
                     
                     {
                         tokenizer.ReadStartArray();
-                        var list_Variables = new global::System.Collections.Generic.List<Variable>();
+                        var buf_Variables = global::System.Array.Empty<Variable>();
+                        var count_Variables = 0;
                         while (!tokenizer.TryReadEndArray())
                         {
+                            if (count_Variables == buf_Variables.Length) global::System.Array.Resize(ref buf_Variables, buf_Variables.Length == 0 ? 4 : buf_Variables.Length * 2);
                             tokenizer.ReadStartObject();
                             var elem = new Variable();
                             VariableFormatter.ReadInto(ref tokenizer, elem, options);
-                            list_Variables.Add(elem);
+                            buf_Variables[count_Variables++] = elem;
                         }
-                        __v_Variables = list_Variables.ToArray();
+                        if (count_Variables != buf_Variables.Length) global::System.Array.Resize(ref buf_Variables, count_Variables);
+                        __v_Variables = buf_Variables;
                     }
                     else
                     

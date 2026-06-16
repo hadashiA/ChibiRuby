@@ -100,15 +100,18 @@ static partial class SourceFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_Sources = new global::System.Collections.Generic.List<Source>();
+                            var buf_Sources = global::System.Array.Empty<Source>();
+                            var count_Sources = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
+                                if (count_Sources == buf_Sources.Length) global::System.Array.Resize(ref buf_Sources, buf_Sources.Length == 0 ? 4 : buf_Sources.Length * 2);
                                 tokenizer.ReadStartObject();
                                 var elem = new Source();
                                 SourceFormatter.ReadInto(ref tokenizer, elem, options);
-                                list_Sources.Add(elem);
+                                buf_Sources[count_Sources++] = elem;
                             }
-                            value.Sources = list_Sources.ToArray();
+                            if (count_Sources != buf_Sources.Length) global::System.Array.Resize(ref buf_Sources, count_Sources);
+                            value.Sources = buf_Sources;
                         }
                     }
                     else
@@ -130,13 +133,16 @@ static partial class SourceFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_Checksums = new global::System.Collections.Generic.List<Checksum>();
+                            var buf_Checksums = global::System.Array.Empty<Checksum>();
+                            var count_Checksums = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
+                                if (count_Checksums == buf_Checksums.Length) global::System.Array.Resize(ref buf_Checksums, buf_Checksums.Length == 0 ? 4 : buf_Checksums.Length * 2);
                                 tokenizer.ReadStartObject();
-                                list_Checksums.Add(ChecksumFormatter.ReadValue(ref tokenizer, options));
+                                buf_Checksums[count_Checksums++] = ChecksumFormatter.ReadValue(ref tokenizer, options);
                             }
-                            value.Checksums = list_Checksums.ToArray();
+                            if (count_Checksums != buf_Checksums.Length) global::System.Array.Resize(ref buf_Checksums, count_Checksums);
+                            value.Checksums = buf_Checksums;
                         }
                     }
                     else

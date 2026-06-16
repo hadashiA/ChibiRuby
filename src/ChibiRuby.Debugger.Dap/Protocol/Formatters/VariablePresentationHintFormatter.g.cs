@@ -75,12 +75,15 @@ static partial class VariablePresentationHintFormatter
                         
                         {
                             tokenizer.ReadStartArray();
-                            var list_Attributes = new global::System.Collections.Generic.List<string>();
+                            var buf_Attributes = global::System.Array.Empty<string>();
+                            var count_Attributes = 0;
                             while (!tokenizer.TryReadEndArray())
                             {
-                                list_Attributes.Add(tokenizer.ReadString());
+                                if (count_Attributes == buf_Attributes.Length) global::System.Array.Resize(ref buf_Attributes, buf_Attributes.Length == 0 ? 4 : buf_Attributes.Length * 2);
+                                buf_Attributes[count_Attributes++] = tokenizer.ReadString();
                             }
-                            value.Attributes = list_Attributes.ToArray();
+                            if (count_Attributes != buf_Attributes.Length) global::System.Array.Resize(ref buf_Attributes, count_Attributes);
+                            value.Attributes = buf_Attributes;
                         }
                     }
                     else if (__name.SequenceEqual("visibility"u8))

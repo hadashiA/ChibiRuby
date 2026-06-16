@@ -60,12 +60,15 @@ static partial class BreakpointModeFormatter
                     
                     {
                         tokenizer.ReadStartArray();
-                        var list_AppliesTo = new global::System.Collections.Generic.List<string>();
+                        var buf_AppliesTo = global::System.Array.Empty<string>();
+                        var count_AppliesTo = 0;
                         while (!tokenizer.TryReadEndArray())
                         {
-                            list_AppliesTo.Add(tokenizer.ReadString());
+                            if (count_AppliesTo == buf_AppliesTo.Length) global::System.Array.Resize(ref buf_AppliesTo, buf_AppliesTo.Length == 0 ? 4 : buf_AppliesTo.Length * 2);
+                            buf_AppliesTo[count_AppliesTo++] = tokenizer.ReadString();
                         }
-                        value.AppliesTo = list_AppliesTo.ToArray();
+                        if (count_AppliesTo != buf_AppliesTo.Length) global::System.Array.Resize(ref buf_AppliesTo, count_AppliesTo);
+                        value.AppliesTo = buf_AppliesTo;
                     }
                     else
                     

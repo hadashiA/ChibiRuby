@@ -32,15 +32,18 @@ static partial class StackTraceResponseBodyFormatter
                     
                     {
                         tokenizer.ReadStartArray();
-                        var list_StackFrames = new global::System.Collections.Generic.List<StackFrame>();
+                        var buf_StackFrames = global::System.Array.Empty<StackFrame>();
+                        var count_StackFrames = 0;
                         while (!tokenizer.TryReadEndArray())
                         {
+                            if (count_StackFrames == buf_StackFrames.Length) global::System.Array.Resize(ref buf_StackFrames, buf_StackFrames.Length == 0 ? 4 : buf_StackFrames.Length * 2);
                             tokenizer.ReadStartObject();
                             var elem = new StackFrame();
                             StackFrameFormatter.ReadInto(ref tokenizer, elem, options);
-                            list_StackFrames.Add(elem);
+                            buf_StackFrames[count_StackFrames++] = elem;
                         }
-                        __v_StackFrames = list_StackFrames.ToArray();
+                        if (count_StackFrames != buf_StackFrames.Length) global::System.Array.Resize(ref buf_StackFrames, count_StackFrames);
+                        __v_StackFrames = buf_StackFrames;
                     }
                     else if (__name.SequenceEqual("totalFrames"u8))
                     

@@ -30,15 +30,18 @@ static partial class ScopesResponseBodyFormatter
                     
                     {
                         tokenizer.ReadStartArray();
-                        var list_Scopes = new global::System.Collections.Generic.List<Scope>();
+                        var buf_Scopes = global::System.Array.Empty<Scope>();
+                        var count_Scopes = 0;
                         while (!tokenizer.TryReadEndArray())
                         {
+                            if (count_Scopes == buf_Scopes.Length) global::System.Array.Resize(ref buf_Scopes, buf_Scopes.Length == 0 ? 4 : buf_Scopes.Length * 2);
                             tokenizer.ReadStartObject();
                             var elem = new Scope();
                             ScopeFormatter.ReadInto(ref tokenizer, elem, options);
-                            list_Scopes.Add(elem);
+                            buf_Scopes[count_Scopes++] = elem;
                         }
-                        __v_Scopes = list_Scopes.ToArray();
+                        if (count_Scopes != buf_Scopes.Length) global::System.Array.Resize(ref buf_Scopes, count_Scopes);
+                        __v_Scopes = buf_Scopes;
                     }
                     else
                     
