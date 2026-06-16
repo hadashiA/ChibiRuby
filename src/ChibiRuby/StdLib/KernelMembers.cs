@@ -313,6 +313,30 @@ static class KernelMembers
     }
 
     /// <summary>
+    /// Returns a bound <c>Method</c> object for the named method on <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "hi".method(:upcase).call  # => "HI"
+    /// </code>
+    /// </example>
+    [RubyDef("(Symbol | String) -> Method")]
+    public static MRubyValue Method(MRubyState state, MRubyValue self)
+    {
+        state.EnsureArgumentCount(1);
+
+        var methodId = state.GetArgumentAsSymbolAt(0);
+        var receiverClass = state.ClassOf(self);
+        if (!state.TryFindMethod(receiverClass, methodId, out var method, out var owner) ||
+            method == MRubyMethod.Undef)
+        {
+            state.RaiseNameError(methodId, state.NewString($"undefined method '{state.NameOf(methodId)}' for class '{state.ClassNameOf(self)}'"));
+        }
+
+        return new RMethod(self, methodId, owner, method, state.MethodClass);
+    }
+
+    /// <summary>
     /// Initializer for object copies. Invoked by <c>clone</c> and <c>dup</c>. Raises <c>TypeError</c>
     /// if the source object is of a different class.
     /// </summary>
@@ -466,14 +490,55 @@ static class KernelMembers
     public static MRubyValue RemoveInstanceVariable(MRubyState state, MRubyValue self)
     {
         var name = state.GetArgumentAsSymbolAt(0);
+        state.EnsureInstanceVariableName(name);
+        if (self.Object is not RObject obj)
+        {
+            return MRubyValue.Undef;
+        }
+
+        return state.RemoveInstanceVariable(obj, name);
+    }
+
+    /// <summary>
+    /// Returns the value of the instance variable named <c>name</c>, or <c>nil</c> if it is not set.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// obj.instance_variable_get(:@x)
+    /// </code>
+    /// </example>
+    [RubyDef("(Symbol | String) -> untyped")]
+    public static MRubyValue InstanceVariableGet(MRubyState state, MRubyValue self)
+    {
+        var name = state.GetArgumentAsSymbolAt(0);
+        state.EnsureInstanceVariableName(name);
+        return self.Object is RObject obj
+            ? state.GetInstanceVariable(obj, name)
+            : MRubyValue.Nil;
+    }
+
+    /// <summary>
+    /// Sets the instance variable named <c>name</c> to <c>value</c> and returns <c>value</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// obj.instance_variable_set(:@x, 1)   # => 1
+    /// </code>
+    /// </example>
+    [RubyDef("(Symbol | String, untyped) -> untyped")]
+    public static MRubyValue InstanceVariableSet(MRubyState state, MRubyValue self)
+    {
+        var name = state.GetArgumentAsSymbolAt(0);
+        state.EnsureInstanceVariableName(name);
+        var value = state.GetArgumentAt(1);
         if (self.Object is RObject obj)
         {
-            if (obj.InstanceVariables.Remove(name, out var v))
-            {
-                return v;
-            }
+            state.SetInstanceVariable(obj, name, value);
+            return value;
         }
-        return MRubyValue.Undef;
+
+        state.Raise(Names.TypeError, $"can't set instance variable on {state.ClassNameOf(self)}");
+        return MRubyValue.Nil;
     }
 
     /// <summary>

@@ -61,6 +61,12 @@ class Integer < Numeric
   #   -(-3)  # => 3
   def -@: () -> Integer
 
+  # Returns the bitwise complement of self.
+  #
+  #   ~0 # => -1
+  #   ~2 # => -3
+  def ~: () -> Integer
+
   # Returns the integer quotient of self divided by the argument.
   #
   #   11.div(3)    # => 3
@@ -181,6 +187,13 @@ class Integer < Numeric
   #   16 >> 2    # => 4
   #   20 >> 2    # => 5
   def >>: (Integer) -> Integer
+
+  # Returns the bit at the given offset, using Ruby's infinite two's-complement integer semantics.
+  #
+  #   5[0]     # => 1
+  #   5[1]     # => 0
+  #   (-1)[64] # => 1
+  def []: (Numeric) -> Integer
 
   # --- from lib.rb ---
   #

@@ -394,6 +394,33 @@ static class IntegerMembers
         return default;
     }
 
+    /// <summary>
+    /// Returns the bit at the given offset, using Ruby's infinite two's-complement integer semantics.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// 5[0]     # => 1
+    /// 5[1]     # => 0
+    /// (-1)[64] # => 1
+    /// </code>
+    /// </example>
+    [RubyDef("(Numeric) -> Integer")]
+    public static MRubyValue OpAref(MRubyState state, MRubyValue self)
+    {
+        var value = self.IsFixnum ? self.FixnumValue : state.AsInteger(self);
+        var offsetValue = state.GetArgumentAt(0);
+        var offset = offsetValue.IsFixnum ? offsetValue.FixnumValue : state.AsInteger(offsetValue);
+        if (offset < 0)
+        {
+            return 0;
+        }
+        if (offset > 8 * sizeof(long) - 1)
+        {
+            return value < 0 ? 1 : 0;
+        }
+        return (value >> (int)offset) & 1;
+    }
+
 
     /// <summary>
     /// Returns the string representation of <c>self</c> in the given base (default 10).
@@ -443,6 +470,18 @@ static class IntegerMembers
     /// </example>
     [RubyDef("() -> Integer")]
     public static MRubyValue OpMinus(MRubyState state, MRubyValue self) => -self.IntegerValue;
+
+    /// <summary>
+    /// Returns the bitwise complement of <c>self</c>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// ~0 # => -1
+    /// ~2 # => -3
+    /// </code>
+    /// </example>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue OpNeg(MRubyState state, MRubyValue self) => ~state.AsInteger(self);
 
     /// <summary>
     /// Returns the absolute value of <c>self</c>.
@@ -826,7 +865,7 @@ static class IntegerMembers
         if (width < 0)
         {
             /* rshift */
-            if (width == long.MinValue || -width >= (sizeof(long) - 1))
+            if (width == long.MinValue || -width > numericShiftWidthMax)
             {
                 if (val < 0)
                 {
@@ -844,8 +883,8 @@ static class IntegerMembers
         }
         else if (val > 0)
         {
-            if ((width > numericShiftWidthMax) ||
-                (val > (long.MaxValue >> (int)width)))
+            if (width > numericShiftWidthMax ||
+                val > long.MaxValue >> (int)width)
             {
                 num = default;
                 return false;
@@ -872,7 +911,7 @@ static class IntegerMembers
         return true;
     }
 
-    internal static MRubyValue PrepareIntRounding(MRubyState state, MRubyValue x)
+    static MRubyValue PrepareIntRounding(MRubyState state, MRubyValue x)
     {
         if (state.GetArgumentCount() <= 1)
         {
@@ -887,7 +926,7 @@ static class IntegerMembers
         return IntPow(state, 10, -other);
     }
 
-    internal static void IntDivMod(MRubyState state, long x, long y, out long divp, out long modp)
+    static void IntDivMod(MRubyState state, long x, long y, out long divp, out long modp)
     {
         if (y == 0)
         {
@@ -896,25 +935,24 @@ static class IntegerMembers
             Unsafe.SkipInit(out modp);
             return;
         }
-        else if (x == int.MinValue && y == -1)
+
+        if (x == int.MinValue && y == -1)
         {
             RaiseIntegerOverflowError(state, "division"u8);
             Unsafe.SkipInit(out divp);
             Unsafe.SkipInit(out modp);
             return;
         }
-        else
-        {
-            long div = x / y;
-            long mod = x - div * y;
 
-            if ((x ^ y) < 0 && x != div * y)
-            {
-                mod += y;
-                div -= 1;
-            }
-            divp = div;
-            modp = mod;
+        var div = x / y;
+        var mod = x - div * y;
+
+        if ((x ^ y) < 0 && x != div * y)
+        {
+            mod += y;
+            div -= 1;
         }
+        divp = div;
+        modp = mod;
     }
 }

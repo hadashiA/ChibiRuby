@@ -108,6 +108,11 @@ module Kernel
   def is_a?: (Module) -> bool
   alias kind_of? is_a?
 
+  # Returns a bound Method object for the named method on self.
+  #
+  #   "hi".method(:upcase).call  # => "HI"
+  def method: (Symbol | String) -> Method
+
   # Returns an integer identifier unique to self for its lifetime.
   #
   #   a = "hi"
@@ -130,6 +135,16 @@ module Kernel
   #   sleep 0.1     # => 0
   #   sleep 1       # => 1
   def sleep: (?Numeric) -> Integer
+
+  # Returns the value of the instance variable named name, or nil if it is not set.
+  #
+  #   obj.instance_variable_get(:@x)
+  def instance_variable_get: (Symbol | String) -> untyped
+
+  # Sets the instance variable named name to value and returns value.
+  #
+  #   obj.instance_variable_set(:@x, 1)   # => 1
+  def instance_variable_set: (Symbol | String, untyped) -> untyped
 
   # Removes and returns the value of the instance variable named name from self.
   #

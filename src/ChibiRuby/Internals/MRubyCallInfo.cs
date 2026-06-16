@@ -230,6 +230,26 @@ class MRubyContext
         }
     }
 
+    /// <summary>
+    /// Slice the current call frame's positional arguments straight out of the VM stack
+    /// as a <see cref="Span{T}"/>, taking a <c>ref</c> into the backing array so the common
+    /// (unpacked) path skips the bounds validation that <c>Stack.AsSpan(start, length)</c>
+    /// performs. Lets a C# builtin read its arguments without per-index
+    /// <see cref="GetArgumentAt"/> calls. The packed case (argc &gt;= 15) falls back to the
+    /// packed array's own span. Valid only while the current frame is active and the stack
+    /// is not resized.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Span<MRubyValue> GetArgumentsSpan()
+    {
+        ref var callInfo = ref CurrentCallInfo;
+        if (callInfo.ArgumentPacked)
+        {
+            return StackAt(callInfo.StackPointer + 1).As<RArray>().AsSpan();
+        }
+        return CreateSpan(ref StackAt(callInfo.StackPointer + 1), callInfo.ArgumentCount);
+    }
+
     public MRubyContext()
     {
         CallStack[0] = new MRubyCallInfo();
@@ -371,23 +391,31 @@ class MRubyContext
         Stack.AsSpan(start, count).Clear();
     }
 
+    /// <summary>
+    /// Unchecked <c>ref</c> into the VM stack backing array. The VM guarantees stack indices
+    /// derived from the active call frame are in range, so the per-access bounds check that
+    /// <c>Stack[i]</c> emits is pure overhead on the hot argument-reading path.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    ref MRubyValue StackAt(int index) => ref Unsafe.Add(ref GetArrayDataReference(Stack), index);
+
     public int GetArgumentCount()
     {
-        ref var callInfo = ref CallStack[CallDepth];
+        ref var callInfo = ref CurrentCallInfo;
         if (callInfo.ArgumentPacked)
         {
-            return Stack[callInfo.StackPointer + 1].As<RArray>().Length;
+            return StackAt(callInfo.StackPointer + 1).As<RArray>().Length;
         }
         return callInfo.ArgumentCount;
     }
 
     public int GetKeywordArgumentCount()
     {
-        ref var callInfo = ref CallStack[CallDepth];
+        ref var callInfo = ref CurrentCallInfo;
         var offset = callInfo.KeywordArgumentOffset;
         if (callInfo.KeywordArgumentPacked)
         {
-            return Stack[callInfo.StackPointer + offset].As<RHash>().Length;
+            return StackAt(callInfo.StackPointer + offset).As<RHash>().Length;
         }
         return callInfo.KeywordArgumentCount;
     }
@@ -398,8 +426,8 @@ class MRubyContext
         ref var callInfo = ref CurrentCallInfo;
         if (callInfo.ArgumentPacked)
         {
-            var args = Stack[callInfo.StackPointer + 1].As<RArray>();
-            if (index < args.Length)
+            var args = StackAt(callInfo.StackPointer + 1).As<RArray>();
+            if ((uint)index < (uint)args.Length)
             {
                 value = args[index];
                 return true;
@@ -407,9 +435,9 @@ class MRubyContext
         }
         else
         {
-            if (index < CurrentCallInfo.ArgumentCount)
+            if ((uint)index < callInfo.ArgumentCount)
             {
-                value = Stack[callInfo.StackPointer + 1 + index];
+                value = StackAt(callInfo.StackPointer + 1 + index);
                 return true;
             }
         }
@@ -429,16 +457,17 @@ class MRubyContext
 
         if (callInfo.KeywordArgumentPacked)
         {
-            var kdict = Stack[callInfo.StackPointer + offset].As<RHash>();
+            var kdict = StackAt(callInfo.StackPointer + offset).As<RHash>();
             return kdict.TryGetValue(new MRubyValue(key), out value);
         }
 
+        ref var k0 = ref StackAt(callInfo.StackPointer + offset);
         for (var i = 0; i < callInfo.KeywordArgumentCount; i++)
         {
-            var k = Stack[callInfo.StackPointer + offset + i * 2];
+            ref var k = ref Unsafe.Add(ref k0, i * 2);
             if (k.SymbolValue == key)
             {
-                value = Stack[callInfo.StackPointer + offset + i * 2 + 1];
+                value = Unsafe.Add(ref k0, i * 2 + 1);
                 return true;
             }
         }
@@ -451,8 +480,7 @@ class MRubyContext
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public MRubyValue GetSelf()
     {
-        ref var callInfo = ref CallStack[CallDepth];
-        return Stack[callInfo.StackPointer];
+        return StackAt(CurrentCallInfo.StackPointer);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -465,7 +493,7 @@ class MRubyContext
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public MRubyValue GetKeywordArgument(Symbol key)
     {
-        ref var callInfo = ref CallStack[CallDepth];
+        ref var callInfo = ref CurrentCallInfo;
         var offset = callInfo.KeywordArgumentOffset;
         if (offset < 0)
         {
@@ -474,16 +502,17 @@ class MRubyContext
 
         if (callInfo.KeywordArgumentPacked)
         {
-            var hash = Stack[callInfo.StackPointer + offset].As<RHash>();
+            var hash = StackAt(callInfo.StackPointer + offset).As<RHash>();
             return hash[new MRubyValue(key)];
         }
 
+        ref var k0 = ref StackAt(callInfo.StackPointer + offset);
         for (var i = 0; i < callInfo.KeywordArgumentCount; i++)
         {
-            var k = Stack[callInfo.StackPointer + offset + i];
+            ref var k = ref Unsafe.Add(ref k0, i);
             if (k.SymbolValue == key)
             {
-                return Stack[callInfo.StackPointer + offset + i + 1];
+                return Unsafe.Add(ref k0, i + 1);
             }
         }
         return MRubyValue.Nil;
@@ -497,7 +526,7 @@ class MRubyContext
     public MRubyValue GetBlockArgument()
     {
         ref var callInfo = ref CurrentCallInfo;
-        return Stack[callInfo.StackPointer + callInfo.BlockArgumentOffset];
+        return StackAt(callInfo.StackPointer + callInfo.BlockArgumentOffset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -509,10 +538,12 @@ class MRubyContext
         }
         if (callInfo.ArgumentPacked)
         {
-            var args = Stack[callInfo.StackPointer + 1].As<RArray>();
+            var args = StackAt(callInfo.StackPointer + 1).As<RArray>();
             return startIndex >= args.Length ? default : args.AsSpan(startIndex);
         }
-        return Stack.AsSpan(callInfo.StackPointer + 1 + startIndex, callInfo.ArgumentCount - startIndex);
+        return CreateSpan(
+            ref StackAt(callInfo.StackPointer + 1 + startIndex),
+            callInfo.ArgumentCount - startIndex);
     }
 
     internal ReadOnlySpan<KeyValuePair<Symbol, MRubyValue>> GetKeywordArgs(ref MRubyCallInfo callInfo)

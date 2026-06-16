@@ -103,6 +103,11 @@ assert('Integer#~', '15.2.8.3.8') do
   # Complement
   assert_equal(-1, ~0)
   assert_equal(-3, ~2)
+
+  x = 0
+  y = 2
+  assert_equal(-1, ~x)
+  assert_equal(-3, y.__send__(:~))
 end
 
 assert('Integer#&', '15.2.8.3.9') do
@@ -152,6 +157,27 @@ assert('Integer#>>', '15.2.8.3.13') do
 
   # Don't raise on large Right Shift
   assert_equal 0, 23 >> 128
+
+  # Preserve bytes for normal-width shifts
+  assert_equal 0x80, 0x8015 >> 8
+
+  # Saturate large arithmetic shifts
+  assert_equal 0, 1 >> 63
+  assert_equal 0, 1 >> 64
+  assert_equal -1, -1 >> 63
+  assert_equal -1, -1 >> 64
+end
+
+assert('Integer#[]') do
+  assert_equal 1, 1[0]
+  assert_equal 0, 1[1]
+  assert_equal 1, 0x80[7]
+  assert_equal 0, 0x80[8]
+  assert_equal 0, 1[-1]
+  assert_equal 1, (-1)[0]
+  assert_equal 1, (-1)[64]
+  assert_equal 0, (-2)[0]
+  assert_equal 1, (-2)[1]
 end
 
 assert('Integer#ceil', '15.2.8.3.14') do

@@ -8,3 +8,6 @@
 	path = src/ChibiRuby.Compiler/mruby-compiler2
 	url = git@github.com:hadashiA/mruby-compiler2.git
 	branch = master
+[submodule "sandbox/ChibiRuby.Benchmark/ruby/optcarrot"]
+	path = sandbox/ChibiRuby.Benchmark/ruby/optcarrot
+	url = git@github.com:mame/optcarrot.git
