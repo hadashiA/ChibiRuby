@@ -14,6 +14,8 @@
         <PackageReference Include="NUnit" Version="4.2.2"/>
         <PackageReference Include="NUnit.Analyzers" Version="4.4.0"/>
         <PackageReference Include="NUnit3TestAdapter" Version="4.6.0"/>
+        <!-- Drive the incremental generator directly to verify cache/skip behavior. -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -25,7 +27,8 @@
       <ProjectReference Include="..\..\src\ChibiRuby.Serializer\ChibiRuby.Serializer.csproj" />
       <ProjectReference Include="..\..\src\ChibiRuby.Serializer.SourceGenerator\ChibiRuby.Serializer.SourceGenerator.csproj">
         <OutputItemType>Analyzer</OutputItemType>
-        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+        <!-- Also referenced as a compile assembly so tests can drive the generator directly. -->
+        <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
       </ProjectReference>
     </ItemGroup>
 
