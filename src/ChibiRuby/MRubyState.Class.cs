@@ -32,7 +32,21 @@ public sealed class ClassDefineOptions(MRubyState state, RClass c)
 
 partial class MRubyState
 {
-    const int MethodCacheSize = 1 << 8;
+    const int MethodCacheSize = 1 << 12;
+    int methodCacheVersion;
+
+    // Public so AOT-generated class-switch dispatch (in the runtime-emitted assembly, which
+    // only sees public members + AotGeneratedMethods helpers) can read it to gate its
+    // once-per-version candidate-class resolution. Monotonic; bumped on any (re)definition.
+    public int MethodCacheVersion => methodCacheVersion;
+
+    // Bumped whenever any constant is (re)assigned (SetConst / DefineConst / class-name binding).
+    // AOT-generated constant reads cache the resolved value and re-resolve only when this changes,
+    // so the steady-state cost of `Math.sqrt`-style lookups is a version compare. Over-bumping (e.g.
+    // on class-ivar writes that share the table) only forces a harmless re-resolution.
+    int constCacheVersion;
+    public int ConstCacheVersion => constCacheVersion;
+    internal void BumpConstCacheVersion() { unchecked { constCacheVersion++; } }
 
     struct MethodCacheEntry
     {
@@ -112,6 +126,7 @@ partial class MRubyState
 
     public void DefineConst(RClass c, Symbol name, MRubyValue value)
     {
+        BumpConstCacheVersion();
         EnsureNotFrozen(c);
         EnsureConstName(name);
         if (value.IsNamespace)
@@ -318,6 +333,10 @@ partial class MRubyState
 
     void ClearMethodCache()
     {
+        unchecked
+        {
+            methodCacheVersion++;
+        }
         Array.Clear(methodCache, 0, methodCache.Length);
     }
 
@@ -455,7 +474,7 @@ partial class MRubyState
 
         // copy instance variables
         clone.InstanceVariables.Clear();
-        klass.InstanceVariables.CopyTo(clone.InstanceVariables);
+        klass.InstanceVariables.CopyTo(ref clone.InstanceVariables);
         clone.InstanceVariables.Set(Names.AttachedKey, obj);
 
         // copy method table
@@ -465,4 +484,3 @@ partial class MRubyState
         return clone;
     }
 }
-

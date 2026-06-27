@@ -1,6 +1,13 @@
-using System.Runtime.CompilerServices;
-
 namespace ChibiRuby;
+
+// AOT-compiled body for one irep — what a build-time Ruby->C# generator emits for a
+// hot, statically-compilable method. It runs directly on the call frame instead of
+// interpreting the irep's bytecode: `self` is at stack[stackPointer], args at
+// stack[stackPointer + 1 ..]. Returns true with `result` set when its speculative
+// type/shape guards hold; returns false (having mutated nothing) to deopt — the VM
+// then interprets the irep's bytecode. Ordinary compiled C# (no runtime IL), so it
+// works under IL2CPP / NativeAOT.
+public delegate bool CompiledRubyMethodBody(MRubyState state, int stackPointer, out MRubyValue result);
 
 public enum CatchHandlerType : byte
 {
@@ -49,6 +56,21 @@ public class Irep
     /// when the bytecode was produced without debug info.
     /// </summary>
     public IrepDebugInfo? DebugInfo { get; internal set; }
+
+    // AOT-compiled C# body for THIS irep (null = interpret the bytecode). The
+    // bytecode VM branches on this where an irep begins executing: if set and its
+    // speculative guards hold, the compiled body runs and the bytecode is ignored;
+    // on a guard miss the body returns false and this same irep is interpreted
+    // (the irep is its own deopt fallback). Attached at load time by the codegen
+    // layer; keyed by the irep itself (no class/method names involved).
+    internal CompiledRubyMethodBody? CompiledBody;
+
+    // Memoized content fingerprint (see MRubyState.ComputeIrepFingerprint). An irep is
+    // immutable once built and its fingerprint depends only on its content, so the first
+    // computation is cached here forever. Guard miss paths (poly-dispatch sites, first
+    // calls, post-redefinition) and the build-time codegen would otherwise re-hash the
+    // entire irep tree (bytecode + symbol names + pool + child ireps) on every lookup.
+    internal ulong? CachedFingerprint;
 
     public bool TryFindCatchHandler(int pc, CatchHandlerType filter, out CatchHandler handler)
     {

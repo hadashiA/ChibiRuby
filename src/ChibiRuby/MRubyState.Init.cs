@@ -81,7 +81,7 @@ public partial class MRubyState : IDisposable
     public RiteParser RiteParser => riteParser ??= new RiteParser(this);
 
     readonly SymbolTable symbolTable = new();
-    readonly VariableTable globalVariables = new();
+    VariableTable globalVariables = new();
 
     RiteParser? riteParser;
 
@@ -465,7 +465,8 @@ public partial class MRubyState : IDisposable
         DefineMethod(IntegerClass, Intern("truncate"u8), IntegerMembers.Truncate);
         DefineMethod(IntegerClass, Names.Hash, IntegerMembers.Hash);
         DefineMethod(IntegerClass, Intern("divmod"u8), IntegerMembers.DivMod);
-        DefineMethod(IntegerClass, Intern("to_f"u8), IntegerMembers.ToF);
+        DefineMethod(IntegerClass, Intern("to_f"u8),
+            new MRubyMethod(IntegerMembers.ToF, (s, self, _) => IntegerMembers.ToF(s, self)));
         DefineMethod(IntegerClass, Names.ToI, MRubyMethod.Identity);
         DefineMethod(IntegerClass, Intern("to_int"u8), MRubyMethod.Identity);
         DefineMethod(IntegerClass, Intern("bit_length"u8), IntegerMembers.BitLength);
@@ -509,7 +510,8 @@ public partial class MRubyState : IDisposable
         DefineMethod(FloatClass, Intern("floor"u8), FloatMembers.Floor);
         DefineMethod(FloatClass, Intern("infinite?"u8), FloatMembers.QInfinite);
         DefineMethod(FloatClass, Intern("round"u8), FloatMembers.Round);
-        DefineMethod(FloatClass, Intern("to_f"u8), FloatMembers.ToF);
+        DefineMethod(FloatClass, Intern("to_f"u8),
+            new MRubyMethod(FloatMembers.ToF, (s, self, _) => FloatMembers.ToF(s, self)));
         DefineMethod(FloatClass, Names.ToI, FloatMembers.ToI);
         DefineMethod(FloatClass, Intern("truncate"u8), FloatMembers.Truncate);
         DefineMethod(FloatClass, Intern("divmod"u8), FloatMembers.DivMod);
@@ -928,6 +930,7 @@ public partial class MRubyState : IDisposable
     {
         if (c.InstanceVariables.TryGet(Names.OuterKey, out _)) return false;
 
+        BumpConstCacheVersion(); // binds `name` as a constant on `outer`
         c.InstanceVariables.Set(Names.OuterKey, outer);
         outer.InstanceVariables.Set(name, c);
 

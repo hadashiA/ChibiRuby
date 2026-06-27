@@ -65,6 +65,7 @@ partial class MRubyState
 
     public void SetConst(Symbol name, RClass mod, MRubyValue value)
     {
+        BumpConstCacheVersion();
         EnsureConstName(name);
         if (value.Object is RClass { VType: MRubyVType.Class or MRubyVType.Module } c)
         {

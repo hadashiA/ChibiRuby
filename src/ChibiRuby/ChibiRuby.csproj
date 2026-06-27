@@ -14,6 +14,7 @@
         <InternalsVisibleTo Include="SampleConsoleApp" />
         <InternalsVisibleTo Include="ChibiRuby.Debugger" />
         <InternalsVisibleTo Include="ChibiRuby.Debugger.Tests" />
+        <InternalsVisibleTo Include="ChibiRuby.JetPack" />
     </ItemGroup>
 
     <ItemGroup>

@@ -15,9 +15,9 @@ public class RClass : RObject, ICallScope
 
     internal MethodTable MethodTable { get; private set; } = new();
 
-    internal VariableTable ClassInstanceVariables => VType == MRubyVType.IClass
-        ? Class.InstanceVariables
-        : InstanceVariables;
+    // ref-return so callers mutate the real struct in place (a by-value return would drop Set/Remove).
+    internal ref VariableTable ClassInstanceVariables =>
+        ref VType == MRubyVType.IClass ? ref Class.InstanceVariables : ref InstanceVariables;
 
     RClass super = default!;
 
@@ -60,7 +60,7 @@ public class RClass : RObject, ICallScope
 
         if (VType is MRubyVType.Class or MRubyVType.Module)
         {
-            InstanceVariables.CopyTo(clone.InstanceVariables);
+            InstanceVariables.CopyTo(ref clone.InstanceVariables);
             // clone.InstanceVariables.Remove(Ids.ClassName);
         }
         return clone;

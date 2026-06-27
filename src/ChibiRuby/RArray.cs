@@ -194,6 +194,13 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
     public void Push(MRubyValue newItem)
     {
         var currentLength = Length;
+        if (dataOwned && data.Length - offset > currentLength)
+        {
+            Length = currentLength + 1;
+            Unsafe.Add(ref GetArrayDataReference(data), offset + currentLength) = newItem;
+            return;
+        }
+
         MakeModifiable(currentLength + 1, true);
         Unsafe.Add(ref GetArrayDataReference(data), offset + currentLength) = newItem;
     }
@@ -299,7 +306,7 @@ public sealed class RArray : RObject, IEnumerable<MRubyValue>
     internal override RObject Clone()
     {
         var clone = new RArray(data.Length, Class);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 

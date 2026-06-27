@@ -30,6 +30,10 @@ assert('Integer#*', '15.2.8.3.3') do
   if Object.const_defined?(:Float)
     b = 1*1.0
     assert_equal 1.0, b
+    # via method dispatch (not the OP_MUL fast path): a value where a buggy `a - f`
+    # would differ from `a * f` (6.0 vs -1.0).
+    assert_equal 6.0, 2.send(:*, 3.0)
+    assert_equal 6.0, 2 * 3.0
   end
   assert_raise(TypeError){ 0*nil }
   assert_raise(TypeError){ 1*nil }

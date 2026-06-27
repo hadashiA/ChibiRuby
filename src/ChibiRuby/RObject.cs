@@ -2,7 +2,10 @@ namespace ChibiRuby;
 
 public class RObject : RBasic
 {
-    internal VariableTable InstanceVariables { get; set; } = new();
+    // Public FIELD (not a property) so AOT-generated code reads/writes ivars directly
+    // (recv.InstanceVariables.Get/Set) and, since VariableTable is a struct, mutates it IN PLACE.
+    // A property getter would return a copy and silently drop Set mutations.
+    public VariableTable InstanceVariables = new();
 
     public RObject(RClass klass) : this(klass.InstanceVType, klass)
     {
@@ -22,7 +25,7 @@ public class RObject : RBasic
     internal virtual RObject Clone()
     {
         var clone = new RObject(VType, Class);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 }

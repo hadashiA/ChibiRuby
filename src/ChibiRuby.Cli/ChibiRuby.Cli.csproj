@@ -21,6 +21,7 @@
     <ItemGroup>
       <ProjectReference Include="..\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" />
       <ProjectReference Include="..\ChibiRuby\ChibiRuby.csproj" />
+      <ProjectReference Include="..\ChibiRuby.JetPack\ChibiRuby.JetPack.csproj" />
     </ItemGroup>
 
 </Project>

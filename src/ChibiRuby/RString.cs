@@ -134,7 +134,7 @@ public class RString : RObject, IEquatable<RString>
     internal override RObject Clone()
     {
         var clone = new RString(buffer.Length, Class);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 

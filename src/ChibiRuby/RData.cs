@@ -21,7 +21,7 @@ public class RData : RObject
     internal override RObject Clone()
     {
         var clone = new RData(Class, Data);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 }
