@@ -84,7 +84,7 @@ static class ProcMembers
 
         var pc = 0;
         var bbb = OperandBBB.Read(ref GetArrayDataReference(sequence), ref pc);
-        var bits = (uint)bbb.A << 16 | (uint)bbb.B << 8 | bbb.C;
+        var bits = (uint)bbb.A << 16 | (uint)bbb.B << 8 | (uint)bbb.C;
         var aspec = new ArgumentSpec(bits);
         // arity = ra || (MRB_PROC_STRICT_P(p) && op) ? -(ma + pa + 1) : ma + pa;
         var arity = aspec.TakeRestArguments || (proc.HasFlag(MRubyObjectFlags.ProcStrict) && aspec.OptionalArgumentsCount > 0)
