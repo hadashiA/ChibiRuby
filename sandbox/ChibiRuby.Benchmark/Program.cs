@@ -73,6 +73,33 @@ using ChibiRuby.Benchmark;
 //     return;
 // }
 
+// Lightweight in-process A/B timing (no BenchmarkDotNet cross-process overhead):
+//   --quick-bench <script.rb> [warmup] [iters]
+// Prints median + min ms/iter over `iters` measured runs after `warmup` runs.
+if (args is ["--quick-bench", ..])
+{
+    var file = args.Length >= 2 ? args[1] : "bm_ao_render.rb";
+    var warmup = args.Length >= 3 && int.TryParse(args[2], out var w) ? w : 5;
+    var iters = args.Length >= 4 && int.TryParse(args[3], out var it) ? it : 15;
+
+    using var loader = new RubyScriptLoader();
+    loader.PreloadScriptFromFile(file);
+    for (var i = 0; i < warmup; i++) loader.RunChibiRuby();
+
+    var samples = new double[iters];
+    for (var i = 0; i < iters; i++)
+    {
+        var sw = Stopwatch.StartNew();
+        loader.RunChibiRuby();
+        sw.Stop();
+        samples[i] = sw.Elapsed.TotalMilliseconds;
+    }
+    Array.Sort(samples);
+    var median = samples[iters / 2];
+    Console.WriteLine($"[quick-bench] {file}: median={median:F1}ms min={samples[0]:F1}ms max={samples[iters - 1]:F1}ms (n={iters})");
+    return;
+}
+
 if (args is ["--quick-optcarrot", ..])
 {
     var frames = args.Length >= 2 && int.TryParse(args[1], out var parsedFrames)
