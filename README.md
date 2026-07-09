@@ -156,7 +156,7 @@ Please refer to the following for the [benchmark code](https://github.com/hadash
 | ChibiRuby.Compiler      | Ruby source compiler utility (native binding).                                    | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Compiler)](https://www.nuget.org/packages/ChibiRuby.Compiler)   |
 | ChibiRuby.Cli           | dotnet tool with subcommands (e.g. `compile`) for ChibiRuby workflows             | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Cli)](https://www.nuget.org/packages/ChibiRuby.Cli) |
 | ChibiRuby.Serializer    | Converts between Ruby and C# objects                                              | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Serializer)](https://www.nuget.org/packages/ChibiRuby.Serializer)  |
-| ChibiRuby.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.irb` suspension) | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger)](https://www.nuget.org/packages/ChibiRuby.Debugger) |
+| ChibiRuby.Debugger      | Protocol-agnostic debugger core (breakpoints, stepping, `binding.break` suspension) | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger)](https://www.nuget.org/packages/ChibiRuby.Debugger) |
 | ChibiRuby.Debugger.Dap  | DAP server (TCP) for any DAP-compatible editor — see [Debugger](#debugger)        | [![NuGet](https://img.shields.io/nuget/v/ChibiRuby.Debugger.Dap)](https://www.nuget.org/packages/ChibiRuby.Debugger.Dap) |
 
 ### Unity
@@ -1599,12 +1599,40 @@ VSCode and Zed need a small extension to register the `chibiruby` debug type; Ri
 
 ### Setting breakpoints
 
+There are two ways to pause execution: set a breakpoint from the editor, or write `binding.break` directly in your Ruby code.
+
+#### From the editor
+
 Once host + editor are wired:
 
 1. Open the `.rb` file in the editor.
 2. Click the gutter next to the line you want to pause at — a red breakpoint marker appears.
 3. Run the host. Execution stops at the breakpoint; the editor surfaces the call stack and locals.
 4. Use the editor's debug controls (**Continue** / **Step Over** / **Step In** / **Step Out**) and the REPL pane (variables view + expression evaluation) as usual.
+
+#### From code (`binding.break`)
+
+Write `binding.break` at the line you want to pause at — same API as [ruby/debug](https://github.com/ruby/debug):
+
+```ruby
+def update
+  hp = @hp
+  binding.break  # execution suspends here; inspect `hp` from the editor
+  hp - 1
+end
+```
+
+`binding.b` and `debugger` are also available as aliases:
+
+```ruby
+binding.b   # same as binding.break
+debugger    # same as binding.break on the caller's frame
+```
+
+When the VM hits `binding.break`, the thread suspends until a DAP client attaches and resumes it — handy for stopping at a precise point before you've had a chance to attach the editor. Once a client has attached and disconnected, later `binding.break` calls become no-ops so the host doesn't hang after the editor goes away.
+
+> [!NOTE]
+> `binding.break` requires the debugger to be installed on the state (`MRubyDapServer` does this automatically). Without it, calling `binding.break` raises `RuntimeError`.
 
 > [!NOTE]
 > Please ensure that ChibiRubyCompiler passes the filename when compiling Ruby.

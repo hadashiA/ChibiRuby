@@ -398,9 +398,11 @@ public partial class MRubyState : IDisposable
         DefineMethod(BindingClass, Intern("local_variable_get"u8), BindingMembers.LocalVariableGet);
         DefineMethod(BindingClass, Intern("local_variable_set"u8), BindingMembers.LocalVariableSet);
         DefineMethod(BindingClass, Intern("local_variable_defined?"u8), BindingMembers.LocalVariableDefined);
-        DefineMethod(BindingClass, Intern("irb"u8), BindingMembers.Irb);
+        DefineMethod(BindingClass, Intern("break"u8), BindingMembers.Break);
+        DefineMethod(BindingClass, Intern("b"u8), BindingMembers.Break);
 
         DefineMethod(KernelModule, Intern("binding"u8), BindingMembers.Binding);
+        DefineMethod(KernelModule, Intern("debugger"u8), BindingMembers.Debugger);
     }
 
     void InitException()

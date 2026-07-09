@@ -13,14 +13,14 @@ namespace ChibiRuby.Debugger.Dap.Tests;
 
 /// <summary>
 /// End-to-end test of the embedded host scenario: a host C# thread runs Ruby (with
-/// <c>binding.irb</c> inside), <see cref="MRubyDapServer"/> listens for an attach over
+/// <c>binding.break</c> inside), <see cref="MRubyDapServer"/> listens for an attach over
 /// loopback TCP, the test plays the client role.
 /// </summary>
 [TestFixture]
 public class TcpDapServerTest
 {
     [Test]
-    public async Task EmbeddedHost_BlocksAtBindingIrb_UntilClientAttaches_ThenContinues()
+    public async Task EmbeddedHost_BlocksAtBindingBreak_UntilClientAttaches_ThenContinues()
     {
         var state = MRubyState.Create();
         var compiler = MRubyCompiler.Create(state);
@@ -36,7 +36,7 @@ public class TcpDapServerTest
             {
                 compiler.LoadSourceCode("""
                     secret = 42
-                    binding.irb
+                    binding.break
                     secret
                     """u8);
             }
@@ -46,7 +46,7 @@ public class TcpDapServerTest
         { IsBackground = true, Name = "test-vm" };
         vmThread.Start();
 
-        Assert.That(vmDone.Wait(200), Is.False, "VM should be blocked at binding.irb waiting for client");
+        Assert.That(vmDone.Wait(200), Is.False, "VM should be blocked at binding.break waiting for client");
 
         using var tcp = new TcpClient();
         await tcp.ConnectAsync("127.0.0.1", port);

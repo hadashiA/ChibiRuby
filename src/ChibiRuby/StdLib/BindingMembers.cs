@@ -58,20 +58,27 @@ static class BindingMembers
         return binding.TryGetLocal(name, out _) ? MRubyValue.True : MRubyValue.False;
     });
 
-    // Binding#irb - default implementation when no debugger is attached.
-    // The ChibiRuby.Debugger package replaces this with a hook-triggering implementation
-    // by calling DefineMethod again at attach time.
-    public static MRubyMethod Irb = new((state, self) =>
+    // Binding#break (alias Binding#b) - ruby/debug compatible breakpoint.
+    public static MRubyMethod Break = new((state, self) =>
     {
         var binding = AsBinding(state, self);
+        return TriggerBreak(state, binding);
+    });
+
+    // Kernel#debugger - ruby/debug compatible; equivalent to binding.break on the caller's frame.
+    public static MRubyMethod Debugger = new((state, self) =>
+        TriggerBreak(state, state.CreateBinding()));
+
+    static MRubyValue TriggerBreak(MRubyState state, RBinding binding)
+    {
         if (state.DebuggerHook is { } hook)
         {
-            hook.OnBindingIrb(state, binding);
+            hook.OnBindingBreak(state, binding);
             return MRubyValue.Nil;
         }
-        state.Raise(Names.RuntimeError, "binding.irb called but no debugger is attached (ChibiRuby.Debugger not initialized)"u8);
+        state.Raise(Names.RuntimeError, "binding.break called but no debugger is attached (ChibiRuby.Debugger not initialized)"u8);
         return MRubyValue.Nil;
-    });
+    }
 
     static RBinding AsBinding(MRubyState state, MRubyValue self)
     {

@@ -20,7 +20,7 @@ partial class MRubyState
 {
     public RClass BindingClass { get; private set; } = default!;
 
-    /// <summary>Optional hook for a debugger to suspend execution at <c>binding.irb</c>.</summary>
+    /// <summary>Optional hook for a debugger to suspend execution at <c>binding.break</c>.</summary>
     public IMRubyDebuggerHook? DebuggerHook { get; set; }
 
     /// <summary>Capture the caller's frame as a <see cref="RBinding"/> (for C#-defined Ruby methods).</summary>
