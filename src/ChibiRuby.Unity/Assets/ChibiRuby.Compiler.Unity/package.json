@@ -1,7 +1,7 @@
 {
   "name": "jp.hadashikick.chibiruby-compiler",
   "displayName": "ChibiRuby.Compiler",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "unity": "2021.3",
   "description": "Unity Editor extension for ChibiRuby.Compiler (ScriptedImporter for .rb / .mrb). Requires the ChibiRuby.Compiler NuGet package installed via NuGetForUnity.",
   "keywords": ["mruby", "ruby"],
