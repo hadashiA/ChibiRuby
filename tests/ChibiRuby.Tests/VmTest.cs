@@ -631,6 +631,48 @@ public class VmTest
         Assert.That(result, Is.EqualTo(MRubyValue.True));
     }
 
+    // https://github.com/hadashiA/ChibiRuby/issues/188
+    // A single method holding more than 255 distinct string literals overflows
+    // the irep pool index into two bytes, so the compiler prefixes the widened
+    // `String` operand with EXT2. The VM must decode the prefix instead of
+    // throwing "Invalid opcode EXT2".
+    [Test]
+    public void ExtendedOperand_StringPoolOverflow()
+    {
+        var source = new System.Text.StringBuilder();
+        source.AppendLine("def big");
+        source.AppendLine("  arr = []");
+        for (var i = 0; i < 300; i++)
+        {
+            source.AppendLine($"  arr << \"str_{i}\"");
+        }
+        source.AppendLine("  arr.length");
+        source.AppendLine("end");
+        source.AppendLine("big");
+
+        var result = Exec(System.Text.Encoding.UTF8.GetBytes(source.ToString()));
+        Assert.That(result, Is.EqualTo(new MRubyValue(300)));
+    }
+
+    // A single method calling more than 255 distinct method names overflows the
+    // symbol pool, widening the `Send` symbol operand (EXT2). Also exercises the
+    // last widened literal actually round-trips to the right value.
+    [Test]
+    public void ExtendedOperand_SymbolPoolOverflow()
+    {
+        var source = new System.Text.StringBuilder();
+        source.AppendLine("s = \"\"");
+        for (var i = 0; i < 300; i++)
+        {
+            source.AppendLine($"def m{i}; {i}; end");
+            source.AppendLine($"s = m{i}.to_s");
+        }
+        source.AppendLine("s");
+
+        var result = Exec(System.Text.Encoding.UTF8.GetBytes(source.ToString()));
+        Assert.That(result.As<RString>().ToString(), Is.EqualTo("299"));
+    }
+
     MRubyValue Exec(ReadOnlySpan<byte> code)
     {
         using var compilation = compiler.Compile(code);
