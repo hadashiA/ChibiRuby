@@ -36,9 +36,9 @@ public class ChibiRubyDapServerTest
     }
 
     [Test]
-    public async Task Launch_RunsScript_StopsAtBindingIrb_AndContinues()
+    public async Task Launch_RunsScript_StopsAtBindingBreak_AndContinues()
     {
-        File.WriteAllText(scriptPath, "binding.irb\n");
+        File.WriteAllText(scriptPath, "binding.break\n");
 
         using var harness = new TestHarness();
         await harness.InitializeAsync();
@@ -61,7 +61,7 @@ public class ChibiRubyDapServerTest
     [Test]
     public async Task Evaluate_RunsRubyExpressionInBinding()
     {
-        File.WriteAllText(scriptPath, "x = 7\nbinding.irb\n");
+        File.WriteAllText(scriptPath, "x = 7\nbinding.break\n");
 
         using var harness = new TestHarness();
         await harness.InitializeAsync();
@@ -80,7 +80,7 @@ public class ChibiRubyDapServerTest
     [Test]
     public async Task Variables_ListsLocalsAndSelf()
     {
-        File.WriteAllText(scriptPath, "a = 10\nb = 'hi'\nbinding.irb\n");
+        File.WriteAllText(scriptPath, "a = 10\nb = 'hi'\nbinding.break\n");
 
         using var harness = new TestHarness();
         await harness.InitializeAsync();
@@ -109,7 +109,7 @@ public class ChibiRubyDapServerTest
     [Test]
     public async Task Evaluate_RubyRaiseReturnsErrorResponse_AndContinueStillWorks()
     {
-        File.WriteAllText(scriptPath, "binding.irb\n:ok\n");
+        File.WriteAllText(scriptPath, "binding.break\n:ok\n");
 
         using var harness = new TestHarness();
         await harness.InitializeAsync();

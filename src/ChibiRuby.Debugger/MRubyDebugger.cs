@@ -51,7 +51,7 @@ public sealed class MRubyDebugger(MRubyState mrb, MRubyCompiler compiler) : IMRu
     StepRequest? stepRequest;
 
     // Once any client has attached: subsequent stops with no client attached become no-op
-    // (so binding.irb doesn't hang the host thread after Rider/VSCode disconnects).
+    // (so binding.break doesn't hang the host thread after Rider/VSCode disconnects).
     bool hadAttachedClient;
 
     int disposed;
@@ -204,9 +204,9 @@ public sealed class MRubyDebugger(MRubyState mrb, MRubyCompiler compiler) : IMRu
         return sep == '/' || sep == '\\';
     }
 
-    void IMRubyDebuggerHook.OnBindingIrb(MRubyState state, RBinding binding)
+    void IMRubyDebuggerHook.OnBindingBreak(MRubyState state, RBinding binding)
     {
-        SuspendInPump(StopReason.BindingIrb, binding);
+        SuspendInPump(StopReason.BindingBreak, binding);
     }
 
     void IMRubyDebuggerHook.OnInstruction(MRubyState state, Irep irep, int pc)

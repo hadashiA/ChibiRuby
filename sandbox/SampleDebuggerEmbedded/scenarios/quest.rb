@@ -1,7 +1,7 @@
 # Sample mruby script for poking at the embedded-host debugger.
 #
 # The host (Program.cs) loads this file via MRubyCompiler.LoadSourceCode. When the
-# binding.irb line is reached, execution suspends until a DAP client attaches to the
+# binding.break line is reached, execution suspends until a DAP client attaches to the
 # host's listening port (default 4711) and sends a `continue`.
 
 class Hero
@@ -23,13 +23,13 @@ inventory = ["potion", "map"]
 
 hero.take_damage(15)
 
-p "Before binding.irb: #{hero.name}, HP=#{hero.hp}"
-binding.irb
+p "Before binding.break: #{hero.name}, HP=#{hero.hp}"
+binding.break
 # Try in the Debug Console:
 #   self                                              # the toplevel object
 #   binding.local_variables                            # [:hero, :weapon, :inventory]
 #   binding.local_variable_get(:weapon).upcase
 #   binding.local_variable_get(:hero).hp
-p "After binding.irb: #{hero.name}, HP=#{hero.hp}"
+p "After binding.break: #{hero.name}, HP=#{hero.hp}"
 
 inventory

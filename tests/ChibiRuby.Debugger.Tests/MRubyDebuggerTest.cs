@@ -74,7 +74,7 @@ public class MRubyDebuggerTest
         }));
 
         var result = compiler.LoadSourceCode("""
-            binding.irb
+            binding.break
             42
             """u8);
 
@@ -95,7 +95,7 @@ public class MRubyDebuggerTest
             evalResult = dbg.Evaluate("self.class.to_s");
         }));
 
-        compiler.LoadSourceCode("binding.irb"u8);
+        compiler.LoadSourceCode("binding.break"u8);
 
         Assert.That(evalResult, Is.Not.Null);
         Assert.That(evalResult!.IsError, Is.False);
@@ -113,7 +113,7 @@ public class MRubyDebuggerTest
         }));
 
         var result = compiler.LoadSourceCode("""
-            binding.irb
+            binding.break
             :ok
             """u8);
 
@@ -130,9 +130,9 @@ public class MRubyDebuggerTest
             evalResult = dbg.Evaluate("raise 'boom'");
         }));
 
-        // The raise inside eval must not bubble out of binding.irb.
+        // The raise inside eval must not bubble out of binding.break.
         var result = compiler.LoadSourceCode("""
-            binding.irb
+            binding.break
             :ok
             """u8);
 
@@ -154,7 +154,7 @@ public class MRubyDebuggerTest
         }));
 
         var result = compiler.LoadSourceCode("""
-            binding.irb
+            binding.break
             42
             """u8);
 
@@ -179,7 +179,7 @@ public class MRubyDebuggerTest
 
         compiler.LoadSourceCode("""
             x = 5
-            binding.irb
+            binding.break
             """u8);
 
         Assert.That(evalResult, Is.Not.Null);
@@ -200,7 +200,7 @@ public class MRubyDebuggerTest
 
         compiler.LoadSourceCode("""
             hero = "knight"
-            binding.irb
+            binding.break
             """u8);
 
         Assert.That(evalResult, Is.Not.Null);
@@ -220,7 +220,7 @@ public class MRubyDebuggerTest
         compiler.LoadSourceCode("""
             hp = 100
             bonus = 25
-            binding.irb
+            binding.break
             """u8);
 
         Assert.That(evalResult, Is.Not.Null);
@@ -232,7 +232,7 @@ public class MRubyDebuggerTest
     public void Eval_BindingLocalVariableSet_WritesBackToOuterScope()
     {
         // Regression: typing `binding.local_variable_set(:x, 5)` in the debug REPL must
-        // mutate the *outer* (binding.irb) scope's local, not a throwaway eval-scope
+        // mutate the *outer* (binding.break) scope's local, not a throwaway eval-scope
         // binding. The wrapper shadows Kernel#binding with the captured outer binding.
         EvalResult? setResult = null;
         EvalResult? getResult = null;
@@ -244,7 +244,7 @@ public class MRubyDebuggerTest
 
         var result = compiler.LoadSourceCode("""
             hp = 100
-            binding.irb
+            binding.break
             hp
             """u8);
 
@@ -270,7 +270,7 @@ public class MRubyDebuggerTest
 
         compiler.LoadSourceCode("""
             name = "sword"
-            binding.irb
+            binding.break
             """u8);
 
         Assert.That(evalResult, Is.Not.Null);
@@ -289,7 +289,7 @@ public class MRubyDebuggerTest
 
         compiler.LoadSourceCode("""
             x = 42
-            binding.irb
+            binding.break
             """u8);
 
         Assert.That(firstEval!.IsError, Is.False);
@@ -309,7 +309,7 @@ public class MRubyDebuggerTest
             results.Add(dbg.Evaluate("3"));
         }));
 
-        compiler.LoadSourceCode("binding.irb"u8);
+        compiler.LoadSourceCode("binding.break"u8);
 
         Assert.That(results, Has.Count.EqualTo(3));
         Assert.That(results[0].Value.IntegerValue, Is.EqualTo(1));
@@ -328,7 +328,7 @@ public class MRubyDebuggerTest
         }));
 
         var result = compiler.LoadSourceCode("""
-            binding.irb
+            binding.break
             :done
             """u8);
 
@@ -346,11 +346,11 @@ public class MRubyDebuggerTest
             evalResult = dbg.Evaluate("raise 'inside-method'");
         }));
 
-        // binding.irb is called from inside a method body so the surrounding call stack
-        // depth is non-trivial (root + method + Send :binding + Send :irb).
+        // binding.break is called from inside a method body so the surrounding call stack
+        // depth is non-trivial (root + method + Send :binding + Send :break).
         var result = compiler.LoadSourceCode("""
             def f(n)
-              binding.irb
+              binding.break
               n * 2
             end
             f(21)
@@ -377,7 +377,7 @@ public class MRubyDebuggerTest
         }));
 
         var result = compiler.LoadSourceCode("""
-            binding.irb
+            binding.break
             42
             """u8);
 
@@ -397,11 +397,11 @@ public class MRubyDebuggerTest
 
         compiler.LoadSourceCode("""
             zz = 99
-            binding.irb
+            binding.break
             """u8);
 
         Assert.That(captured, Is.Not.Null);
-        Assert.That(captured!.Reason, Is.EqualTo(StopReason.BindingIrb));
+        Assert.That(captured!.Reason, Is.EqualTo(StopReason.BindingBreak));
         Assert.That(captured.Binding.TryGetLocal(mrb.Intern("zz"u8), out var v), Is.True);
         Assert.That(v.IntegerValue, Is.EqualTo(99));
     }

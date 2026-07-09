@@ -9,7 +9,7 @@ namespace ChibiRuby.Debugger.Dap.Tests;
 
 /// <summary>
 /// Verifies that Phase 2.1 DBG-section plumbing actually reaches the DAP wire: the
-/// stackTrace response should carry the real source filename + line where binding.irb
+/// stackTrace response should carry the real source filename + line where binding.break
 /// was invoked, not the (toplevel) / line 1 placeholder.
 /// </summary>
 [TestFixture]
@@ -25,7 +25,7 @@ public class StackTraceLineTest
         var port = server.LocalEndpoint.Port;
 
         var scriptPath = Path.Combine(Path.GetTempPath(), $"dbg-{System.Guid.NewGuid():N}.rb");
-        File.WriteAllText(scriptPath, "x = 10\ny = 20\nbinding.irb\nx + y\n");
+        File.WriteAllText(scriptPath, "x = 10\ny = 20\nbinding.break\nx + y\n");
         try
         {
             var vmDone = new ManualResetEventSlim();
@@ -58,7 +58,7 @@ public class StackTraceLineTest
 
             var frame0 = frames[0];
             Assert.That(frame0.Line, Is.EqualTo((ulong)3),
-                "stackTrace should report the source line of binding.irb (line 3)");
+                "stackTrace should report the source line of binding.break (line 3)");
 
             var sourcePath = frame0.Source?.Path;
             Assert.That(sourcePath, Is.EqualTo(scriptPath));

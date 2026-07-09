@@ -29,7 +29,7 @@ public sealed class MRubyDapMessageHandler : IDebuggerClient, IDisposable
     public MRubyDebugger Debugger { get; }
 
     const int ThreadId = 1;
-    const int FrameIdBindingIrb = 1;
+    const int FrameIdBindingBreak = 1;
     const int VariablesRefLocals = 1000;
 
     readonly PipeReader reader;
@@ -211,7 +211,7 @@ public sealed class MRubyDapMessageHandler : IDebuggerClient, IDisposable
                     await HandleStepAsync(seq, "stepOut", StepMode.StepOut, cancellationToken).ConfigureAwait(false);
                     break;
                 case PauseRequest:
-                    await RespondErrorAsync(seq, "pause", "pause is not supported in Phase 1; use binding.irb", cancellationToken).ConfigureAwait(false);
+                    await RespondErrorAsync(seq, "pause", "pause is not supported in Phase 1; use binding.break", cancellationToken).ConfigureAwait(false);
                     break;
                 case DisconnectRequest:
                     await HandleDisconnectAsync(seq, "disconnect", cancellationToken).ConfigureAwait(false);
@@ -377,7 +377,7 @@ public sealed class MRubyDapMessageHandler : IDebuggerClient, IDisposable
 
             var frame = new StackFrame
             {
-                Id = FrameIdBindingIrb,
+                Id = FrameIdBindingBreak,
                 Name = sourcePath is null ? "(toplevel)" : Path.GetFileName(sourcePath),
                 Line = (ulong)line,
                 Column = 1,
@@ -617,7 +617,7 @@ public sealed class MRubyDapMessageHandler : IDebuggerClient, IDisposable
             StopReason.LineBreakpoint => ("breakpoint", stopEvent.Line > 0
                 ? $"Paused at line breakpoint {Path.GetFileName(stopEvent.File ?? "")}:{stopEvent.Line}"
                 : "Paused at line breakpoint"),
-            StopReason.BindingIrb => ("pause", "Paused at binding.irb"),
+            StopReason.BindingBreak => ("pause", "Paused at binding.break"),
             StopReason.Step => ("step", stopEvent.Line > 0
                 ? $"Paused after step at {Path.GetFileName(stopEvent.File ?? "")}:{stopEvent.Line}"
                 : "Paused after step"),

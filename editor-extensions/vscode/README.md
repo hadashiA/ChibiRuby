@@ -20,7 +20,7 @@ Or search **"ChibiRuby Debugger"** in the Extensions panel.
 - Evaluate Ruby expressions in the suspended binding (Debug Console / Watch / Hover)
 - View `self` and locals in the Variables pane
 - Continue / terminate
-- `binding.irb` as an inline pause (also supported, useful when you can't easily
+- `binding.break` as an inline pause (also supported, useful when you can't easily
   set a gutter breakpoint — e.g. generated code)
 
 Not yet supported: launch mode (run a `.rb` file from VSCode), step
@@ -33,7 +33,7 @@ over/into/out.
 The extension supports **attach mode** only. Your C# / Unity host embeds
 ChibiRuby and opens a TCP listener via `new MRubyDapServer(...).StartAsync()`;
 VSCode connects over TCP, sends your breakpoints, and execution halts when a
-breakpoint hits (or at any `binding.irb` call).
+breakpoint hits (or at any `binding.break` call).
 
 See [`sandbox/SampleDebuggerEmbedded/`](../../sandbox/SampleDebuggerEmbedded/)
 for a complete working host you can run with `dotnet run`.

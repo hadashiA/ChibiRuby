@@ -2,7 +2,7 @@ namespace ChibiRuby.Debugger;
 
 public enum StopReason
 {
-    BindingIrb,
+    BindingBreak,
     LineBreakpoint,
     Step,
 }

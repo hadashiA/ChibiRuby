@@ -276,11 +276,11 @@ public class BindingTest
     }
 
     [Test]
-    public void BindingIrb_RaisesWhenNoDebuggerAttached()
+    public void BindingBreak_RaisesWhenNoDebuggerAttached()
     {
         Assert.That(mrb.DebuggerHook, Is.Null);
         Assert.Throws<MRubyRaiseException>(() =>
-            compiler.LoadSourceCode("binding.irb"u8));
+            compiler.LoadSourceCode("binding.break"u8));
     }
 
     sealed class CaptureHook : IMRubyDebuggerHook
@@ -288,7 +288,7 @@ public class BindingTest
         public RBinding? CapturedBinding;
         public int CallCount;
 
-        public void OnBindingIrb(MRubyState state, RBinding binding)
+        public void OnBindingBreak(MRubyState state, RBinding binding)
         {
             CapturedBinding = binding;
             CallCount++;
@@ -297,19 +297,19 @@ public class BindingTest
 
         public void OnInstruction(MRubyState state, Irep irep, int pc)
         {
-            // No-op for these tests; the binding.irb path is what we exercise.
+            // No-op for these tests; the binding.break path is what we exercise.
         }
     }
 
     [Test]
-    public void BindingIrb_InvokesDebuggerHook_AndContinues()
+    public void BindingBreak_InvokesDebuggerHook_AndContinues()
     {
         var hook = new CaptureHook();
         mrb.DebuggerHook = hook;
 
         var result = compiler.LoadSourceCode("""
             x = 100
-            binding.irb
+            binding.break
             x + 1
             """u8);
 
@@ -318,6 +318,26 @@ public class BindingTest
         Assert.That(hook.CapturedBinding!.TryGetLocal(mrb.Intern("x"u8), out var xValue), Is.True);
         Assert.That(xValue.IntegerValue, Is.EqualTo(100));
         Assert.That(result.IntegerValue, Is.EqualTo(101));
+    }
+
+    [Test]
+    public void BindingB_AndKernelDebugger_AreAliasesOfBindingBreak()
+    {
+        var hook = new CaptureHook();
+        mrb.DebuggerHook = hook;
+
+        var result = compiler.LoadSourceCode("""
+            x = 5
+            binding.b
+            debugger
+            x + 1
+            """u8);
+
+        Assert.That(hook.CallCount, Is.EqualTo(2));
+        Assert.That(hook.CapturedBinding, Is.Not.Null);
+        Assert.That(hook.CapturedBinding!.TryGetLocal(mrb.Intern("x"u8), out var xValue), Is.True);
+        Assert.That(xValue.IntegerValue, Is.EqualTo(5));
+        Assert.That(result.IntegerValue, Is.EqualTo(6));
     }
 
     [Test]
@@ -331,7 +351,7 @@ public class BindingTest
             def f
               aaa = 7
               bbb = "hello"
-              binding.irb
+              binding.break
             end
             f
             """u8);
