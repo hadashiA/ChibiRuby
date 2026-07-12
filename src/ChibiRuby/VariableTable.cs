@@ -22,34 +22,80 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
         get => count;
     }
 
+    // Vectorized scan: Symbol is a single uint, so the key array can be searched
+    // with the SIMD IndexOf over uints instead of a scalar loop.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Defined(Symbol id)
+    int IndexOfKey(Symbol id) =>
+        System.Runtime.InteropServices.MemoryMarshal
+            .Cast<Symbol, uint>(keys.AsSpan(0, count))
+            .IndexOf(id.Value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Defined(Symbol id) => IndexOfKey(id) >= 0;
+
+    // Slot-verified accessors used by the interpreter's inline caches. `slot` is an
+    // untrusted guess: it hits only when the entry at that index is exactly `id`,
+    // so a stale or foreign slot value can never read/write the wrong variable.
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool TryGetAt(int slot, Symbol id, out MRubyValue value)
     {
-        var keysLocal = keys;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        var l = count;
-        for (var i = 0; l > i; i++)
+        if ((uint)slot < (uint)count &&
+            Unsafe.Add(ref GetArrayDataReference(keys), slot) == id)
         {
-            if (Unsafe.Add(ref keysRef, i) == id) return true;
+            value = Unsafe.Add(ref GetArrayDataReference(values), slot);
+            return true;
+        }
+        value = default;
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool TrySetAt(int slot, Symbol id, MRubyValue value)
+    {
+        if ((uint)slot < (uint)count &&
+            Unsafe.Add(ref GetArrayDataReference(keys), slot) == id)
+        {
+            Unsafe.Add(ref GetArrayDataReference(values), slot) = value;
+            return true;
         }
         return false;
+    }
+
+    /// <summary>Get that also reports the slot the symbol was found at (-1 when missing).</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal int GetWithSlot(Symbol id, out MRubyValue value)
+    {
+        var i = IndexOfKey(id);
+        value = i >= 0 ? Unsafe.Add(ref GetArrayDataReference(values), i) : default;
+        return i;
+    }
+
+    /// <summary>Set that also reports the slot the value was stored at.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal int SetWithSlot(Symbol id, MRubyValue value)
+    {
+        var i = IndexOfKey(id);
+        if (i >= 0)
+        {
+            Unsafe.Add(ref GetArrayDataReference(values), i) = value;
+            return i;
+        }
+        if (count >= keys.Length) Grow();
+
+        Unsafe.Add(ref GetArrayDataReference(keys), count) = id;
+        Unsafe.Add(ref GetArrayDataReference(values), count) = value;
+        return count++;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGet(Symbol id, out MRubyValue value)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
+        var i = IndexOfKey(id);
+        if (i >= 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id)
-            {
-                value = Unsafe.Add(ref valsRef, i);
-                return true;
-            }
+            value = Unsafe.Add(ref GetArrayDataReference(values), i);
+            return true;
         }
         value = default;
         return false;
@@ -58,67 +104,31 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public MRubyValue Get(Symbol id)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
-        {
-            if (Unsafe.Add(ref keysRef, i) == id)
-            {
-                return Unsafe.Add(ref valsRef, i);
-            }
-        }
-        return default;
+        var i = IndexOfKey(id);
+        return i >= 0 ? Unsafe.Add(ref GetArrayDataReference(values), i) : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Set(Symbol id, MRubyValue value)
-    {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
-        {
-            if (Unsafe.Add(ref keysRef, i) == id)
-            {
-                Unsafe.Add(ref valsRef, i) = value;
-                return;
-            }
-        }
-        if (count >= keys.Length) Grow();
-
-        Unsafe.Add(ref GetArrayDataReference(keys), count) = id;
-        Unsafe.Add(ref GetArrayDataReference(values), count) = value;
-        count++;
-    }
+    public void Set(Symbol id, MRubyValue value) => SetWithSlot(id, value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Remove(Symbol id, out MRubyValue removedValue)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
+        var i = IndexOfKey(id);
+        if (i >= 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id)
+            ref var keysRef = ref GetArrayDataReference(keys);
+            ref var valsRef = ref GetArrayDataReference(values);
+            removedValue = Unsafe.Add(ref valsRef, i);
+            count--;
+            for (var j = i; j < count; j++)
             {
-                removedValue = Unsafe.Add(ref valsRef, i);
-                count--;
-                for (var j = i; j < count; j++)
-                {
-                    Unsafe.Add(ref keysRef, j) = Unsafe.Add(ref keysRef, j + 1);
-                    Unsafe.Add(ref valsRef, j) = Unsafe.Add(ref valsRef, j + 1);
-                }
-                Unsafe.Add(ref keysRef, count) = default;
-                Unsafe.Add(ref valsRef, count) = default;
-                return true;
+                Unsafe.Add(ref keysRef, j) = Unsafe.Add(ref keysRef, j + 1);
+                Unsafe.Add(ref valsRef, j) = Unsafe.Add(ref valsRef, j + 1);
             }
+            Unsafe.Add(ref keysRef, count) = default;
+            Unsafe.Add(ref valsRef, count) = default;
+            return true;
         }
         removedValue = default;
         return false;
