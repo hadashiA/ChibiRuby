@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using ChibiRuby;
 using ChibiRuby.Benchmark;
 
 // Profiling-friendly mode: warm up the VM, then run the measured optcarrot
@@ -72,6 +73,36 @@ using ChibiRuby.Benchmark;
 //     Console.Write(loader.DumpDispatchProfile());
 //     return;
 // }
+
+// Quick wall-clock runner for a single ruby script (no BenchmarkDotNet):
+//   --quick-script <file.rb> [iterations] [warmups]
+// Prints per-iteration milliseconds and the median.
+if (args is ["--quick-script", var scriptFile, ..])
+{
+    var iterations = args.Length >= 3 && int.TryParse(args[2], out var it) ? it : 10;
+    var warmups = args.Length >= 4 && int.TryParse(args[3], out var w) ? w : 3;
+
+    using var loader = new RubyScriptLoader();
+    loader.PreloadScriptFromFile(scriptFile);
+    for (var i = 0; i < warmups; i++)
+    {
+        loader.RunChibiRuby();
+    }
+    var times = new double[iterations];
+    MRubyValue lastResult = default;
+    for (var i = 0; i < iterations; i++)
+    {
+        var sw = Stopwatch.StartNew();
+        lastResult = loader.RunChibiRuby();
+        sw.Stop();
+        times[i] = sw.Elapsed.TotalMilliseconds;
+    }
+    Array.Sort(times);
+    var median = times[iterations / 2];
+    Console.WriteLine($"result: {lastResult}");
+    Console.WriteLine($"median: {median:F3} ms  (min {times[0]:F3} / max {times[^1]:F3}, n={iterations})");
+    return;
+}
 
 if (args is ["--quick-optcarrot", ..])
 {
