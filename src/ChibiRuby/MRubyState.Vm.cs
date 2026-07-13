@@ -492,6 +492,25 @@ partial class MRubyState
     /// <summary>
     /// Execute irep assuming the Stack values are placed
     /// </summary>
+    /// <summary>
+    /// OP_SYMBOL slow path: intern the pool string and memoize it on the irep.
+    /// A cache owned by another state is replaced wholesale (owner id and symbol
+    /// array travel together), so shared ireps stay correct across states.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static Symbol PoolSymbolMiss(MRubyState state, Irep irep, int poolIndex)
+    {
+        var symbol = state.Intern(irep.PoolValues[poolIndex].As<RString>());
+        var cache = irep.PoolSymbolCache;
+        if (cache == null || cache.OwnerStateId != state.StateId)
+        {
+            cache = new IrepPoolSymbolCache(state.StateId, new Symbol[irep.PoolValues.Length]);
+            irep.PoolSymbolCache = cache;
+        }
+        cache.Symbols[poolIndex] = symbol;
+        return symbol;
+    }
+
     internal MRubyValue Execute(Irep irep, int pc, int stackKeep, RException? injectedRaise = null)
     {
         Exception = null;
@@ -2444,8 +2463,15 @@ partial class MRubyState
                     {
                         Markers.Symbol();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        //var name = irep.PoolValues[bb.B].As<RString>();
-                        Unsafe.Add(ref registers, bb.A) = Intern(irep.PoolValues[bb.B].As<RString>());
+                        Symbol sym = default;
+                        var poolSymbols = irep.PoolSymbolCache;
+                        if (poolSymbols == null ||
+                            poolSymbols.OwnerStateId != StateId ||
+                            (sym = poolSymbols.Symbols[bb.B]).Value == 0)
+                        {
+                            sym = PoolSymbolMiss(this, irep, bb.B);
+                        }
+                        Unsafe.Add(ref registers, bb.A) = sym;
                         goto Next;
                     }
                     case OpCode.String:

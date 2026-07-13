@@ -13,23 +13,30 @@ public readonly record struct Symbol(uint Value)
 
 class SymbolTable
 {
-    readonly record struct Key(int HashCode)
+    /// <summary>
+    /// One interned symbol per node, chained per FNV-1a hash bucket. Names sharing a
+    /// hash coexist on the chain and are distinguished by comparing the actual bytes,
+    /// so a 32-bit hash collision can never alias two different symbol names.
+    /// </summary>
+    sealed class Entry(Symbol symbol, byte[] name, Entry? next)
     {
-        const uint OffsetBasis = 2166136261u;
-        const uint FnvPrime = 16777619u;
+        public readonly Symbol Symbol = symbol;
+        public readonly byte[] Name = name;
+        public readonly Entry? Next = next;
+    }
 
-        public static Key Create(ReadOnlySpan<byte> symbolName)
+    const uint OffsetBasis = 2166136261u;
+    const uint FnvPrime = 16777619u;
+
+    static int HashOf(ReadOnlySpan<byte> symbolName)
+    {
+        var hash = OffsetBasis;
+        foreach (var b in symbolName)
         {
-            var hash = OffsetBasis;
-            foreach (var b in symbolName)
-            {
-                hash ^= b;
-                hash *= FnvPrime;
-            }
-            return new Key(unchecked((int)hash));
+            hash ^= b;
+            hash *= FnvPrime;
         }
-
-        public override int GetHashCode() => HashCode;
+        return unchecked((int)hash);
     }
 
     const int PackLengthMax = 5;
@@ -44,7 +51,7 @@ class SymbolTable
     static byte[] ThreadStaticBuffer() => nameBuffer ??= new byte[32];
 
     readonly Dictionary<Symbol, byte[]> names = new(64);
-    readonly Dictionary<Key, Symbol> symbols = new(64);
+    readonly Dictionary<int, Entry> symbols = new(64);
 
     public Symbol Intern(ReadOnlySpan<byte> utf8)
     {
@@ -52,13 +59,7 @@ class SymbolTable
         {
             return symbol;
         }
-
-        symbol = new Symbol(++lastId);
-        var nameBuf = new byte[utf8.Length];
-        utf8.CopyTo(nameBuf);
-        names.Add(symbol, nameBuf);
-        symbols.Add(Key.Create(utf8), symbol);
-        return symbol;
+        return Add(utf8.ToArray());
     }
 
     public Symbol InternLiteral(byte[] utf8)
@@ -67,9 +68,16 @@ class SymbolTable
         {
             return symbol;
         }
-        symbol = new Symbol(++lastId);
-        names.Add(symbol, utf8);
-        symbols.Add(Key.Create(utf8), symbol);
+        return Add(utf8);
+    }
+
+    Symbol Add(byte[] name)
+    {
+        var symbol = new Symbol(++lastId);
+        names.Add(symbol, name);
+        var hash = HashOf(name);
+        symbols.TryGetValue(hash, out var head);
+        symbols[hash] = new Entry(symbol, name, head);
         return symbol;
     }
 
@@ -92,9 +100,20 @@ class SymbolTable
         // {
         //     return true;
         // }
-        var key = Key.Create(utf8);
-        return symbols.TryGetValue(key, out symbol) ||
-               Names.TryFind(key.HashCode, utf8, out symbol);
+        var hash = HashOf(utf8);
+        if (symbols.TryGetValue(hash, out var entry))
+        {
+            do
+            {
+                if (entry.Name.AsSpan().SequenceEqual(utf8))
+                {
+                    symbol = entry.Symbol;
+                    return true;
+                }
+                entry = entry.Next;
+            } while (entry != null);
+        }
+        return Names.TryFind(hash, utf8, out symbol);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
