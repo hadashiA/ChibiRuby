@@ -30,10 +30,23 @@ public readonly struct CatchHandler(CatchHandlerType handlerType, uint begin, ui
 }
 
 /// <summary>
+/// Memoized results of interning this irep's pool strings (OP_SYMBOL operands).
+/// Owner id and the symbol array live in one immutable-shape object so that a
+/// state can never observe another state's symbols through a torn owner/array pair.
+/// </summary>
+sealed class IrepPoolSymbolCache(int ownerStateId, Symbol[] symbols)
+{
+    public readonly int OwnerStateId = ownerStateId;
+    public readonly Symbol[] Symbols = symbols;
+}
+
+/// <summary>
 /// Program data
 /// </summary>
 public class Irep
 {
+    internal IrepPoolSymbolCache? PoolSymbolCache;
+
     public byte Flags { get; init; }
     public ushort RegisterVariableCount { get; init; }
     public byte[] Sequence { get; init; } = [];

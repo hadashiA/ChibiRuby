@@ -227,32 +227,23 @@ static class Names
                 stringBuilder.AppendLine($$"""
             case {{x.Key}}:
 """);
-                if (x.Count() == 1)
+                // Always verify the actual name: a user-defined symbol may collide with a
+                // known symbol's 32-bit hash, and must not alias it.
+                var branch = "if";
+                foreach (var xs in x)
                 {
-                    var singleValue = x.First();
                     stringBuilder.AppendLine($$"""
-                symbol = new Symbol({{singleValue.Index}});
-                return true;
-""");
-                }
-                else
-                {
-                    var branch = "if";
-                    foreach (var xs in x)
-                    {
-                        stringBuilder.AppendLine($$"""
                 {{branch}} (name.SequenceEqual("{{xs.SymbolName}}"u8))
                 {
                     symbol = new Symbol({{xs.Index}});
                     return true;
                 }
 """);
-                        branch = "else if";
-                    }
-                    stringBuilder.AppendLine($$"""
+                    branch = "else if";
+                }
+                stringBuilder.AppendLine($$"""
                 break;
 """);
-                }
             }
             stringBuilder.AppendLine($$"""
         }

@@ -80,6 +80,15 @@ public partial class MRubyState : IDisposable
 
     public RiteParser RiteParser => riteParser ??= new RiteParser(this);
 
+    static int stateIdSource;
+
+    /// <summary>
+    /// Process-wide unique id of this state. Symbols are interned per state, so
+    /// caches of interned symbols (e.g. <see cref="Irep.PoolSymbolCache"/>) are
+    /// tagged with this id to stay valid when an Irep is shared between states.
+    /// </summary>
+    internal readonly int StateId = System.Threading.Interlocked.Increment(ref stateIdSource);
+
     readonly SymbolTable symbolTable = new();
     readonly VariableTable globalVariables = new();
 
