@@ -10,11 +10,29 @@ using static ChibiRuby.Internal.MemoryMarshalEx;
 
 namespace ChibiRuby;
 
-public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
+// A struct (embedded directly in RObject.InstanceVariables / RClass class-ivars) so an object with
+// instance variables costs ONE heap allocation, not two. ≤4 ivars live in inline fields (no backing
+// array); more promote to arrays. Because it is a struct it MUST be stored in a field and mutated in
+// place (`obj.InstanceVariables.Set(...)`), and passed by `ref` when a callee mutates it (see CopyTo).
+public struct VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
 {
+    const int InlineCapacity = 4;
+
+    Symbol key0;
+    Symbol key1;
+    Symbol key2;
+    Symbol key3;
+    MRubyValue value0;
+    MRubyValue value1;
+    MRubyValue value2;
+    MRubyValue value3;
     Symbol[] keys = [];
     MRubyValue[] values = [];
     int count;
+
+    // Field initializers (keys/values = []) only run via an explicit parameterless ctor; a `default`
+    // VariableTable would have null arrays. Every owner creates it with `new VariableTable()`.
+    public VariableTable() { }
 
     public int Length
     {
@@ -25,12 +43,21 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Defined(Symbol id)
     {
-        var keysLocal = keys;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        var l = count;
-        for (var i = 0; l > i; i++)
+        if (keys.Length != 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id) return true;
+            var keysLocal = keys;
+            ref var keysRef = ref GetArrayDataReference(keysLocal);
+            var l = count;
+            for (var i = 0; l > i; i++)
+            {
+                if (Unsafe.Add(ref keysRef, i) == id) return true;
+            }
+            return false;
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            if (GetInlineKey(i) == id) return true;
         }
         return false;
     }
@@ -38,16 +65,30 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGet(Symbol id, out MRubyValue value)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
+        if (keys.Length != 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id)
+            var keysLocal = keys;
+            var valsLocal = values;
+            ref var keysRef = ref GetArrayDataReference(keysLocal);
+            ref var valsRef = ref GetArrayDataReference(valsLocal);
+            var l = count;
+            for (var i = 0; i < l; i++)
             {
-                value = Unsafe.Add(ref valsRef, i);
+                if (Unsafe.Add(ref keysRef, i) == id)
+                {
+                    value = Unsafe.Add(ref valsRef, i);
+                    return true;
+                }
+            }
+            value = default;
+            return false;
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            if (GetInlineKey(i) == id)
+            {
+                value = GetInlineValue(i);
                 return true;
             }
         }
@@ -58,16 +99,28 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public MRubyValue Get(Symbol id)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
+        if (keys.Length != 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id)
+            var keysLocal = keys;
+            var valsLocal = values;
+            ref var keysRef = ref GetArrayDataReference(keysLocal);
+            ref var valsRef = ref GetArrayDataReference(valsLocal);
+            var l = count;
+            for (var i = 0; i < l; i++)
             {
-                return Unsafe.Add(ref valsRef, i);
+                if (Unsafe.Add(ref keysRef, i) == id)
+                {
+                    return Unsafe.Add(ref valsRef, i);
+                }
+            }
+            return default;
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            if (GetInlineKey(i) == id)
+            {
+                return GetInlineValue(i);
             }
         }
         return default;
@@ -76,21 +129,46 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(Symbol id, MRubyValue value)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
+        if (keys.Length != 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id)
+            var keysLocal = keys;
+            var valsLocal = values;
+            ref var keysRef = ref GetArrayDataReference(keysLocal);
+            ref var valsRef = ref GetArrayDataReference(valsLocal);
+            var l = count;
+            for (var i = 0; i < l; i++)
             {
-                Unsafe.Add(ref valsRef, i) = value;
+                if (Unsafe.Add(ref keysRef, i) == id)
+                {
+                    Unsafe.Add(ref valsRef, i) = value;
+                    return;
+                }
+            }
+            if (count >= keys.Length) Grow();
+
+            Unsafe.Add(ref GetArrayDataReference(keys), count) = id;
+            Unsafe.Add(ref GetArrayDataReference(values), count) = value;
+            count++;
+            return;
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            if (GetInlineKey(i) == id)
+            {
+                SetInlineValue(i, value);
                 return;
             }
         }
-        if (count >= keys.Length) Grow();
 
+        if (count < InlineCapacity)
+        {
+            SetInline(count, id, value);
+            count++;
+            return;
+        }
+
+        Grow();
         Unsafe.Add(ref GetArrayDataReference(keys), count) = id;
         Unsafe.Add(ref GetArrayDataReference(values), count) = value;
         count++;
@@ -99,26 +177,45 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Remove(Symbol id, out MRubyValue removedValue)
     {
-        var keysLocal = keys;
-        var valsLocal = values;
-        ref var keysRef = ref GetArrayDataReference(keysLocal);
-        ref var valsRef = ref GetArrayDataReference(valsLocal);
-        var l = count;
-        for (var i = 0; i < l; i++)
+        if (keys.Length != 0)
         {
-            if (Unsafe.Add(ref keysRef, i) == id)
+            var keysLocal = keys;
+            var valsLocal = values;
+            ref var keysRef = ref GetArrayDataReference(keysLocal);
+            ref var valsRef = ref GetArrayDataReference(valsLocal);
+            var l = count;
+            for (var i = 0; i < l; i++)
             {
-                removedValue = Unsafe.Add(ref valsRef, i);
-                count--;
-                for (var j = i; j < count; j++)
+                if (Unsafe.Add(ref keysRef, i) == id)
                 {
-                    Unsafe.Add(ref keysRef, j) = Unsafe.Add(ref keysRef, j + 1);
-                    Unsafe.Add(ref valsRef, j) = Unsafe.Add(ref valsRef, j + 1);
+                    removedValue = Unsafe.Add(ref valsRef, i);
+                    count--;
+                    for (var j = i; j < count; j++)
+                    {
+                        Unsafe.Add(ref keysRef, j) = Unsafe.Add(ref keysRef, j + 1);
+                        Unsafe.Add(ref valsRef, j) = Unsafe.Add(ref valsRef, j + 1);
+                    }
+                    Unsafe.Add(ref keysRef, count) = default;
+                    Unsafe.Add(ref valsRef, count) = default;
+                    return true;
                 }
-                Unsafe.Add(ref keysRef, count) = default;
-                Unsafe.Add(ref valsRef, count) = default;
-                return true;
             }
+            removedValue = default;
+            return false;
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            if (GetInlineKey(i) != id) continue;
+
+            removedValue = GetInlineValue(i);
+            count--;
+            for (var j = i; j < count; j++)
+            {
+                SetInline(j, GetInlineKey(j + 1), GetInlineValue(j + 1));
+            }
+            ClearInline(count);
+            return true;
         }
         removedValue = default;
         return false;
@@ -128,38 +225,174 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
     {
         if (count > 0)
         {
-            Array.Clear(keys, 0, count);
-            Array.Clear(values, 0, count);
+            if (keys.Length != 0)
+            {
+                Array.Clear(keys, 0, count);
+                Array.Clear(values, 0, count);
+            }
+            else
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    ClearInline(i);
+                }
+            }
             count = 0;
         }
     }
 
-    public void CopyTo(VariableTable other)
+    // `other` is mutated, so it must be passed by ref (a struct copy's mutations would be lost).
+    public void CopyTo(ref VariableTable other)
     {
         if (count == 0) return;
-        if (other.keys.Length < other.count + count)
+        if (other.keys.Length != 0 || other.count + count > InlineCapacity)
         {
-            var newSize = Math.Max(other.keys.Length == 0 ? 4 : other.keys.Length * 2, other.count + count);
-            Array.Resize(ref other.keys, newSize);
-            Array.Resize(ref other.values, newSize);
+            other.EnsureArrayCapacity(other.count + count);
+            for (var i = 0; i < count; i++)
+            {
+                other.keys[other.count + i] = GetKey(i);
+                other.values[other.count + i] = GetValue(i);
+            }
         }
-        Array.Copy(keys, 0, other.keys, other.count, count);
-        Array.Copy(values, 0, other.values, other.count, count);
+        else
+        {
+            for (var i = 0; i < count; i++)
+            {
+                other.SetInline(other.count + i, GetKey(i), GetValue(i));
+            }
+        }
         other.count += count;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     void Grow()
     {
-        var newSize = keys.Length == 0 ? 4 : keys.Length * 2;
+        if (keys.Length == 0)
+        {
+            PromoteInlineToArray(InlineCapacity * 2);
+            return;
+        }
+
+        var newSize = keys.Length * 2;
         Array.Resize(ref keys, newSize);
         Array.Resize(ref values, newSize);
     }
 
-    public Enumerator GetEnumerator() => new(this);
+    void EnsureArrayCapacity(int capacity)
+    {
+        if (keys.Length == 0)
+        {
+            PromoteInlineToArray(Math.Max(InlineCapacity * 2, capacity));
+            return;
+        }
 
-    IEnumerator<KeyValuePair<Symbol, MRubyValue>> IEnumerable<KeyValuePair<Symbol, MRubyValue>>.GetEnumerator() => GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        if (keys.Length < capacity)
+        {
+            var newSize = Math.Max(keys.Length * 2, capacity);
+            Array.Resize(ref keys, newSize);
+            Array.Resize(ref values, newSize);
+        }
+    }
+
+    void PromoteInlineToArray(int capacity)
+    {
+        keys = new Symbol[capacity];
+        values = new MRubyValue[capacity];
+        for (var i = 0; i < count; i++)
+        {
+            keys[i] = GetInlineKey(i);
+            values[i] = GetInlineValue(i);
+        }
+        for (var i = 0; i < InlineCapacity; i++)
+        {
+            ClearInline(i);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    readonly Symbol GetKey(int index) => keys.Length != 0 ? keys[index] : GetInlineKey(index);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    readonly MRubyValue GetValue(int index) => keys.Length != 0 ? values[index] : GetInlineValue(index);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    readonly Symbol GetInlineKey(int index) => index switch
+    {
+        0 => key0,
+        1 => key1,
+        2 => key2,
+        3 => key3,
+        _ => throw new ArgumentOutOfRangeException(nameof(index))
+    };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    readonly MRubyValue GetInlineValue(int index) => index switch
+    {
+        0 => value0,
+        1 => value1,
+        2 => value2,
+        3 => value3,
+        _ => throw new ArgumentOutOfRangeException(nameof(index))
+    };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void SetInlineValue(int index, MRubyValue value)
+    {
+        switch (index)
+        {
+            case 0:
+                value0 = value;
+                break;
+            case 1:
+                value1 = value;
+                break;
+            case 2:
+                value2 = value;
+                break;
+            case 3:
+                value3 = value;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index));
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void SetInline(int index, Symbol key, MRubyValue value)
+    {
+        switch (index)
+        {
+            case 0:
+                key0 = key;
+                value0 = value;
+                break;
+            case 1:
+                key1 = key;
+                value1 = value;
+                break;
+            case 2:
+                key2 = key;
+                value2 = value;
+                break;
+            case 3:
+                key3 = key;
+                value3 = value;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index));
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void ClearInline(int index)
+    {
+        SetInline(index, default, default);
+    }
+
+    public readonly Enumerator GetEnumerator() => new(this);
+
+    readonly IEnumerator<KeyValuePair<Symbol, MRubyValue>> IEnumerable<KeyValuePair<Symbol, MRubyValue>>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public struct Enumerator : IEnumerator<KeyValuePair<Symbol, MRubyValue>>
     {
@@ -175,7 +408,7 @@ public class VariableTable : IEnumerable<KeyValuePair<Symbol, MRubyValue>>
         public KeyValuePair<Symbol, MRubyValue> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(table.keys[index], table.values[index]);
+            get => new(table.GetKey(index), table.GetValue(index));
         }
 
         object IEnumerator.Current => Current;

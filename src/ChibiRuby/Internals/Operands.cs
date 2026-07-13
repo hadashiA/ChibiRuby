@@ -141,6 +141,86 @@ struct OperandBBB
 }
 
 [StructLayout(LayoutKind.Explicit)]
+unsafe struct OperandBBBS
+{
+    [FieldOffset(0)]
+    public byte A;
+
+    [FieldOffset(1)]
+    public byte B;
+
+    [FieldOffset(2)]
+    public byte C;
+
+    [FieldOffset(3)]
+    fixed byte bytesD[2];
+
+    public int D => (bytesD[0] << 8) | bytesD[1];
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static OperandBBBS Read(ref byte sequence, ref int pc)
+    {
+        pc += 6;
+        return Unsafe.ReadUnaligned<OperandBBBS>(ref Unsafe.Add(ref sequence, pc - 5));
+    }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+unsafe struct OperandBBSS
+{
+    [FieldOffset(0)]
+    public byte A;
+
+    [FieldOffset(1)]
+    public byte B;
+
+    [FieldOffset(2)]
+    fixed byte bytesC[2];
+
+    [FieldOffset(4)]
+    fixed byte bytesD[2];
+
+    public int C => (bytesC[0] << 8) | bytesC[1];
+    public int D => (bytesD[0] << 8) | bytesD[1];
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static OperandBBSS Read(ref byte sequence, ref int pc)
+    {
+        pc += 7;
+        return Unsafe.ReadUnaligned<OperandBBSS>(ref Unsafe.Add(ref sequence, pc - 6));
+    }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+unsafe struct OperandBBBSS
+{
+    [FieldOffset(0)]
+    public byte A;
+
+    [FieldOffset(1)]
+    public byte B;
+
+    [FieldOffset(2)]
+    public byte C;
+
+    [FieldOffset(3)]
+    fixed byte bytesD[2];
+
+    [FieldOffset(5)]
+    fixed byte bytesE[2];
+
+    public int D => (bytesD[0] << 8) | bytesD[1];
+    public int E => (bytesE[0] << 8) | bytesE[1];
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static OperandBBBSS Read(ref byte sequence, ref int pc)
+    {
+        pc += 8;
+        return Unsafe.ReadUnaligned<OperandBBBSS>(ref Unsafe.Add(ref sequence, pc - 7));
+    }
+}
+
+[StructLayout(LayoutKind.Explicit)]
 unsafe struct OperandBSS
 {
     [FieldOffset(0)]

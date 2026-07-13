@@ -19,8 +19,10 @@ namespace ChibiRuby;
 
 enum VmSignal : byte { Next, JumpAndNext, Return }
 
+
 partial class MRubyState
 {
+
     public MRubyValue Send(MRubyValue self, Symbol methodId) =>
         Send(self, methodId, ReadOnlySpan<MRubyValue>.Empty);
 
@@ -117,7 +119,17 @@ partial class MRubyState
     {
         ref var currentCallInfo = ref Context.CurrentCallInfo;
         var nextStackPointer = currentCallInfo.StackPointer + currentCallInfo.NumberOfRegisters;
+        return SendWithStackPointer(self, methodId, args, kargs, block, nextStackPointer);
+    }
 
+    internal MRubyValue SendWithStackPointer(
+        MRubyValue self,
+        Symbol methodId,
+        ReadOnlySpan<MRubyValue> args,
+        ReadOnlySpan<KeyValuePair<Symbol, MRubyValue>> kargs,
+        RProc? block,
+        int nextStackPointer)
+    {
         var stackSize = MRubyCallInfo.CalculateBlockArgumentOffset(
             args.Length,
             kargs.IsEmpty ? 0 : MRubyCallInfo.CallMaxArgs) + 1; // argc + kargs(packed) + self + proc
@@ -189,6 +201,17 @@ partial class MRubyState
         else
         {
             var irepProc = nextCallInfo.Proc!;
+
+            // AOT-compiled body keyed by irep (same contract as the CSharpFunc path
+            // above: run on the frame, pop, return). On a guard miss fall through to
+            // interpret the irep's bytecode.
+            if (irepProc.Irep.CompiledBody is { } compiledBody &&
+                compiledBody(this, nextCallInfo.StackPointer, out var compiledResult))
+            {
+                Context.PopCallStack();
+                return compiledResult;
+            }
+
             nextCallInfo.CallerType = CallerType.VmExecuted;
             nextCallInfo.ProgramCounter = irepProc.ProgramCounter;
             return Execute(irepProc.Irep, irepProc.ProgramCounter, nextCallInfo.BlockArgumentOffset + 1);
@@ -257,6 +280,15 @@ partial class MRubyState
         }
 
         var irepProc = nextCallInfo.Proc!;
+
+        // AOT-compiled body keyed by irep (same contract as the CSharpFunc path above).
+        if (irepProc.Irep.CompiledBody is { } compiledBody &&
+            compiledBody(this, nextCallInfo.StackPointer, out var compiledResult))
+        {
+            Context.PopCallStack();
+            return compiledResult;
+        }
+
         nextCallInfo.CallerType = CallerType.VmExecuted;
         nextCallInfo.ProgramCounter = irepProc.ProgramCounter;
         return Execute(irepProc.Irep, irepProc.ProgramCounter, nextCallInfo.BlockArgumentOffset + 1);
@@ -309,11 +341,17 @@ partial class MRubyState
         };
     }
 
-    public Irep ParseBytecode(ReadOnlySpan<byte> bytecode) => RiteParser.Parse(bytecode);
+    public Irep ParseBytecode(ReadOnlySpan<byte> bytecode)
+    {
+        var irep = RiteParser.Parse(bytecode);
+        BindCompiledMethods(irep);
+        return irep;
+    }
 
     public MRubyValue LoadBytecode(ReadOnlySpan<byte> bytecode)
     {
         var irep = RiteParser.Parse(bytecode);
+        BindCompiledMethods(irep);
         return Execute(irep);
     }
 
@@ -515,10 +553,12 @@ partial class MRubyState
     {
         Exception = null;
 
-        var registerVariableCount = irep.RegisterVariableCount;
+        ref var callInfo = ref Context.CurrentCallInfo;
+        GetExecutableArrays(irep, out var frameCode, out var frameSymbols, out var frameRegisterCount);
+        var registerVariableCount = frameRegisterCount;
         if (stackKeep > registerVariableCount)
         {
-            registerVariableCount = (ushort)stackKeep;
+            registerVariableCount = stackKeep;
         }
         // else
         // {
@@ -530,10 +570,10 @@ partial class MRubyState
         //     }
         // }
 
-        ref var sequence = ref GetArrayDataReference(irep.Sequence);
-        ref var symbols = ref GetArrayDataReference(irep.Symbols);
+        ref var sequence = ref GetArrayDataReference(frameCode);
+        ref var symbols = ref GetArrayDataReference(frameSymbols);
+        callInfo.OptimizerRegisterVariableCount = registerVariableCount;
 
-        ref var callInfo = ref Context.CurrentCallInfo;
         Context.ExtendStack(callInfo.StackPointer + registerVariableCount);
         Context.ClearStack(callInfo.StackPointer + stackKeep, registerVariableCount - stackKeep);
 
@@ -554,9 +594,11 @@ partial class MRubyState
             }
             callInfo = ref Context.CurrentCallInfo;
             irep = callInfo.Proc!.Irep;
+            GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+            callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
             registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
-            sequence = ref GetArrayDataReference(irep.Sequence);
-            symbols = ref GetArrayDataReference(irep.Symbols);
+            sequence = ref GetArrayDataReference(frameCode);
+            symbols = ref GetArrayDataReference(frameSymbols);
         }
 
         while (true)
@@ -704,42 +746,8 @@ partial class MRubyState
                             goto Next;
                         }
 
-                        GetConstSlowPath(
-                            this, ref registerA, ref callInfo, id, c);
-
+                        registerA = ResolveConstantSlow(ref callInfo, id, c);
                         goto Next;
-
-                        [MethodImpl(MethodImplOptions.NoInlining)]
-                        static void GetConstSlowPath(MRubyState state, ref MRubyValue registerA, ref MRubyCallInfo callInfo, Symbol id, RClass c)
-                        {
-                            var x = c;
-                            MRubyValue value;
-                            while (x is { VType: MRubyVType.SClass })
-                            {
-                                if (!x.ClassInstanceVariables.TryGet(id, out value))
-                                {
-                                    x = null;
-                                    break;
-                                }
-                                x = c.Class;
-                            }
-                            if (x is { VType: MRubyVType.Class or MRubyVType.Module })
-                            {
-                                c = x;
-                            }
-                            var proc = callInfo.Proc?.Upper;
-                            while (proc != null)
-                            {
-                                x = proc.Scope?.TargetClass ?? state.ObjectClass;
-                                if (x.ClassInstanceVariables.TryGet(id, out value))
-                                {
-                                    registerA = value;
-                                    return;
-                                }
-                                proc = proc.Upper;
-                            }
-                            registerA = state.GetConst(id, c);
-                        }
                     }
                     case OpCode.SetConst:
                     {
@@ -865,7 +873,7 @@ partial class MRubyState
                         OperandBBB bbb;
                     {
                         bbb = OperandBBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        var env = callInfo.Proc?.FindUpperEnvTo(bbb.C);
+                        var env = GetCurrentUpVarEnv(ref callInfo, bbb.C);
                         if (env != null && bbb.B < env.Stack.Length)
                         {
                             Unsafe.Add(ref registers, bbb.A) = env.Stack[bbb.B];
@@ -880,7 +888,7 @@ partial class MRubyState
                     {
                         Markers.SetUpVar();
                         bbb = OperandBBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        var env = callInfo.Proc?.FindUpperEnvTo(bbb.C);
+                        var env = GetCurrentUpVarEnv(ref callInfo, bbb.C);
                         if (env != null && bbb.B < env.Stack.Length)
                         {
                             env.Stack[bbb.B] = Unsafe.Add(ref registers, bbb.A);
@@ -1698,9 +1706,11 @@ partial class MRubyState
                             }
 
                             callInfo = ref Context.CurrentCallInfo;
+                            GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                            callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
                             registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
-                            sequence = ref GetArrayDataReference(irep.Sequence);
-                            symbols = ref GetArrayDataReference(irep.Symbols);
+                            sequence = ref GetArrayDataReference(frameCode);
+                            symbols = ref GetArrayDataReference(frameSymbols);
                             goto Next;
 
                             static bool CallCSharpFunc(MRubyState state, MRubyMethod method, MRubyValue self, ref Irep irep, out MRubyValue result)
@@ -1733,20 +1743,60 @@ partial class MRubyState
                         irep = irepProc!.Irep;
                         callInfo.ProgramCounter = irepProc.ProgramCounter;
 
-                        Context.ExtendStack(callInfo.StackPointer + (irep.RegisterVariableCount < 4 ? 4 : irep.RegisterVariableCount) + 1);
+                        // AOT-compiled body, keyed by the irep itself: args are already
+                        // in the frame (self at StackPointer, args above). If its guards
+                        // hold it returns the value frameless — no ExtendStack/interpret/
+                        // Return. On a guard miss it returns false and we fall through to
+                        // interpret this same irep's bytecode (deopt), frame untouched.
+                        if (irep.CompiledBody is { } compiledBody &&
+                            InvokeCompiledBody(this, compiledBody, ref irep, callInfo.StackPointer))
+                        {
+                            callInfo = ref Context.CurrentCallInfo;
+                            GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                            callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
+                            registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
+                            sequence = ref GetArrayDataReference(frameCode);
+                            symbols = ref GetArrayDataReference(frameSymbols);
+                            goto Next;
+                        }
+
+                        GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                        callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
+                        Context.ExtendStack(callInfo.StackPointer + (frameRegisterCount < 4 ? 4 : frameRegisterCount) + 1);
                         registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
-                        sequence = ref GetArrayDataReference(irep.Sequence);
-                        symbols = ref GetArrayDataReference(irep.Symbols);
+                        sequence = ref GetArrayDataReference(frameCode);
+                        symbols = ref GetArrayDataReference(frameSymbols);
 
                         goto Next;
                         // pop on OpCode.Return
+
+                        [MethodImpl(MethodImplOptions.NoInlining)]
+                        static bool InvokeCompiledBody(MRubyState state, CompiledRubyMethodBody body, ref Irep irep, int stackPointer)
+                        {
+                            if (!body(state, stackPointer, out var result))
+                            {
+                                return false; // guard miss -> deopt to the bytecode interpreter
+                            }
+
+                            // Success: return the value and pop the callee frame (mirrors
+                            // the CSharpFunc return path).
+                            ref var ci = ref state.Context.CurrentCallInfo;
+                            state.Context.Stack[ci.StackPointer] = result;
+                            state.Context.PopCallStack();
+                            ci = ref state.Context.CurrentCallInfo;
+                            irep = ci.Proc!.Irep;
+                            return true;
+                        }
                     }
                     case OpCode.Call: // modify program counter
                     {
                         CallProc(this, out irep, ref callInfo);
+                        GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                        callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
+                        Context.ExtendStack(callInfo.StackPointer + frameRegisterCount);
                         registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
-                        sequence = ref GetArrayDataReference(irep.Sequence);
-                        symbols = ref GetArrayDataReference(irep.Symbols);
+                        sequence = ref GetArrayDataReference(frameCode);
+                        symbols = ref GetArrayDataReference(frameSymbols);
                         goto Next;
 
                         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -2297,7 +2347,9 @@ partial class MRubyState
                         irep = proc.Irep;
                         callInfo.ProgramCounter = proc.ProgramCounter;
 
-                        var newRegisterCount = irep.RegisterVariableCount;
+                        GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                        var newRegisterCount = frameRegisterCount;
+                        callInfo.OptimizerRegisterVariableCount = newRegisterCount;
                         Context.ExtendStack(callInfo.StackPointer + newRegisterCount + 1);
                         // self at stack[0] is already the proc value (= old register A);
                         // ensure block arg slot is nil.
@@ -2316,8 +2368,8 @@ partial class MRubyState
                             Context.Stack[callInfo.StackPointer] = env.Stack[0];
                         }
 
-                        sequence = ref GetArrayDataReference(irep.Sequence);
-                        symbols = ref GetArrayDataReference(irep.Symbols);
+                        sequence = ref GetArrayDataReference(frameCode);
+                        symbols = ref GetArrayDataReference(frameSymbols);
                         registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
                         goto Next;
                     }
@@ -2701,8 +2753,10 @@ partial class MRubyState
                         Exec(this, ref callInfo, ref sequence, ref registers);
                         callInfo = ref Context.CurrentCallInfo;
                         irep = callInfo.Proc!.Irep;
-                        sequence = ref GetArrayDataReference(irep.Sequence);
-                        symbols = ref GetArrayDataReference(irep.Symbols);
+                        GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                        callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
+                        sequence = ref GetArrayDataReference(frameCode);
+                        symbols = ref GetArrayDataReference(frameSymbols);
                         registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
                         goto Next;
 
@@ -2849,9 +2903,11 @@ partial class MRubyState
                 JumpAndNext:
                 callInfo = ref Context.CurrentCallInfo;
                 irep = callInfo.Proc!.Irep;
+                GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
                 registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
-                sequence = ref GetArrayDataReference(irep.Sequence);
-                symbols = ref GetArrayDataReference(irep.Symbols);
+                sequence = ref GetArrayDataReference(frameCode);
+                symbols = ref GetArrayDataReference(frameSymbols);
             }
             catch (MRubyRaiseException ex)
             {
@@ -2860,9 +2916,11 @@ partial class MRubyState
                 {
                     callInfo = ref Context.CurrentCallInfo;
                     irep = callInfo.Proc!.Irep;
+                    GetExecutableArrays(irep, out frameCode, out frameSymbols, out frameRegisterCount);
+                    callInfo.OptimizerRegisterVariableCount = frameRegisterCount;
                     registers = ref Unsafe.Add(ref GetArrayDataReference(Context.Stack), callInfo.StackPointer);
-                    sequence = ref GetArrayDataReference(irep.Sequence);
-                    symbols = ref GetArrayDataReference(irep.Symbols);
+                    sequence = ref GetArrayDataReference(frameCode);
+                    symbols = ref GetArrayDataReference(frameSymbols);
                 }
                 else
                 {
@@ -3035,6 +3093,13 @@ partial class MRubyState
                 Value = returnValue
             });
         }
+    }
+
+
+
+    static REnv? GetCurrentUpVarEnv(ref MRubyCallInfo callInfo, int depth)
+    {
+        return callInfo.Proc?.FindUpperEnvTo(depth);
     }
 
     MRubyMethod PrepareMethodMissing(

@@ -11,6 +11,7 @@
 
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,6 +28,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" />
+      <ProjectReference Include="..\..\src\ChibiRuby.JetPack\ChibiRuby.JetPack.csproj" />
       <ProjectReference Include="..\..\src\ChibiRuby.NIO\ChibiRuby.NIO.csproj" />
       <ProjectReference Include="..\..\src\ChibiRuby\ChibiRuby.csproj" />
     </ItemGroup>

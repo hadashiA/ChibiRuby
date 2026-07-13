@@ -13,7 +13,7 @@ public sealed class RException(
     internal override RObject Clone()
     {
         var clone = new RException(Message, Class);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 

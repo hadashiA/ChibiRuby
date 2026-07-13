@@ -129,6 +129,6 @@ public enum OpCode : byte
     EXT3 = 117, // not implemented
     Stop = 118,
 
-    // use internally
+    // Internal sentinel used by the bytecode VM dispatch loop.
     SendInternal = 255,
 }

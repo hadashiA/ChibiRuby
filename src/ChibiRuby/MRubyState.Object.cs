@@ -295,12 +295,7 @@ partial class MRubyState
         {
             return c.ClassInstanceVariables.Get(key);
         }
-
-        if (obj is { } o)
-        {
-            return o.InstanceVariables.Get(key);
-        }
-        return MRubyValue.Nil;
+        return obj.InstanceVariables.Get(key);
     }
 
     public void SetInstanceVariable(RObject obj, Symbol key, MRubyValue value)
@@ -528,9 +523,23 @@ partial class MRubyState
 
     internal RProc NewClosure(Irep irep, RClass? procClass = null)
     {
+        var scope = GetOrCreateClosureScope();
+        ref var callInfo = ref Context.CurrentCallInfo;
+        var env = scope as REnv;
+
+        return new RProc(irep, 0, procClass ?? ProcClass)
+        {
+            Upper = callInfo.Proc,
+            Scope = env,
+            OptimizedUpperEnvironment = callInfo.Proc is null ? callInfo.OptimizedBlockEnvironment : null,
+            OptimizedUpperProc = callInfo.Proc is null ? callInfo.OptimizedBlockUpperProc : null,
+        };
+    }
+
+    internal ICallScope? GetOrCreateClosureScope()
+    {
         ref var callInfo = ref Context.CurrentCallInfo;
         var env = callInfo.Scope as REnv;
-
         if (env is null)
         {
             if (callInfo.Proc is { } upper)
@@ -551,16 +560,37 @@ partial class MRubyState
                     BlockArgumentOffset = callInfo.BlockArgumentOffset,
                     TargetClass = callInfo.Scope.TargetClass,
                     Visibility = callInfo.Visibility,
-                    VisibilityBreak = callInfo.VisibilityBreak
+                    VisibilityBreak = callInfo.VisibilityBreak,
+                    OptimizedUpperProc = upper
+                };
+                callInfo.Scope = env;
+            }
+            else if (callInfo.OptimizedBlockEnvironment is { } optimizedUpperEnv)
+            {
+                var stackSize = callInfo.OptimizedBlockRegisterCount;
+                if (stackSize <= 0)
+                {
+                    stackSize = callInfo.NumberOfRegisters;
+                }
+
+                env = new REnv
+                {
+                    Context = Context,
+                    StackPointer = callInfo.StackPointer,
+                    StackSize = stackSize,
+                    MethodId = optimizedUpperEnv.MethodId,
+                    BlockArgumentOffset = callInfo.BlockArgumentOffset,
+                    TargetClass = callInfo.Scope.TargetClass,
+                    Visibility = optimizedUpperEnv.Visibility,
+                    VisibilityBreak = optimizedUpperEnv.VisibilityBreak,
+                    OptimizedUpperEnvironment = callInfo.OptimizedBlockEnvironment,
+                    OptimizedUpperProc = callInfo.OptimizedBlockUpperProc
                 };
                 callInfo.Scope = env;
             }
         }
-        return new RProc(irep, 0, procClass ?? ProcClass)
-        {
-            Upper = callInfo.Proc,
-            Scope = env,
-        };
+
+        return env ?? callInfo.Scope;
     }
 
     internal MRubyValue GetProcSelf(RProc proc, out RClass targetClass)

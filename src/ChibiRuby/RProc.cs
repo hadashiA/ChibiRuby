@@ -21,6 +21,8 @@ class REnv() : RBasic(MRubyVType.Env, default!), ICallScope
     public required Symbol MethodId { get; init; }
     public required MRubyMethodVisibility Visibility { get; internal set; }
     public required bool VisibilityBreak { get; init; }
+    internal REnv? OptimizedUpperEnvironment { get; init; }
+    internal RProc? OptimizedUpperProc { get; init; }
 
     public bool OnStack => Context != null;
 
@@ -46,6 +48,24 @@ class REnv() : RBasic(MRubyVType.Env, default!), ICallScope
 
         capturedStack = new Memory<MRubyValue>(Stack.ToArray());
     }
+
+    internal REnv? FindOptimizedUpperEnvTo(int up)
+    {
+        var env = this;
+        while (up > 0)
+        {
+            if (env.OptimizedUpperEnvironment is { } optimizedEnv)
+            {
+                env = optimizedEnv;
+                up--;
+                continue;
+            }
+
+            return env.OptimizedUpperProc?.FindUpperEnvTo(up - 1);
+        }
+
+        return env;
+    }
 }
 
 public class RProc(Irep irep, int programCounter, RClass procClass) : RObject(MRubyVType.Proc, procClass), IEquatable<RProc>
@@ -59,6 +79,8 @@ public class RProc(Irep irep, int programCounter, RClass procClass) : RObject(MR
 
     public Irep Irep => irep;
     public int ProgramCounter => programCounter;
+    internal REnv? OptimizedUpperEnvironment { get; init; }
+    internal RProc? OptimizedUpperProc { get; init; }
 
     ICallScope? scope;
 
@@ -81,10 +103,16 @@ public class RProc(Irep irep, int programCounter, RClass procClass) : RObject(MR
     internal REnv? FindUpperEnvTo(int up)
     {
         RProc? proc = this;
-        while (up-- > 0)
+        while (up > 0)
         {
+            if (proc.Upper is null && proc.OptimizedUpperEnvironment is { } optimizedEnv)
+            {
+                return optimizedEnv.FindOptimizedUpperEnvTo(up - 1);
+            }
+
             proc = proc.Upper;
             if (proc is null) return null;
+            up--;
         }
         return proc.Scope as REnv;
     }
@@ -100,6 +128,8 @@ public class RProc(Irep irep, int programCounter, RClass procClass) : RObject(MR
         {
             Upper = Upper,
             Scope = Scope,
+            OptimizedUpperEnvironment = OptimizedUpperEnvironment,
+            OptimizedUpperProc = OptimizedUpperProc,
         };
         clone.SetFlag(Flags);
         return clone;
@@ -117,7 +147,7 @@ public class RProc(Irep irep, int programCounter, RClass procClass) : RObject(MR
     internal override RObject Clone()
     {
         var clone = Dup();
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 

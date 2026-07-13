@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
         <PackageReference Include="NUnit" Version="3.14.0"/>
         <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
@@ -23,6 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\ChibiRuby.Compiler\ChibiRuby.Compiler.csproj" />
+      <ProjectReference Include="..\..\src\ChibiRuby.JetPack\ChibiRuby.JetPack.csproj" />
       <ProjectReference Include="..\..\src\ChibiRuby\ChibiRuby.csproj" />
       <ProjectReference Include="..\..\src\ChibiRuby.SourceGenerator\ChibiRuby.SourceGenerator.csproj">
           <OutputItemType>Analyzer</OutputItemType>

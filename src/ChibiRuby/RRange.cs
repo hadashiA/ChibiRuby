@@ -35,7 +35,7 @@ public sealed class RRange : RObject
     internal override RObject Clone()
     {
         var clone = new RRange(default, default, false, Class);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 

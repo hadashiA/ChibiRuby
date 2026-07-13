@@ -179,7 +179,7 @@ static class IntegerMembers
         }
         if (other.IsFloat)
         {
-            return a - other.FloatValue;
+            return a * other.FloatValue;
         }
         state.Raise(Names.TypeError, Utf8String.Format($"can't convert {state.TypeNameOf(other)} into Integer"));
         return default;

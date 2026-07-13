@@ -578,6 +578,21 @@ static class ArrayMembers
 
         array.MakeModifiable(length);
         var span = array.AsSpan();
+        if (count == 1)
+        {
+            var first = span[0];
+            span[1..].CopyTo(span);
+            span[^1] = first;
+            return self;
+        }
+        if (count == length - 1)
+        {
+            var last = span[^1];
+            span[..^1].CopyTo(span[1..]);
+            span[0] = last;
+            return self;
+        }
+
         span[..(int)count].Reverse();
         span[(int)count..].Reverse();
         span.Reverse();

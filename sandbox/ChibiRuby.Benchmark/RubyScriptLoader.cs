@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using ChibiRuby.Compiler;
+using ChibiRuby.JetPack;
 
 namespace ChibiRuby.Benchmark;
 
@@ -50,27 +53,100 @@ unsafe class RubyScriptLoader : IDisposable
         mrbStateNative = NativeMethods.MrbOpen();
     }
 
+    public static void RunQuickScript(string scriptName, int iterations)
+    {
+        RunQuickScript(scriptName, iterations, aot: false);
+    }
+
+    public static void RunQuickScript(string scriptName, int iterations, bool aot)
+    {
+        if (iterations < 1)
+        {
+            iterations = 1;
+        }
+
+        using var loader = new RubyScriptLoader();
+        if (aot)
+        {
+            var compiled = loader.PreloadScriptFromFileAot(scriptName);
+            Console.Error.WriteLine($"AOT-compiled methods: {compiled}");
+        }
+        else
+        {
+            loader.PreloadScriptFromFile(scriptName);
+        }
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+        var gc0 = GC.CollectionCount(0);
+        var gc1 = GC.CollectionCount(1);
+        var gc2 = GC.CollectionCount(2);
+        var pauseBefore = GC.GetTotalPauseDuration();
+        var stopwatch = Stopwatch.StartNew();
+        var result = MRubyValue.Nil;
+        for (var i = 0; i < iterations; i++)
+        {
+            result = loader.RunChibiRuby();
+        }
+        stopwatch.Stop();
+        var allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        var pauseMs = (GC.GetTotalPauseDuration() - pauseBefore).TotalMilliseconds;
+        var wallMs = stopwatch.Elapsed.TotalMilliseconds;
+
+        Console.WriteLine(
+            $"ChibiRuby quick script={scriptName} aot={aot} iterations={iterations} elapsedMs={wallMs:F3} allocatedBytes={allocatedBytes} allocatedBytesPerIteration={(double)allocatedBytes / iterations:F0} result={result}");
+        Console.WriteLine(
+            $"[gc] server={System.Runtime.GCSettings.IsServerGC} gen0={GC.CollectionCount(0) - gc0} gen1={GC.CollectionCount(1) - gc1} gen2={GC.CollectionCount(2) - gc2} pauseMs={pauseMs:F1} pausePct={(wallMs > 0 ? pauseMs / wallMs * 100 : 0):F1}%");
+    }
+
+    // AOT variant of PreloadScriptFromFile: compile the script, execute it once so the
+    // class hierarchy exists (lets the codegen resolve self-sends for devirtualize+inline),
+    // then AOT-compile every statically-compilable method to C#, register the bodies by
+    // fingerprint and bind them to the irep tree. Subsequent RunChibiRuby() calls hit the
+    // compiled bodies. Returns the number of methods compiled.
+    public int PreloadScriptFromFileAot(string fileName)
+    {
+        var source = ReadBytes(fileName);
+        currentChibiRubyIrep = CompileChibiRubySource(Encoding.UTF8.GetString(source));
+        mrubyCSState.Execute(currentChibiRubyIrep);
+        var compiled = OptcarrotAotCompiler.CompileAndRegister(mrubyCSState, currentChibiRubyIrep);
+        mrubyCSState.BindCompiledMethods(currentChibiRubyIrep);
+        return compiled;
+    }
+
     static void RegisterMathModule(MRubyState state)
     {
         state.DefineModule(state.Intern("Math"u8), mod =>
         {
-            mod.DefineClassMethod(state.Intern("sqrt"u8), new MRubyMethod((s, self) =>
-            {
-                var value = s.GetArgumentAsFloatAt(0);
-                return System.Math.Sqrt(value);
-            }));
+            mod.DefineClassMethod(state.Intern("sqrt"u8), new MRubyMethod(
+                (s, self) =>
+                {
+                    var value = s.GetArgumentAsFloatAt(0);
+                    return System.Math.Sqrt(value);
+                },
+                (s, self, argument) => System.Math.Sqrt(s.AsFloat(argument)),
+                (_, _, argument) => System.Math.Sqrt(argument)));
 
-            mod.DefineClassMethod(state.Intern("cos"u8), new MRubyMethod((s, self) =>
-            {
-                var value = s.GetArgumentAsFloatAt(0);
-                return System.Math.Cos(value);
-            }));
+            mod.DefineClassMethod(state.Intern("cos"u8), new MRubyMethod(
+                (s, self) =>
+                {
+                    var value = s.GetArgumentAsFloatAt(0);
+                    return System.Math.Cos(value);
+                },
+                (s, self, argument) => System.Math.Cos(s.AsFloat(argument)),
+                (_, _, argument) => System.Math.Cos(argument)));
 
-            mod.DefineClassMethod(state.Intern("sin"u8), new MRubyMethod((s, self) =>
-            {
-                var value = s.GetArgumentAsFloatAt(0);
-                return System.Math.Sin(value);
-            }));
+            mod.DefineClassMethod(state.Intern("sin"u8), new MRubyMethod(
+                (s, self) =>
+                {
+                    var value = s.GetArgumentAsFloatAt(0);
+                    return System.Math.Sin(value);
+                },
+                (s, self, argument) => System.Math.Sin(s.AsFloat(argument)),
+                (_, _, argument) => System.Math.Sin(argument)));
         });
     }
 
@@ -122,6 +198,22 @@ unsafe class RubyScriptLoader : IDisposable
     public void PreloadOptcarrotRun(int frames = 180, bool printResult = true)
     {
         currentChibiRubyIrep = CompileChibiRubySource(BuildOptcarrotRunSource(frames, printResult));
+    }
+
+    // Like PreloadOptcarrotBenchmark but AOT-compiles every statically-compilable
+    // optcarrot method to C# first, registering bodies by fingerprint and binding them
+    // to the definitions tree before it executes. Returns the number of methods compiled.
+    public int PreloadOptcarrotBenchmarkAot(int frames = 180, bool printResult = true)
+    {
+        var definitions = CompileChibiRubySource(BuildOptcarrotDefinitionsSource());
+        // Define the classes first so the AOT compiler can resolve self-sends against
+        // the real class hierarchy (for devirtualize+inline), then compile + bind.
+        mrubyCSState.Execute(definitions);
+        var compiled = OptcarrotAotCompiler.CompileAndRegister(mrubyCSState, definitions);
+        mrubyCSState.BindCompiledMethods(definitions);
+
+        PreloadOptcarrotRun(frames, printResult);
+        return compiled;
     }
 
     public MRubyValue RunChibiRuby()

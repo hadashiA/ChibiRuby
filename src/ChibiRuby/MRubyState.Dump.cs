@@ -135,14 +135,13 @@ partial class MRubyState
             OpCode.EXT2 => "EXT2"u8,
             OpCode.EXT3 => "EXT3"u8,
             OpCode.Stop => "STOP"u8,
-
             OpCode.SendInternal => "SEND_INTERNAL"u8,
             _ => throw new ArgumentOutOfRangeException(nameof(code), code, null)
         };
 
     public void CodeDump(Irep irep, IBufferWriter<byte> writer, int tabWidth = 4)
     {
-        var longestOpCodeName = "RETURN_BLK"u8.Length;
+        var longestOpCodeName = "FIXNUM_GE_REG_JMPNOT"u8.Length;
         var maxTabCount = (longestOpCodeName) / tabWidth + 1;
 
         void WriteOpCodeWithTab(OpCode opcode)

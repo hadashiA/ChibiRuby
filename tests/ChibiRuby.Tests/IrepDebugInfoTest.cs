@@ -41,10 +41,7 @@ public class IrepDebugInfoTest
     [Test]
     public void CompileWithoutDebugInfo_DoesNotProduceIrepDebugInfo()
     {
-        using var c = compiler.Compile("x = 1\nx"u8, filename: "test.rb", new MRubyCompileOptions
-        {
-            EnableDebugInfo = false
-        });
+        using var c = compiler.Compile("x = 1\nx"u8, filename: "test.rb", options: new MRubyCompileOptions { EnableDebugInfo = false });
         var irep = c.ToIrep();
         Assert.That(irep.DebugInfo, Is.Null, "DebugInfo should be omitted when debugInfo=false");
     }

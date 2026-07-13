@@ -34,4 +34,7 @@ class MethodTable
             other.Add(key, value);
         }
     }
+
+    // Entry enumeration for the AOT-compiler driver (walks classes -> methods).
+    public Dictionary<Symbol, MRubyMethod>.Enumerator GetEnumerator() => methods.GetEnumerator();
 }

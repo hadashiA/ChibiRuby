@@ -95,12 +95,62 @@ if (args is ["--quick-optcarrot", ..])
     return;
 }
 
+if (args is ["--quick-optcarrot-aot", ..])
+{
+    var frames = args.Length >= 2 && int.TryParse(args[1], out var parsedAotFrames)
+        ? parsedAotFrames
+        : 180;
+    var warmupRuns = args.Length >= 3 && int.TryParse(args[2], out var parsedAotWarmup)
+        ? parsedAotWarmup
+        : 0;
+    using var loader = new RubyScriptLoader();
+    var compiled = loader.PreloadOptcarrotBenchmarkAot(frames, printResult: warmupRuns == 0);
+    Console.Error.WriteLine($"AOT-compiled methods: {compiled}");
+    for (var i = 0; i < warmupRuns; i++)
+    {
+        loader.RunChibiRuby();
+    }
+    if (warmupRuns > 0)
+    {
+        loader.PreloadOptcarrotRun(frames);
+    }
+    loader.RunChibiRuby();
+    return;
+}
+
 if (args is ["--quick-optcarrot-mruby", ..])
 {
     var frames = args.Length >= 2 && int.TryParse(args[1], out var parsedFrames)
         ? parsedFrames
         : 180;
     new OptcarrotMrubyOriginalRunner(frames, printResult: true).Run();
+    return;
+}
+
+if (args is [ "--quick-variable-table-allocation", .. ])
+{
+    var objectCount = args.Length >= 2 && int.TryParse(args[1], out var parsed)
+        ? parsed
+        : 100_000;
+    VariableTableAllocationCounter.Run(objectCount);
+    return;
+}
+
+if (args is [ "--quick-script", var scriptName, .. ])
+{
+    var iterations = args.Length >= 3 && int.TryParse(args[2], out var parsedIterations)
+        ? parsedIterations
+        : 1;
+    RubyScriptLoader.RunQuickScript(scriptName, iterations);
+    return;
+}
+
+if (args is [ "--quick-script-aot", var aotScriptName, .. ])
+{
+    var iterations = args.Length >= 3 && int.TryParse(args[2], out var parsedAotIterations)
+        ? parsedAotIterations
+        : 1;
+    RubyScriptLoader.RunQuickScript(aotScriptName, iterations, aot: true);
     return;
 }
 

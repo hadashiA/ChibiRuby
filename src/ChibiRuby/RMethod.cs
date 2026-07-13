@@ -18,7 +18,7 @@ public sealed class RMethod(
     internal override RObject Clone()
     {
         var clone = new RMethod(Receiver, MethodId, Owner, Method, Class);
-        InstanceVariables.CopyTo(clone.InstanceVariables);
+        InstanceVariables.CopyTo(ref clone.InstanceVariables);
         return clone;
     }
 

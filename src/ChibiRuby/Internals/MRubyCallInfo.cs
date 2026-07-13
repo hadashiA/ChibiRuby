@@ -73,6 +73,10 @@ struct MRubyCallInfo
     // for stacktrace..
     public CallerType CallerType;
     public ICallScope Scope;
+    internal ChibiRuby.REnv? OptimizedBlockEnvironment;
+    internal ChibiRuby.RProc? OptimizedBlockUpperProc;
+    internal int OptimizedBlockRegisterCount;
+    internal int OptimizerRegisterVariableCount;
     public Symbol MethodId;
     public MRubyMethodVisibility Visibility;
     public bool VisibilityBreak;
@@ -97,7 +101,11 @@ struct MRubyCallInfo
             var numberOfRegisters = BlockArgumentOffset + 1; // self + args + kargs + blk
             if (Proc is { } p && p.Irep.RegisterVariableCount > numberOfRegisters)
             {
-                return p.Irep.RegisterVariableCount;
+                numberOfRegisters = p.Irep.RegisterVariableCount;
+            }
+            if (OptimizerRegisterVariableCount > numberOfRegisters)
+            {
+                numberOfRegisters = OptimizerRegisterVariableCount;
             }
             return numberOfRegisters;
         }
@@ -110,6 +118,10 @@ struct MRubyCallInfo
         // Proc?.SetFlag(MRubyObjectFlags.ProcOrphan);
         Proc = null;
         Scope = null!;
+        OptimizedBlockEnvironment = null;
+        OptimizedBlockUpperProc = null;
+        OptimizedBlockRegisterCount = 0;
+        OptimizerRegisterVariableCount = 0;
         MethodId = default;
         ArgumentCount = 0;
         KeywordArgumentCount = 0;
