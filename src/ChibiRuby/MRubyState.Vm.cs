@@ -1736,24 +1736,31 @@ partial class MRubyState
                         // if (!block.IsNil) EnsureValueIsBlock(block);
 
                         // Validate method visibility
-                        if (opcode is OpCode.Send or OpCode.SendB)
+                        if (opcode is OpCode.Send or OpCode.SendB &&
+                            method.Visibility != MRubyMethodVisibility.Public)
                         {
-                            if (method.Visibility == MRubyMethodVisibility.Private)
-                            {
-                                var args = callInfo.ArgumentPacked
-                                    ? Context.Stack[callInfo.StackPointer + 1]
-                                    : NewArray(Context.Stack.AsSpan(callInfo.StackPointer + 1, callInfo.ArgumentCount));
+                            ValidateMethodVisibility(this, ref callInfo, method, methodId, self);
 
-                                RaiseMethodVisibilityVioration(methodId, self, args, MRubyMethodVisibility.Private);
-                            }
-                            else if (method.Visibility == MRubyMethodVisibility.Protected &&
-                                     KindOf(self, callInfo.Scope.TargetClass))
+                            [MethodImpl(MethodImplOptions.NoInlining)]
+                            static void ValidateMethodVisibility(MRubyState state, ref MRubyCallInfo callInfo, MRubyMethod method, Symbol methodId, MRubyValue self)
                             {
-                                var args = callInfo.ArgumentPacked
-                                    ? Context.Stack[callInfo.StackPointer + 1]
-                                    : NewArray(Context.Stack.AsSpan(callInfo.StackPointer + 1, callInfo.ArgumentCount));
+                                if (method.Visibility == MRubyMethodVisibility.Private)
+                                {
+                                    var args = callInfo.ArgumentPacked
+                                        ? state.Context.Stack[callInfo.StackPointer + 1]
+                                        : new MRubyValue(state.NewArray(state.Context.Stack.AsSpan(callInfo.StackPointer + 1, callInfo.ArgumentCount)));
 
-                                RaiseMethodVisibilityVioration(methodId, self, args, MRubyMethodVisibility.Protected);
+                                    state.RaiseMethodVisibilityVioration(methodId, self, args, MRubyMethodVisibility.Private);
+                                }
+                                else if (method.Visibility == MRubyMethodVisibility.Protected &&
+                                         state.KindOf(self, callInfo.Scope.TargetClass))
+                                {
+                                    var args = callInfo.ArgumentPacked
+                                        ? state.Context.Stack[callInfo.StackPointer + 1]
+                                        : new MRubyValue(state.NewArray(state.Context.Stack.AsSpan(callInfo.StackPointer + 1, callInfo.ArgumentCount)));
+
+                                    state.RaiseMethodVisibilityVioration(methodId, self, args, MRubyMethodVisibility.Protected);
+                                }
                             }
                         }
 
@@ -1889,65 +1896,69 @@ partial class MRubyState
                     case OpCode.ArgAry:
                     {
                         Markers.ArgAry();
-
-                        bs = OperandBS.Read(ref sequence, ref callInfo.ProgramCounter);
-                        var bits = (ushort)bs.B;
-                        var m1 = (bits >> 11) & 0x3f;
-                        var r = (bits >> 10) & 0x1;
-                        var m2 = (bits >> 5) & 0x1f;
-                        var kd = (bits >> 4) & 0x1;
-                        var lv = bits & 0xf;
-
-                        Span<MRubyValue> sourceStack;
-                        if (lv == 0)
-                        {
-                            sourceStack = Context.Stack.AsSpan(callInfo.StackPointer + 1);
-                        }
-                        else
-                        {
-                            var env = callInfo.Proc?.FindUpperEnvTo(lv - 1);
-                            if (env is null || env.Stack.Length <= m1 + r + m2 + 1)
-                            {
-                                Raise(Names.NoMethodError, "super called outside of method"u8);
-                            }
-                            sourceStack = env!.Stack[1..];
-                        }
-
-                        var result = r == 0
-                            ? NewArray(sourceStack.Slice(0, m1 + m2))
-                            : NewArrayFromArgumentArray(sourceStack, m1, m2);
-
-                        Unsafe.Add(ref registers, bs.A) = result;
-                        if (kd != 0)
-                        {
-                            Unsafe.Add(ref registers, bs.A + 1) = sourceStack[m1 + r + m2];
-                            Unsafe.Add(ref registers, bs.A + 2) = sourceStack[m1 + r + m2 + 1];
-                        }
-
+                        ArgAry(this, ref callInfo, ref registers, ref sequence);
                         goto Next;
 
-                        RArray NewArrayFromArgumentArray(Span<MRubyValue> sourceStack, int m1, int m2)
+                        [MethodImpl(MethodImplOptions.NoInlining)]
+                        static void ArgAry(MRubyState state, ref MRubyCallInfo callInfo, ref MRubyValue registers, ref byte sequence)
                         {
-                            var rest = sourceStack[m1].Object as RArray;
-                            var resultLength = m1 + (rest?.Length ?? 0) + m2;
-                            var array = NewArray(resultLength);
+                            var bs = OperandBS.Read(ref sequence, ref callInfo.ProgramCounter);
+                            var bits = (ushort)bs.B;
+                            var m1 = (bits >> 11) & 0x3f;
+                            var r = (bits >> 10) & 0x1;
+                            var m2 = (bits >> 5) & 0x1f;
+                            var kd = (bits >> 4) & 0x1;
+                            var lv = bits & 0xf;
 
-                            if (m1 > 0)
+                            Span<MRubyValue> sourceStack;
+                            if (lv == 0)
                             {
-                                array.PushRange(sourceStack[..m1]);
+                                sourceStack = state.Context.Stack.AsSpan(callInfo.StackPointer + 1);
+                            }
+                            else
+                            {
+                                var env = callInfo.Proc?.FindUpperEnvTo(lv - 1);
+                                if (env is null || env.Stack.Length <= m1 + r + m2 + 1)
+                                {
+                                    state.Raise(Names.NoMethodError, "super called outside of method"u8);
+                                }
+                                sourceStack = env!.Stack[1..];
                             }
 
-                            if (rest is not null)
+                            var result = r == 0
+                                ? state.NewArray(sourceStack.Slice(0, m1 + m2))
+                                : NewArrayFromArgumentArray(state, sourceStack, m1, m2);
+
+                            Unsafe.Add(ref registers, bs.A) = result;
+                            if (kd != 0)
                             {
-                                array.PushRange(rest.AsSpan());
+                                Unsafe.Add(ref registers, bs.A + 1) = sourceStack[m1 + r + m2];
+                                Unsafe.Add(ref registers, bs.A + 2) = sourceStack[m1 + r + m2 + 1];
                             }
 
-                            if (m2 > 0)
+                            static RArray NewArrayFromArgumentArray(MRubyState state, Span<MRubyValue> sourceStack, int m1, int m2)
                             {
-                                array.PushRange(sourceStack.Slice(m1 + 1, m2));
-                            }
+                                var rest = sourceStack[m1].Object as RArray;
+                                var resultLength = m1 + (rest?.Length ?? 0) + m2;
+                                var array = state.NewArray(resultLength);
 
-                            return array;
+                                if (m1 > 0)
+                                {
+                                    array.PushRange(sourceStack[..m1]);
+                                }
+
+                                if (rest is not null)
+                                {
+                                    array.PushRange(rest.AsSpan());
+                                }
+
+                                if (m2 > 0)
+                                {
+                                    array.PushRange(sourceStack.Slice(m1 + 1, m2));
+                                }
+
+                                return array;
+                            }
                         }
                     }
                     case OpCode.Enter:
@@ -1993,6 +2004,7 @@ partial class MRubyState
 
                         goto Next;
 
+                        [MethodImpl(MethodImplOptions.NoInlining)]
                         void EnterSlowPath(ref MRubyCallInfo callInfo, Span<MRubyValue> argv, Span<MRubyValue> registers)
                         {
                             var o = aspec.OptionalArgumentsCount;
@@ -2155,30 +2167,36 @@ partial class MRubyState
                     case OpCode.KArg:
                     {
                         Markers.KArg();
-                        bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        // mrb_value k = mrb_symbol_value(irep->syms[b]);
-                        var key = Unsafe.Add(ref symbols, bb.B);
-                        var kargOffset = callInfo.KeywordArgumentOffset;
-                        if (kargOffset < 0)
-                        {
-                            RaiseMissingKeywordError(key);
-                        }
-                        var kdict = Unsafe.Add(ref registers, kargOffset);
-                        var value = default(MRubyValue);
-                        if (kdict.VType != MRubyVType.Hash ||
-                            !Unsafe.Add(ref registers, kargOffset).As<RHash>().TryGetValue(key, out value))
-                        {
-                            RaiseMissingKeywordError(key);
-                        }
-
-                        Unsafe.Add(ref registers, bb.A) = value;
-                        kdict.As<RHash>().TryDelete(key, out _);
+                        KArg(this, ref callInfo, ref registers, ref symbols, ref sequence);
                         goto Next;
 
                         [MethodImpl(MethodImplOptions.NoInlining)]
-                        void RaiseMissingKeywordError(MRubyValue keyValue)
+                        static void KArg(MRubyState state, ref MRubyCallInfo callInfo, ref MRubyValue registers, ref Symbol symbols, ref byte sequence)
                         {
-                            Raise(Names.ArgumentError, $"missing keyword: {Stringify(keyValue)}");
+                            var bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
+                            // mrb_value k = mrb_symbol_value(irep->syms[b]);
+                            var key = Unsafe.Add(ref symbols, bb.B);
+                            var kargOffset = callInfo.KeywordArgumentOffset;
+                            if (kargOffset < 0)
+                            {
+                                RaiseMissingKeywordError(state, key);
+                            }
+                            var kdict = Unsafe.Add(ref registers, kargOffset);
+                            var value = default(MRubyValue);
+                            if (kdict.VType != MRubyVType.Hash ||
+                                !Unsafe.Add(ref registers, kargOffset).As<RHash>().TryGetValue(key, out value))
+                            {
+                                RaiseMissingKeywordError(state, key);
+                            }
+
+                            Unsafe.Add(ref registers, bb.A) = value;
+                            kdict.As<RHash>().TryDelete(key, out _);
+
+                            [MethodImpl(MethodImplOptions.NoInlining)]
+                            static void RaiseMissingKeywordError(MRubyState state, MRubyValue keyValue)
+                            {
+                                state.Raise(Names.ArgumentError, $"missing keyword: {state.Stringify(keyValue)}");
+                            }
                         }
                     }
                     case OpCode.KeyP:
@@ -2558,33 +2576,45 @@ partial class MRubyState
                     case OpCode.Hash:
                     {
                         Markers.Hash();
-                        bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        registerA = ref Unsafe.Add(ref registers, bb.A);
-                        var hash = NewHash(bb.B);
-                        var lastIndex = bb.B * 2;
-                        for (var i = 0; i < lastIndex; i += 2)
-                        {
-                            hash.Add(Unsafe.Add(ref registerA, i), Unsafe.Add(ref registerA, i + 1));
-                        }
-
-                        registerA = hash;
+                        BuildHash(this, ref callInfo, ref registers, ref sequence);
                         goto Next;
+
+                        [MethodImpl(MethodImplOptions.NoInlining)]
+                        static void BuildHash(MRubyState state, ref MRubyCallInfo callInfo, ref MRubyValue registers, ref byte sequence)
+                        {
+                            var bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
+                            ref var registerA = ref Unsafe.Add(ref registers, bb.A);
+                            var hash = state.NewHash(bb.B);
+                            var lastIndex = bb.B * 2;
+                            for (var i = 0; i < lastIndex; i += 2)
+                            {
+                                hash.Add(Unsafe.Add(ref registerA, i), Unsafe.Add(ref registerA, i + 1));
+                            }
+
+                            registerA = hash;
+                        }
                     }
                     case OpCode.HashAdd:
                     {
                         Markers.HashAdd();
-                        bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        registerA = ref Unsafe.Add(ref registers, bb.A);
-                        var hashValue = registerA;
-                        var lastIndex = bb.B * 2 + 1;
-
-                        EnsureValueType(hashValue, MRubyVType.Hash);
-                        var hash = hashValue.As<RHash>();
-                        for (var i = 1; i < lastIndex; i += 2)
-                        {
-                            hash.Add(Unsafe.Add(ref registerA, i), Unsafe.Add(ref registerA, i + 1));
-                        }
+                        HashAdd(this, ref callInfo, ref registers, ref sequence);
                         goto Next;
+
+                        [MethodImpl(MethodImplOptions.NoInlining)]
+                        static void HashAdd(MRubyState state, ref MRubyCallInfo callInfo, ref MRubyValue registers, ref byte sequence)
+                        {
+                            var bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
+                            ref var registerA = ref Unsafe.Add(ref registers, bb.A);
+                            var hashValue = registerA;
+                            var lastIndex = bb.B * 2 + 1;
+
+                            state.EnsureValueType(hashValue, MRubyVType.Hash);
+                            var hash = hashValue.As<RHash>();
+                            for (var i = 1; i < lastIndex; i += 2)
+                            {
+                                hash.Add(Unsafe.Add(ref registerA, i), Unsafe.Add(ref registerA, i + 1));
+                            }
+                        }
                     }
                     case OpCode.HashCat:
                         Markers.HashCat();
