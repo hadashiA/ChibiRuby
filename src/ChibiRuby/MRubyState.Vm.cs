@@ -489,9 +489,30 @@ partial class MRubyState
         return self;
     }
 
-    /// <summary>
-    /// Execute irep assuming the Stack values are placed
-    /// </summary>
+    // Inline-cache miss paths for variable-access opcodes. Kept out of line so the
+    // dispatch switch's hot case bodies stay small; the caches store the found slot,
+    // and every cached slot is re-verified by VariableTable.TryGetAt/TrySetAt.
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static MRubyValue GetVariableMiss(VariableTable table, Symbol id, ushort[] slotCache, int cacheIndex)
+    {
+        slotCache[cacheIndex] = unchecked((ushort)table.GetWithSlot(id, out var value));
+        return value;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static void SetVariableMiss(VariableTable table, Symbol id, MRubyValue value, ushort[] slotCache, int cacheIndex)
+    {
+        slotCache[cacheIndex] = unchecked((ushort)table.SetWithSlot(id, value));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static MRubyValue TrivialGetterMiss(ref MethodCacheEntry entry, VariableTable table)
+    {
+        entry.TrivialGetterSlot = unchecked((ushort)table.GetWithSlot(entry.Method.TrivialGetterIVarSymbol, out var value));
+        return value;
+    }
+
     /// <summary>
     /// OP_SYMBOL slow path: intern the pool string and memoize it on the irep.
     /// A cache owned by another state is replaced wholesale (owner id and symbol
@@ -511,6 +532,9 @@ partial class MRubyState
         return symbol;
     }
 
+    /// <summary>
+    /// Execute irep assuming the Stack values are placed
+    /// </summary>
     internal MRubyValue Execute(Irep irep, int pc, int stackKeep, RException? injectedRaise = null)
     {
         Exception = null;
@@ -648,15 +672,28 @@ partial class MRubyState
                         Unsafe.Add(ref registers, a) = MRubyValue.False;
                         goto Next;
                     case OpCode.GetGV:
+                    {
                         Markers.GetGV();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        Unsafe.Add(ref registers, bb.A) = globalVariables.Get(Unsafe.Add(ref symbols, bb.B));
+                        var slotCache = irep.VariableSlotCache;
+                        if (!globalVariables.TryGetAt(slotCache[bb.B], Unsafe.Add(ref symbols, bb.B), out var value))
+                        {
+                            value = GetVariableMiss(globalVariables, Unsafe.Add(ref symbols, bb.B), slotCache, bb.B);
+                        }
+                        Unsafe.Add(ref registers, bb.A) = value;
                         goto Next;
+                    }
                     case OpCode.SetGV:
+                    {
                         Markers.SetGV();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        globalVariables.Set(Unsafe.Add(ref symbols, bb.B), Unsafe.Add(ref registers, bb.A));
+                        var slotCache = irep.VariableSlotCache;
+                        if (!globalVariables.TrySetAt(slotCache[bb.B], Unsafe.Add(ref symbols, bb.B), Unsafe.Add(ref registers, bb.A)))
+                        {
+                            SetVariableMiss(globalVariables, Unsafe.Add(ref symbols, bb.B), Unsafe.Add(ref registers, bb.A), slotCache, bb.B);
+                        }
                         goto Next;
+                    }
                     case OpCode.GetSV:
                         Markers.GetSV();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
@@ -668,18 +705,30 @@ partial class MRubyState
                         globalVariables.Set(Unsafe.Add(ref symbols, bb.B), Unsafe.Add(ref registers, bb.A));
                         goto Next;
                     case OpCode.GetIV:
+                    {
                         Markers.GetIV();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        Unsafe.Add(ref registers, bb.A) = Unsafe.Add(ref registers, 0).As<RObject>().InstanceVariables.Get(Unsafe.Add(ref symbols, bb.B));
+                        var table = Unsafe.Add(ref registers, 0).As<RObject>().InstanceVariables;
+                        var slotCache = irep.VariableSlotCache;
+                        if (!table.TryGetAt(slotCache[bb.B], Unsafe.Add(ref symbols, bb.B), out var value))
+                        {
+                            value = GetVariableMiss(table, Unsafe.Add(ref symbols, bb.B), slotCache, bb.B);
+                        }
+                        Unsafe.Add(ref registers, bb.A) = value;
                         goto Next;
+                    }
                     case OpCode.SetIV:
+                    {
                         Markers.SetIV();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
-                        Unsafe.Add(ref registers, 0)
-                            .As<RObject>()
-                            .InstanceVariables.Set(Unsafe.Add(ref symbols, bb.B),
-                                Unsafe.Add(ref registers, bb.A));
+                        var table = Unsafe.Add(ref registers, 0).As<RObject>().InstanceVariables;
+                        var slotCache = irep.VariableSlotCache;
+                        if (!table.TrySetAt(slotCache[bb.B], Unsafe.Add(ref symbols, bb.B), Unsafe.Add(ref registers, bb.A)))
+                        {
+                            SetVariableMiss(table, Unsafe.Add(ref symbols, bb.B), Unsafe.Add(ref registers, bb.A), slotCache, bb.B);
+                        }
                         goto Next;
+                    }
                     case OpCode.GetCV:
                         Markers.GetCV();
                         bb = OperandBB.Read(ref sequence, ref callInfo.ProgramCounter);
@@ -698,16 +747,30 @@ partial class MRubyState
                     {
                         var id = Unsafe.Add(ref symbols, bb.B);
                         var c = callInfo.Proc?.Scope?.TargetClass ?? ObjectClass;
-                        if (c.ClassInstanceVariables.TryGet(id, out var value))
+                        var slotCache = irep.VariableSlotCache;
+                        if (c.ClassInstanceVariables.TryGetAt(slotCache[bb.B], id, out var value))
                         {
                             registerA = value;
                             goto Next;
                         }
 
-                        GetConstSlowPath(
-                            this, ref registerA, ref callInfo, id, c);
+                        GetConstMiss(
+                            this, ref registerA, ref callInfo, id, c, slotCache, bb.B);
 
                         goto Next;
+
+                        [MethodImpl(MethodImplOptions.NoInlining)]
+                        static void GetConstMiss(MRubyState state, ref MRubyValue registerA, ref MRubyCallInfo callInfo, Symbol id, RClass c, ushort[] slotCache, int cacheIndex)
+                        {
+                            var slot = c.ClassInstanceVariables.GetWithSlot(id, out var found);
+                            if (slot >= 0)
+                            {
+                                slotCache[cacheIndex] = unchecked((ushort)slot);
+                                registerA = found;
+                                return;
+                            }
+                            GetConstSlowPath(state, ref registerA, ref callInfo, id, c);
+                        }
 
                         [MethodImpl(MethodImplOptions.NoInlining)]
                         static void GetConstSlowPath(MRubyState state, ref MRubyValue registerA, ref MRubyCallInfo callInfo, Symbol id, RClass c)
@@ -1571,8 +1634,12 @@ partial class MRubyState
                                 if (ce.Class == selfObj.Class && ce.MethodId == mid &&
                                     ce.Method.TrivialGetterIVarSymbol.Value != 0)
                                 {
-                                    Unsafe.Add(ref registers, bbb.A) = selfObj.InstanceVariables.Get(
-                                        ce.Method.TrivialGetterIVarSymbol);
+                                    var getterTable = selfObj.InstanceVariables;
+                                    if (!getterTable.TryGetAt(ce.TrivialGetterSlot, ce.Method.TrivialGetterIVarSymbol, out var getterValue))
+                                    {
+                                        getterValue = TrivialGetterMiss(ref ce, getterTable);
+                                    }
+                                    Unsafe.Add(ref registers, bbb.A) = getterValue;
                                     goto Next;
                                 }
                             }

@@ -101,6 +101,7 @@ public class SpecTest
     [TestCase("class.rb")]
     [TestCase("module.rb")]
     [TestCase("methods.rb")]
+    [TestCase("variables.rb")]
     // lib
     [TestCase("integer.rb")]
     [TestCase("float.rb")]

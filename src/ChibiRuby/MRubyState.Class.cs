@@ -40,6 +40,12 @@ partial class MRubyState
         public Symbol MethodId;
         public MRubyMethod Method;
         public RClass? DefiningClass;
+
+        /// <summary>
+        /// Slot guess for <see cref="MRubyMethod.TrivialGetterIVarSymbol"/> lookups.
+        /// Verified against the receiver's table on every use, so staleness is harmless.
+        /// </summary>
+        public ushort TrivialGetterSlot;
     }
 
     public RClass SingletonClassOf(MRubyValue value)

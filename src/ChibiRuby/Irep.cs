@@ -56,6 +56,23 @@ public class Irep
     public Irep[] Children { get; init; } = [];
     public CatchHandler[] CatchHandlers { get; init; } = [];
 
+    ushort[]? variableSlotCache;
+
+    /// <summary>
+    /// Per-symbol-index inline cache used by variable-access opcodes (GetIV/SetIV,
+    /// GetGV/SetGV, GetConst). Holds the last slot where the symbol was found in the
+    /// target <see cref="VariableTable"/>. Entries are guesses: every use is verified
+    /// against the table, so a stale value only costs the fallback lookup.
+    /// </summary>
+    internal ushort[] VariableSlotCache
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => variableSlotCache ?? CreateVariableSlotCache();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    ushort[] CreateVariableSlotCache() => variableSlotCache = new ushort[Symbols.Length];
+
     /// <summary>
     /// Source-position information recovered from the .mrb file's DBG section, if it was
     /// emitted (controlled by <c>MRubyCompiler.Compile(..., debugInfo: true)</c>). Null
