@@ -234,6 +234,58 @@ assert('Hash#[]', '15.2.13.4.2') do
   assert_equal(2, h[:foo])
 end
 
+assert('Hash#[] with user-defined hash/eql? key') do
+  # A key that is eql? to the stored key (different instance) must be found:
+  # the table must consult the Ruby-visible #hash for bucketing.
+  k1 = HashKey[10]
+  k2 = HashKey[10]
+  h = { k1 => :found }
+  assert_equal(:found, h[k2])
+  assert_true(h.key?(k2))
+  assert_equal(:found, h.delete(k2))
+  assert_equal(0, h.size)
+
+  # Distinct values with colliding #hash stay distinct entries
+  a = HashKey[2]
+  b = HashKey[5] # 5 % 3 == 2 % 3
+  h = { a => :a, b => :b }
+  assert_equal(2, h.size)
+  assert_equal(:a, h[HashKey[2]])
+  assert_equal(:b, h[HashKey[5]])
+
+  # String keys keep content semantics
+  h = { "foo" => 1 }
+  assert_equal(1, h["fo" + "o"])
+end
+
+assert('Hash#compare_by_identity') do
+  h = {}.compare_by_identity
+  assert_true(h.compare_by_identity?)
+  assert_false({}.compare_by_identity?)
+
+  # Mutating a key object must not invalidate it (identity, not content)
+  a = [0]
+  h[a] = 42
+  a[0] = 1
+  assert_equal(42, h[a])
+
+  # Content-equal but distinct instances are distinct keys
+  s1 = "key"
+  s2 = "key"
+  h = { s1 => 1 }.compare_by_identity
+  h[s2] = 2
+  assert_equal(2, h.size)
+  assert_equal(1, h[s1])
+  assert_equal(2, h[s2])
+
+  # Immediates still compare by value
+  h = {}.compare_by_identity
+  h[100] = :int
+  h[:sym] = :sym
+  assert_equal(:int, h[100])
+  assert_equal(:sym, h[:sym])
+end
+
 [%w[[]= 3], %w[store 26]].each do |meth, no|
   assert("Hash##{meth}", "15.2.13.4.#{no}") do
     [{}, ht_entries.hash_for].each do |h|

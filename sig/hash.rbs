@@ -133,6 +133,18 @@ class Hash[K, V] < Object
   #   h.rehash      # => h
   def rehash: () -> self
 
+  # Switches the hash to identity key semantics: keys are compared by object identity instead of hash/eql?, so mutating a key object does not invalidate it.
+  #
+  #   h = {}.compare_by_identity
+  #   a = [0]
+  #   h[a] = 42
+  #   a[0] = 1
+  #   h[a]    # => 42
+  def compare_by_identity: () -> self
+
+  # Returns whether the hash compares keys by identity.
+  def compare_by_identity?: () -> bool
+
   # Internal helper used by Hash#delete to remove and return the value for a key.
   def __delete: (K) -> V?
 

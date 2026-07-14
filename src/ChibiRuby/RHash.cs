@@ -17,10 +17,28 @@ public sealed class RHash : RObject, IEnumerable<KeyValuePair<MRubyValue, MRubyV
 
     readonly List<MRubyValue> keys;
     readonly List<MRubyValue> values;
-    readonly Dictionary<MRubyValue, int> indexTable;
+    Dictionary<MRubyValue, int> indexTable;
 
-    readonly IEqualityComparer<MRubyValue> keyComparer;
+    IEqualityComparer<MRubyValue> keyComparer;
     readonly IEqualityComparer<MRubyValue> valueComparer;
+
+    public bool ComparedByIdentity => keyComparer is MRubyValueHashKeyEqualityComparer { ByIdentity: true };
+
+    /// <summary>
+    /// Switch key semantics to identity (Hash#compare_by_identity): objects compare by
+    /// reference, immediates by value, ignoring user-defined hash/eql?. Existing entries
+    /// are re-bucketed; identity is strictly finer than eql?-equality so no entries merge.
+    /// </summary>
+    internal void CompareByIdentity(MRubyValueHashKeyEqualityComparer identityComparer)
+    {
+        if (ComparedByIdentity) return;
+        keyComparer = identityComparer;
+        indexTable = new Dictionary<MRubyValue, int>(keys.Count, keyComparer);
+        for (var i = 0; i < keys.Count; i++)
+        {
+            indexTable[keys[i]] = i;
+        }
+    }
 
     internal RHash(
         int capacity,
@@ -65,7 +83,7 @@ public sealed class RHash : RObject, IEnumerable<KeyValuePair<MRubyValue, MRubyV
         }
         set
         {
-            if (indexTable.TryGetValue(key, out var index))
+            if (TryGetIndexGuarded(key, out var index))
             {
                 keys[index] = key;
                 values[index] = value;
@@ -105,7 +123,7 @@ public sealed class RHash : RObject, IEnumerable<KeyValuePair<MRubyValue, MRubyV
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool ContainsKey(MRubyValue key) => indexTable.TryGetValue(key, out var i);
+    public bool ContainsKey(MRubyValue key) => TryGetIndexGuarded(key, out _);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool ContainsValue(MRubyValue value)
@@ -215,7 +233,7 @@ public sealed class RHash : RObject, IEnumerable<KeyValuePair<MRubyValue, MRubyV
         for (var readPos = 0; readPos < keys.Count; readPos++)
         {
             var key = keys[readPos];
-            if (indexTable.TryGetValue(key, out var existingIndex))
+            if (TryGetIndexGuarded(key, out var existingIndex))
             {
                 values[existingIndex] = values[readPos];
             }
@@ -231,8 +249,12 @@ public sealed class RHash : RObject, IEnumerable<KeyValuePair<MRubyValue, MRubyV
             }
         }
 
-        keys.RemoveRange(writePos, keys.Count - writePos);
-        values.RemoveRange(writePos, values.Count - writePos);
+        // A user-defined #hash may have mutated this hash (e.g. cleared it) during the
+        // probes above; clamp so the trim never underflows.
+        var keyTrimStart = Math.Min(writePos, keys.Count);
+        var valueTrimStart = Math.Min(writePos, values.Count);
+        keys.RemoveRange(keyTrimStart, keys.Count - keyTrimStart);
+        values.RemoveRange(valueTrimStart, values.Count - valueTrimStart);
     }
 
     public struct Enumerator(RHash source) : IEnumerator<KeyValuePair<MRubyValue, MRubyValue>>
@@ -268,12 +290,37 @@ public sealed class RHash : RObject, IEnumerable<KeyValuePair<MRubyValue, MRubyV
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool TryGetIndexOfKey(MRubyValue key, out int index)
     {
-        if (indexTable.TryGetValue(key, out index))
+        if (TryGetIndexGuarded(key, out index))
         {
             return true;
         }
         index = -1;
         return false;
+    }
+
+    /// <summary>
+    /// indexTable probe that survives a user-defined <c>#hash</c>/<c>#eql?</c> mutating
+    /// this hash mid-probe (mruby leaves the result unspecified but must not crash).
+    /// The Dictionary itself stays consistent after such a mutation — only the in-flight
+    /// probe's guard throws — so a single retry against the new state is sound.
+    /// </summary>
+    /// <summary>
+    /// indexTable probe that survives a user-defined <c>#hash</c>/<c>#eql?</c> mutating
+    /// this hash mid-probe (mruby raises "hash modified" there; the result is unspecified
+    /// but must not crash). The Dictionary itself stays consistent after such a mutation —
+    /// only the in-flight probe's guard throws — so a single retry against the new state
+    /// is sound.
+    /// </summary>
+    bool TryGetIndexGuarded(MRubyValue key, out int index)
+    {
+        try
+        {
+            return indexTable.TryGetValue(key, out index);
+        }
+        catch (InvalidOperationException)
+        {
+            return indexTable.TryGetValue(key, out index);
+        }
     }
 
     public Enumerator GetEnumerator() => new(this);

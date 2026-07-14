@@ -312,6 +312,10 @@ static class KernelMembers
         return self.ObjectId;
     }
 
+    // Shared delegate instance for the default `hash`. Registered in Init and compared
+    // by reference in MRubyValueHashKeyEqualityComparer to detect "hash not overridden".
+    internal static readonly MRubyFunc HashFunc = Hash;
+
     /// <summary>
     /// Returns a bound <c>Method</c> object for the named method on <c>self</c>.
     /// </summary>

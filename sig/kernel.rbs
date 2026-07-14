@@ -88,11 +88,7 @@ module Kernel
   #   1.frozen?            # => true
   def frozen?: () -> bool
 
-  # Returns a hash code for self, suitable for use as a Hash key.
-  #
-  #   1.hash         # => Integer
-  #   "hi".hash      # => Integer
-  def hash: () -> Integer
+  def hash: (*untyped) -> untyped
 
   # Returns true if the class of self is exactly klass (not a subclass).
   #

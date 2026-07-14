@@ -394,6 +394,45 @@ static class ArrayMembers
     /// [1, 2].eql?([1.0, 2.0]) # => false
     /// </code>
     /// </example>
+    /// <summary>
+    /// Returns a content-based hash code; equal (<c>eql?</c>) arrays have equal hashes.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [1, 2].hash == [1, 2].hash    # => true
+    /// </code>
+    /// </example>
+    [RubyDef("() -> Integer")]
+    public static MRubyValue Hash(MRubyState state, MRubyValue self)
+    {
+        // Same algorithm as Enumerable#hash in lib.rb (12347 seed + __update_hash),
+        // implemented natively because array keys make Hash probe this per operation.
+        var span = self.As<RArray>().AsSpan();
+        var h = 12347;
+        for (var i = 0; i < span.Length; i++)
+        {
+            var e = span[i];
+            int hv;
+            if (e.IsInteger)
+            {
+                // Matches IntegerMembers.Hash
+                var n = e.IntegerValue;
+                hv = unchecked((int)RString.GetHashCode(
+                    System.Runtime.InteropServices.MemoryMarshal.CreateSpan(
+                        ref System.Runtime.CompilerServices.Unsafe.As<long, byte>(ref n), sizeof(long))));
+            }
+            else
+            {
+                var hashValue = state.Send(e, Names.Hash);
+                hv = hashValue.IsInteger
+                    ? unchecked((int)hashValue.IntegerValue)
+                    : hashValue.GetHashCode();
+            }
+            h ^= hv << (i % 16);
+        }
+        return new MRubyValue(h);
+    }
+
     [RubyDef("(untyped) -> bool")]
     public static MRubyValue Eql(MRubyState state, MRubyValue self)
     {
