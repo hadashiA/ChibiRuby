@@ -312,7 +312,7 @@ public partial class MRubyState : IDisposable
         DefineMethod(KernelModule, Names.QNil, MRubyMethod.False);
         DefineMethod(KernelModule, Intern("freeze"u8), KernelMembers.Freeze);
         DefineMethod(KernelModule, Intern("frozen?"u8), KernelMembers.Frozen);
-        DefineMethod(KernelModule, Names.Hash, KernelMembers.Hash);
+        DefineMethod(KernelModule, Names.Hash, KernelMembers.HashFunc);
         DefineMethod(KernelModule, Intern("instance_of?"u8), KernelMembers.InstanceOf);
         DefineMethod(KernelModule, Names.QIsA, KernelMembers.KindOf);
         DefineMethod(KernelModule, Names.QKindOf, KernelMembers.KindOf);
@@ -615,6 +615,7 @@ public partial class MRubyState : IDisposable
 
         DefineMethod(ArrayClass, Names.OpEq, ArrayMembers.OpEq);
         DefineMethod(ArrayClass, Names.QEql, ArrayMembers.Eql);
+        DefineMethod(ArrayClass, Names.Hash, ArrayMembers.Hash);
         DefineMethod(ArrayClass, Names.OpLShift, ArrayMembers.Push);
         DefineMethod(ArrayClass, Names.OpAdd, ArrayMembers.OpAdd);
         DefineMethod(ArrayClass, Names.OpAref, ArrayMembers.OpAref);
@@ -685,6 +686,8 @@ public partial class MRubyState : IDisposable
         DefineMethod(HashClass, Intern("assoc"u8), HashMembers.Assoc);
         DefineMethod(HashClass, Intern("rassoc"u8), HashMembers.RAssoc);
         DefineMethod(HashClass, Intern("rehash"u8), HashMembers.Rehash);
+        DefineMethod(HashClass, Intern("compare_by_identity"u8), HashMembers.CompareByIdentity);
+        DefineMethod(HashClass, Intern("compare_by_identity?"u8), HashMembers.QCompareByIdentity);
         DefineMethod(HashClass, Intern("__delete"u8), HashMembers.InternalDelete);
         DefineMethod(HashClass, Intern("__merge"u8), HashMembers.InternalMerge);
         DefineMethod(HashClass, Intern("__except"u8), HashMembers.InternalExcept);

@@ -475,6 +475,35 @@ static class HashMembers
         return self;
     }
 
+    /// <summary>
+    /// Switches the hash to identity key semantics: keys are compared by object identity
+    /// instead of <c>hash</c>/<c>eql?</c>, so mutating a key object does not invalidate it.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// h = {}.compare_by_identity
+    /// a = [0]
+    /// h[a] = 42
+    /// a[0] = 1
+    /// h[a]    # => 42
+    /// </code>
+    /// </example>
+    [RubyDef("() -> self")]
+    public static MRubyValue CompareByIdentity(MRubyState state, MRubyValue self)
+    {
+        var h = self.As<RHash>();
+        state.EnsureNotFrozen(h);
+        h.CompareByIdentity(new MRubyValueHashKeyEqualityComparer(state, byIdentity: true));
+        return self;
+    }
+
+    /// <summary>Returns whether the hash compares keys by identity.</summary>
+    [RubyDef("() -> bool")]
+    public static MRubyValue QCompareByIdentity(MRubyState state, MRubyValue self)
+    {
+        return self.As<RHash>().ComparedByIdentity;
+    }
+
     /// <summary>Internal helper used by <c>Hash#delete</c> to remove and return the value for a key.</summary>
     [RubyDef("(K) -> V?")]
     public static MRubyValue InternalDelete(MRubyState state, MRubyValue self)
