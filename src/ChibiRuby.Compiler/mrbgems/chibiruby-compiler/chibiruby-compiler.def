@@ -6,6 +6,7 @@ EXPORTS
     chibiruby_free
     mrc_ccontext_new
     mrc_ccontext_free
+    mrc_ccontext_filename
     mrc_load_string_cxt
     mrc_dump_irep
     mrc_irep_free
