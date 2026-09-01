@@ -12,6 +12,7 @@ task :build, ['target'] do |t, args|
   build_config_path = File.expand_path("../build_config.#{args.target}.rb", __FILE__)
   
   Dir.chdir(MRUBY_ROOT) do
-    sh "MRUBY_CONFIG=#{build_config_path} rake"
+    ENV['MRUBY_CONFIG'] = build_config_path
+    sh "rake"
   end
 end

@@ -34,6 +34,7 @@ MRuby.each_target do
     
     if is_vc
       flags << '/DLL'
+      flags << "/IMPLIB:#{build_dir}/lib/libmruby_import.lib"
       flags << "/DEF:#{deffile}"
       flags << libmruby_static
     else
