@@ -26,8 +26,9 @@ public class GeneratedResolver : IMRubyValueFormatterResolver
 
     static bool TryInvokeRegisterFormatter(Type type)
     {
-        if (type.GetCustomAttribute<MRubyObjectAttribute>() == null) return false;
-
+        // Do not gate on [MRubyObject] here: Unity 6000.5+'s linker strips instances of
+        // PreserveAttribute-derived attributes from player builds, so the attribute can be
+        // absent at runtime even for generated types. The generated method is the reliable signal.
         var m = type.GetMethod("__RegisterMRubyValueFormatter",
             BindingFlags.Public |
             BindingFlags.NonPublic |
