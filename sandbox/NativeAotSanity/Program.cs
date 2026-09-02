@@ -22,6 +22,8 @@ Check("[MRubyObject] round-trip (collection/enum/nullable members)", () =>
         Names = ["a", "b"],
         Table = new Dictionary<string, Inner> { ["x"] = new() { Id = 42 } },
         MaybeCount = 7,
+        Tags = ["p", "q"],
+        Tup = (5, "five"),
     };
     var value = MRubyValueSerializer.Serialize(original, state);
     var restored = MRubyValueSerializer.Deserialize<Command>(value, state)!;
@@ -31,6 +33,8 @@ Check("[MRubyObject] round-trip (collection/enum/nullable members)", () =>
     Require(restored.Names.SequenceEqual(["a", "b"]), "string[] member");
     Require(restored.Table["x"].Id == 42, "Dictionary<string, struct> member");
     Require(restored.MaybeCount == 7, "int? member");
+    Require(restored.Tags.SetEquals(["p", "q"]), "HashSet<string> member");
+    Require(restored.Tup == (5, "five"), "ValueTuple member");
 });
 
 Check("int[] at a call site", () =>
@@ -89,6 +93,8 @@ partial class Command
     public string[] Names { get; set; } = [];
     public Dictionary<string, Inner> Table { get; set; } = new();
     public int? MaybeCount { get; set; }
+    public HashSet<string> Tags { get; set; } = [];
+    public (int, string) Tup { get; set; }
 }
 
 [MRubyObject]

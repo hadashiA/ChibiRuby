@@ -22,12 +22,12 @@ sealed record AssemblyMeta(
             "System.Runtime.CompilerServices.ModuleInitializerAttribute") is not null;
 
         var formattableAttribute = compilation.GetTypeByMetadataName("ChibiRuby.Serializer.MRubyFormattableAttribute");
-        var mrubyObjectAttribute = compilation.GetTypeByMetadataName("ChibiRuby.Serializer.MRubyObjectAttribute");
+        var references = ReferenceSymbols.Create(compilation);
 
         var statements = new SortedSet<string>(StringComparer.Ordinal);
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 
-        if (formattableAttribute is not null && mrubyObjectAttribute is not null)
+        if (formattableAttribute is not null && references is not null)
         {
             foreach (var attribute in compilation.Assembly.GetAttributes())
             {
@@ -50,7 +50,7 @@ sealed record AssemblyMeta(
                         rootType.ToDisplayString()));
                     continue;
                 }
-                BuiltinFormatterWalker.Collect(rootType, mrubyObjectAttribute, statements);
+                BuiltinFormatterWalker.Collect(rootType, references, statements);
             }
         }
 

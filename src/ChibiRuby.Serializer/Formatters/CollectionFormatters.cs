@@ -304,7 +304,7 @@ public class DictionaryFormatter<TKey, TValue> : IMRubyValueFormatter<Dictionary
     }
 }
 
-class SortedDictionaryFormatter<TKey, TValue> : IMRubyValueFormatter<SortedDictionary<TKey, TValue>?> where TKey : notnull
+public class SortedDictionaryFormatter<TKey, TValue> : IMRubyValueFormatter<SortedDictionary<TKey, TValue>?> where TKey : notnull
 {
     public MRubyValue Serialize(SortedDictionary<TKey, TValue>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -341,7 +341,7 @@ class SortedDictionaryFormatter<TKey, TValue> : IMRubyValueFormatter<SortedDicti
     }
 }
 
-class ConcurrentDictionaryFormatter<TKey, TValue> : IMRubyValueFormatter<ConcurrentDictionary<TKey, TValue>?> where TKey : notnull
+public class ConcurrentDictionaryFormatter<TKey, TValue> : IMRubyValueFormatter<ConcurrentDictionary<TKey, TValue>?> where TKey : notnull
 {
     public MRubyValue Serialize(ConcurrentDictionary<TKey, TValue>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -452,7 +452,7 @@ public class InterfaceReadOnlyDictionaryFormatter<TKey, TValue> : IMRubyValueFor
     }
 }
 
-class InterfaceEnumerableFormatter<T> : IMRubyValueFormatter<IEnumerable<T>?>
+public class InterfaceEnumerableFormatter<T> : IMRubyValueFormatter<IEnumerable<T>?>
 {
     public MRubyValue Serialize(IEnumerable<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -486,7 +486,7 @@ class InterfaceEnumerableFormatter<T> : IMRubyValueFormatter<IEnumerable<T>?>
     }
 }
 
-class InterfaceCollectionFormatter<T> : IMRubyValueFormatter<ICollection<T>?>
+public class InterfaceCollectionFormatter<T> : IMRubyValueFormatter<ICollection<T>?>
 {
     public MRubyValue Serialize(ICollection<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -519,7 +519,7 @@ class InterfaceCollectionFormatter<T> : IMRubyValueFormatter<ICollection<T>?>
     }
 }
 
-class InterfaceReadOnlyCollectionFormatter<T> : IMRubyValueFormatter<IReadOnlyCollection<T>?>
+public class InterfaceReadOnlyCollectionFormatter<T> : IMRubyValueFormatter<IReadOnlyCollection<T>?>
 {
     public MRubyValue Serialize(IReadOnlyCollection<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -553,7 +553,7 @@ class InterfaceReadOnlyCollectionFormatter<T> : IMRubyValueFormatter<IReadOnlyCo
     }
 }
 
-class InterfaceListFormatter<T> : IMRubyValueFormatter<IList<T>?>
+public class InterfaceListFormatter<T> : IMRubyValueFormatter<IList<T>?>
 {
     public MRubyValue Serialize(IList<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -586,7 +586,7 @@ class InterfaceListFormatter<T> : IMRubyValueFormatter<IList<T>?>
     }
 }
 
-class InterfaceReadOnlyListFormatter<T> : IMRubyValueFormatter<IReadOnlyList<T>?>
+public class InterfaceReadOnlyListFormatter<T> : IMRubyValueFormatter<IReadOnlyList<T>?>
 {
     public MRubyValue Serialize(IReadOnlyList<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -619,7 +619,7 @@ class InterfaceReadOnlyListFormatter<T> : IMRubyValueFormatter<IReadOnlyList<T>?
     }
 }
 
-class HashSetFormatter<T> : IMRubyValueFormatter<HashSet<T>?>
+public class HashSetFormatter<T> : IMRubyValueFormatter<HashSet<T>?>
 {
     public MRubyValue Serialize(HashSet<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -652,7 +652,7 @@ class HashSetFormatter<T> : IMRubyValueFormatter<HashSet<T>?>
     }
 }
 
-class SortedSetFormatter<T> : IMRubyValueFormatter<SortedSet<T>?>
+public class SortedSetFormatter<T> : IMRubyValueFormatter<SortedSet<T>?>
 {
     public MRubyValue Serialize(SortedSet<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -685,7 +685,7 @@ class SortedSetFormatter<T> : IMRubyValueFormatter<SortedSet<T>?>
     }
 }
 
-class InterfaceSetFormatter<T> : IMRubyValueFormatter<ISet<T>?>
+public class InterfaceSetFormatter<T> : IMRubyValueFormatter<ISet<T>?>
 {
     public MRubyValue Serialize(ISet<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -718,7 +718,7 @@ class InterfaceSetFormatter<T> : IMRubyValueFormatter<ISet<T>?>
     }
 }
 
-class StackFormatter<T> : IMRubyValueFormatter<Stack<T>?>
+public class StackFormatter<T> : IMRubyValueFormatter<Stack<T>?>
 {
     public MRubyValue Serialize(Stack<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -761,7 +761,7 @@ class StackFormatter<T> : IMRubyValueFormatter<Stack<T>?>
     }
 }
 
-class QueueFormatter<T> : IMRubyValueFormatter<Queue<T>?>
+public class QueueFormatter<T> : IMRubyValueFormatter<Queue<T>?>
 {
     public MRubyValue Serialize(Queue<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -795,7 +795,7 @@ class QueueFormatter<T> : IMRubyValueFormatter<Queue<T>?>
     }
 }
 
-class LinkedListFormatter<T> : IMRubyValueFormatter<LinkedList<T>?>
+public class LinkedListFormatter<T> : IMRubyValueFormatter<LinkedList<T>?>
 {
     public MRubyValue Serialize(LinkedList<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -829,7 +829,7 @@ class LinkedListFormatter<T> : IMRubyValueFormatter<LinkedList<T>?>
     }
 }
 
-class CollectionFormatter<T> : IMRubyValueFormatter<Collection<T>?>
+public class CollectionFormatter<T> : IMRubyValueFormatter<Collection<T>?>
 {
     public MRubyValue Serialize(Collection<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -863,7 +863,7 @@ class CollectionFormatter<T> : IMRubyValueFormatter<Collection<T>?>
     }
 }
 
-class ReadOnlyCollectionFormatter<T> : IMRubyValueFormatter<ReadOnlyCollection<T>?>
+public class ReadOnlyCollectionFormatter<T> : IMRubyValueFormatter<ReadOnlyCollection<T>?>
 {
     public MRubyValue Serialize(ReadOnlyCollection<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -897,7 +897,7 @@ class ReadOnlyCollectionFormatter<T> : IMRubyValueFormatter<ReadOnlyCollection<T
     }
 }
 
-class BlockingCollectionFormatter<T> : IMRubyValueFormatter<BlockingCollection<T>?>
+public class BlockingCollectionFormatter<T> : IMRubyValueFormatter<BlockingCollection<T>?>
 {
     public MRubyValue Serialize(BlockingCollection<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -931,7 +931,7 @@ class BlockingCollectionFormatter<T> : IMRubyValueFormatter<BlockingCollection<T
     }
 }
 
-class ConcurrentQueueFormatter<T> : IMRubyValueFormatter<ConcurrentQueue<T>?>
+public class ConcurrentQueueFormatter<T> : IMRubyValueFormatter<ConcurrentQueue<T>?>
 {
     public MRubyValue Serialize(ConcurrentQueue<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -965,7 +965,7 @@ class ConcurrentQueueFormatter<T> : IMRubyValueFormatter<ConcurrentQueue<T>?>
     }
 }
 
-class ConcurrentStackFormatter<T> : IMRubyValueFormatter<ConcurrentStack<T>?>
+public class ConcurrentStackFormatter<T> : IMRubyValueFormatter<ConcurrentStack<T>?>
 {
     public MRubyValue Serialize(ConcurrentStack<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -1009,7 +1009,7 @@ class ConcurrentStackFormatter<T> : IMRubyValueFormatter<ConcurrentStack<T>?>
     }
 }
 
-class ConcurrentBagFormatter<T> : IMRubyValueFormatter<ConcurrentBag<T>?>
+public class ConcurrentBagFormatter<T> : IMRubyValueFormatter<ConcurrentBag<T>?>
 {
     public MRubyValue Serialize(ConcurrentBag<T>? value, MRubyState state, MRubyValueSerializerOptions options)
     {

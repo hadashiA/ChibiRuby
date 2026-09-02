@@ -68,4 +68,8 @@ partial class AotMemberObject
     public List<int> Ids { get; set; } = [];
     public Dictionary<string, Struct1> DictField { get; set; } = new();
     public int[,] Grid { get; set; } = new int[0, 0];
+    public HashSet<string> Tags { get; set; } = [];
+    public Stack<long> History { get; set; } = new();
+    public KeyValuePair<string, int> Pair { get; set; }
+    public (int, string) Tup { get; set; }
 }

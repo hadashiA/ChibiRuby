@@ -252,7 +252,7 @@ sealed record MRubyObjectModel(
         var eagerRegistrations = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var member in typeMeta.MemberMetas)
         {
-            BuiltinFormatterWalker.Collect(member.MemberType, references.MRubyObjectAttribute, eagerRegistrations);
+            BuiltinFormatterWalker.Collect(member.MemberType, references, eagerRegistrations);
         }
         // The registration for the type itself is emitted unconditionally; a statement produced
         // for a self-typed member would just be a duplicate of it.

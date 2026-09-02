@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace ChibiRuby.Serializer.SourceGenerator;
@@ -16,57 +17,14 @@ static class BuiltinFormatterWalker
 {
     const string Ns = "global::ChibiRuby.Serializer.";
 
-    // Keep in sync with BuiltinResolver.KnownGenericTypes.
-    static readonly Dictionary<string, string> KnownGenericFormatters = new()
-    {
-        { "System.Nullable`1", "NullableFormatter" },
-        { "System.Collections.Generic.KeyValuePair`2", "KeyValuePairFormatter" },
-
-        { "System.Tuple`1", "TupleFormatter" },
-        { "System.Tuple`2", "TupleFormatter" },
-        { "System.Tuple`3", "TupleFormatter" },
-        { "System.Tuple`4", "TupleFormatter" },
-        { "System.Tuple`5", "TupleFormatter" },
-        { "System.ValueTuple`1", "ValueTupleFormatter" },
-        { "System.ValueTuple`2", "ValueTupleFormatter" },
-        { "System.ValueTuple`3", "ValueTupleFormatter" },
-        { "System.ValueTuple`4", "ValueTupleFormatter" },
-        { "System.ValueTuple`5", "ValueTupleFormatter" },
-
-        { "System.Collections.Generic.List`1", "ListFormatter" },
-        { "System.Collections.Generic.Stack`1", "StackFormatter" },
-        { "System.Collections.Generic.Queue`1", "QueueFormatter" },
-        { "System.Collections.Generic.LinkedList`1", "LinkedListFormatter" },
-        { "System.Collections.Generic.HashSet`1", "HashSetFormatter" },
-        { "System.Collections.Generic.SortedSet`1", "SortedSetFormatter" },
-
-        { "System.Collections.ObjectModel.Collection`1", "CollectionFormatter" },
-        { "System.Collections.ObjectModel.ReadOnlyCollection`1", "ReadOnlyCollectionFormatter" },
-        { "System.Collections.Concurrent.BlockingCollection`1", "BlockingCollectionFormatter" },
-        { "System.Collections.Concurrent.ConcurrentQueue`1", "ConcurrentQueueFormatter" },
-        { "System.Collections.Concurrent.ConcurrentStack`1", "ConcurrentStackFormatter" },
-        { "System.Collections.Concurrent.ConcurrentBag`1", "ConcurrentBagFormatter" },
-
-        { "System.Collections.Generic.Dictionary`2", "DictionaryFormatter" },
-        { "System.Collections.Generic.SortedDictionary`2", "SortedDictionaryFormatter" },
-        { "System.Collections.Concurrent.ConcurrentDictionary`2", "ConcurrentDictionaryFormatter" },
-
-        { "System.Collections.Generic.IEnumerable`1", "InterfaceEnumerableFormatter" },
-        { "System.Collections.Generic.ICollection`1", "InterfaceCollectionFormatter" },
-        { "System.Collections.Generic.IReadOnlyCollection`1", "InterfaceReadOnlyCollectionFormatter" },
-        { "System.Collections.Generic.IList`1", "InterfaceListFormatter" },
-        { "System.Collections.Generic.IReadOnlyList`1", "InterfaceReadOnlyListFormatter" },
-        { "System.Collections.Generic.IDictionary`2", "InterfaceDictionaryFormatter" },
-        { "System.Collections.Generic.IReadOnlyDictionary`2", "InterfaceReadOnlyDictionaryFormatter" },
-        { "System.Collections.Generic.ISet`1", "InterfaceSetFormatter" },
-    };
+    // targetOriginalDefinition (e.g. List`1) -> formatter definition (e.g. ListFormatter`1),
+    // discovered from the referenced ChibiRuby.Serializer assembly, cached per assembly symbol.
+    static readonly ConditionalWeakTable<IAssemblySymbol, Dictionary<INamedTypeSymbol, INamedTypeSymbol>> MapCache = new();
 
     /// <summary>
     /// Collects registration statements for <paramref name="type"/> into <paramref name="statements"/>.
-    /// Returns true when the walk produced at least one statement or the type is covered by its own
-    /// generated registration.
     /// </summary>
-    public static bool Collect(ITypeSymbol type, INamedTypeSymbol mrubyObjectAttribute, ISet<string> statements)
+    public static void Collect(ITypeSymbol type, ReferenceSymbols references, ISet<string> statements)
     {
         switch (type)
         {
@@ -82,22 +40,22 @@ static class BuiltinFormatterWalker
                 };
                 if (formatter is null)
                 {
-                    return false;
+                    return;
                 }
                 statements.Add(Register($"{Ns}{formatter}<{Display(array.ElementType)}>"));
-                Collect(array.ElementType, mrubyObjectAttribute, statements);
-                return true;
+                Collect(array.ElementType, references, statements);
+                return;
             }
             case INamedTypeSymbol named:
             {
                 if (named.TypeKind == TypeKind.Enum)
                 {
                     statements.Add(Register($"{Ns}EnumAsStringFormatter<{Display(named)}>"));
-                    return true;
+                    return;
                 }
 
                 if (named.GetAttributes().Any(a =>
-                        SymbolEqualityComparer.Default.Equals(a.AttributeClass, mrubyObjectAttribute)))
+                        SymbolEqualityComparer.Default.Equals(a.AttributeClass, references.MRubyObjectAttribute)))
                 {
                     // A [MRubyObject] type registers itself (and its member formatters) from its
                     // generated __RegisterMRubyValueFormatter. Calling it here roots the closed
@@ -105,33 +63,132 @@ static class BuiltinFormatterWalker
                     statements.Add($"{DisplayBare(named)}.__RegisterMRubyValueFormatter();");
                     foreach (var arg in named.TypeArguments)
                     {
-                        Collect(arg, mrubyObjectAttribute, statements);
+                        Collect(arg, references, statements);
                     }
-                    return true;
+                    return;
                 }
 
                 if (named is { IsGenericType: true, IsUnboundGenericType: false })
                 {
-                    var handled = false;
-                    var metadataName = $"{named.ConstructedFrom.ContainingNamespace.ToDisplayString()}.{named.ConstructedFrom.MetadataName}";
-                    if (KnownGenericFormatters.TryGetValue(metadataName, out var formatterName))
+                    if (GetFormatterMap(references).TryGetValue(named.OriginalDefinition, out var formatter))
                     {
                         var args = string.Join(", ", named.TypeArguments.Select(Display));
-                        statements.Add(Register($"{Ns}{formatterName}<{args}>"));
-                        handled = true;
+                        statements.Add(Register($"{FormatterTypeName(formatter)}<{args}>"));
                     }
                     foreach (var arg in named.TypeArguments)
                     {
-                        handled |= Collect(arg, mrubyObjectAttribute, statements);
+                        Collect(arg, references, statements);
                     }
-                    return handled;
                 }
-                return false;
+                return;
             }
             default:
-                return false; // type parameters etc. resolve at the closed instantiation
+                return; // type parameters etc. resolve at the closed instantiation
         }
     }
+
+    static Dictionary<INamedTypeSymbol, INamedTypeSymbol> GetFormatterMap(ReferenceSymbols references)
+    {
+        var formatterInterface = references.MRubyValueFormatterInterface;
+        return MapCache.GetValue(
+            formatterInterface.ContainingAssembly,
+            assembly => CreateFormatterMap(assembly, formatterInterface));
+    }
+
+    /// <summary>
+    /// Derives the generic-formatter map from the serializer assembly itself, by convention:
+    /// a public, non-abstract generic class <c>F&lt;T1..Tn&gt;</c> with a public parameterless
+    /// constructor that implements <c>IMRubyValueFormatter&lt;Target&gt;</c>, where
+    /// <c>Target</c> is a generic type constructed exactly from <c>T1..Tn</c> in order
+    /// (e.g. <c>ListFormatter&lt;T&gt; : IMRubyValueFormatter&lt;List&lt;T&gt;?&gt;</c>),
+    /// maps <c>Target</c>'s definition to <c>F</c>. This is the same shape BuiltinResolver
+    /// instantiates at runtime via MakeGenericType, so the two stay in sync by construction.
+    /// Formatters over a bare type parameter (EnumAsStringFormatter, RObjectFormatter) and
+    /// array formatters do not match and keep their dedicated handling above.
+    /// </summary>
+    static Dictionary<INamedTypeSymbol, INamedTypeSymbol> CreateFormatterMap(
+        IAssemblySymbol serializerAssembly,
+        INamedTypeSymbol formatterInterface)
+    {
+        var map = new Dictionary<INamedTypeSymbol, INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (var formatter in EnumerateTypes(serializerAssembly.GlobalNamespace))
+        {
+            if (formatter is not
+                {
+                    TypeKind: TypeKind.Class,
+                    IsAbstract: false,
+                    IsGenericType: true,
+                    // generated code in user assemblies must be able to `new` it
+                    DeclaredAccessibility: Accessibility.Public,
+                })
+            {
+                continue;
+            }
+            if (!formatter.InstanceConstructors.Any(x =>
+                    x.Parameters.Length == 0 && x.DeclaredAccessibility == Accessibility.Public))
+            {
+                continue;
+            }
+
+            foreach (var implemented in formatter.AllInterfaces)
+            {
+                if (!SymbolEqualityComparer.Default.Equals(implemented.OriginalDefinition, formatterInterface))
+                {
+                    continue;
+                }
+                if (implemented.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true } target ||
+                    target.TypeArguments.Length != formatter.TypeParameters.Length)
+                {
+                    continue;
+                }
+
+                var argumentsMatch = true;
+                for (var i = 0; i < target.TypeArguments.Length; i++)
+                {
+                    if (!SymbolEqualityComparer.Default.Equals(target.TypeArguments[i], formatter.TypeParameters[i]))
+                    {
+                        argumentsMatch = false;
+                        break;
+                    }
+                }
+                if (!argumentsMatch)
+                {
+                    continue;
+                }
+
+                var key = target.OriginalDefinition;
+                // Deterministic pick if two formatters ever target the same type.
+                if (!map.TryGetValue(key, out var existing) ||
+                    string.CompareOrdinal(FormatterTypeName(formatter), FormatterTypeName(existing)) < 0)
+                {
+                    map[key] = formatter;
+                }
+            }
+        }
+        return map;
+    }
+
+    static IEnumerable<INamedTypeSymbol> EnumerateTypes(INamespaceSymbol ns)
+    {
+        foreach (var member in ns.GetMembers())
+        {
+            switch (member)
+            {
+                case INamespaceSymbol child:
+                    foreach (var type in EnumerateTypes(child))
+                    {
+                        yield return type;
+                    }
+                    break;
+                case INamedTypeSymbol type:
+                    yield return type; // formatters are top-level; no need to walk nested types
+                    break;
+            }
+        }
+    }
+
+    static string FormatterTypeName(INamedTypeSymbol formatter) =>
+        $"global::{formatter.ContainingNamespace.ToDisplayString()}.{formatter.Name}";
 
     static string Register(string formatterType) =>
         $"{Ns}GeneratedResolver.Register(new {formatterType}());";

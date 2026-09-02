@@ -108,6 +108,10 @@ public class GeneratedFormatterTest
         Assert.That(GeneratedResolver.Instance.GetFormatter<Dictionary<string, Struct1>>(), Is.Not.Null);
         Assert.That(GeneratedResolver.Instance.GetFormatter<int[,]>(), Is.Not.Null);
         Assert.That(GeneratedResolver.Instance.GetFormatter<string[]>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<HashSet<string>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<Stack<long>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<KeyValuePair<string, int>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<(int, string)>(), Is.Not.Null);
     }
 
     [Test]

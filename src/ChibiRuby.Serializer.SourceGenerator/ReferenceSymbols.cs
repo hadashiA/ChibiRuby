@@ -16,6 +16,7 @@ public class ReferenceSymbols
             MRubyMemberAttribute = compilation.GetTypeByMetadataName("ChibiRuby.Serializer.MRubyMemberAttribute")!,
             MRubyIgnoreAttribute = compilation.GetTypeByMetadataName("ChibiRuby.Serializer.MRubyIgnoreAttribute")!,
             MRubyConstructorAttribute = compilation.GetTypeByMetadataName("ChibiRuby.Serializer.MRubyConstructorAttribute")!,
+            MRubyValueFormatterInterface = compilation.GetTypeByMetadataName("ChibiRuby.Serializer.IMRubyValueFormatter`1")!,
         };
     }
 
@@ -23,4 +24,5 @@ public class ReferenceSymbols
     public INamedTypeSymbol MRubyMemberAttribute { get; private set; } = default!;
     public INamedTypeSymbol MRubyIgnoreAttribute { get; private set; } = default!;
     public INamedTypeSymbol MRubyConstructorAttribute { get; private set; } = default!;
+    public INamedTypeSymbol MRubyValueFormatterInterface { get; private set; } = default!;
 }
