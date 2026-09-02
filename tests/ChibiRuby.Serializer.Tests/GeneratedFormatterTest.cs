@@ -95,4 +95,16 @@ public class GeneratedFormatterTest
         Assert.That(result.Y, Is.EqualTo(456));
         Assert.That(result.Hoge, Is.EqualTo("hello hello"));
     }
+
+    [Test]
+    public void RegisterFormatterWithoutAttributeInstance()
+    {
+        // The [MRubyObject] attribute instance may be stripped by Unity 6000.5+'s linker (#199).
+        // Registration must work based on the generated method alone.
+        var result = MRubyValueSerializer.Deserialize<AttributeStrippedObject>(new MRubyValue(42), state)!;
+        Assert.That(result.Value, Is.EqualTo(42));
+
+        var serialized = MRubyValueSerializer.Serialize(new AttributeStrippedObject { Value = 43 }, state);
+        Assert.That(serialized, Is.EqualTo(new MRubyValue(43)));
+    }
 }
