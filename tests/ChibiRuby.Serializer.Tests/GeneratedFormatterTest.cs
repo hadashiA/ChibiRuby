@@ -97,6 +97,28 @@ public class GeneratedFormatterTest
     }
 
     [Test]
+    public void EagerMemberFormatterRegistrations()
+    {
+        // These closed generic/enum instantiations are registered statically by the generated
+        // code (module initializer), so they must be resolvable from GeneratedResolver without
+        // any runtime MakeGenericType — the invariant NativeAOT/IL2CPP builds rely on.
+        Assert.That(GeneratedResolver.Instance.GetFormatter<SampleKind>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<int?>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<List<int>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<Dictionary<string, Struct1>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<int[,]>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<string[]>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void MRubyFormattableRootRegistration()
+    {
+        // Registered via [assembly: MRubyFormattable(typeof(List<double>))] in Classes.cs;
+        // List<double> appears in no [MRubyObject] member.
+        Assert.That(GeneratedResolver.Instance.GetFormatter<List<double>>(), Is.Not.Null);
+    }
+
+    [Test]
     public void RegisterFormatterWithoutAttributeInstance()
     {
         // The [MRubyObject] attribute instance may be stripped by Unity 6000.5+'s linker (#199).

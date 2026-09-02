@@ -22,3 +22,15 @@ jobs:
             9.0.x
       - run: dotnet build -c Debug
       - run: dotnet test -c Debug --no-build
+
+  test-nativeaot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            9.0.x
+      - run: dotnet publish sandbox/NativeAotSanity/NativeAotSanity.csproj -c Release -r linux-x64
+      - run: ./sandbox/NativeAotSanity/bin/Release/net9.0/linux-x64/publish/NativeAotSanity

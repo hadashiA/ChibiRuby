@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ChibiRuby.Serializer;
 
@@ -143,7 +144,41 @@ public class BuiltinResolver : IMRubyValueFormatterResolver
         return FormatterCache<T>.Formatter;
     }
 
+    // On NativeAOT (and IL2CPP without full generic sharing), constructing a generic formatter
+    // instantiation that was not compiled ahead of time throws. The source generator emits eager,
+    // statically-typed registrations into GeneratedResolver for every member type it can see, so
+    // when this dynamic path fails we return null and let resolution fall through to those.
     static object? TryCreateGenericFormatter(Type type)
+    {
+        try
+        {
+            return TryCreateGenericFormatterCore(type);
+        }
+        catch (NotSupportedException)
+        {
+            return null; // NativeAOT: the generic instantiation was not compiled ahead of time
+        }
+        catch (MissingMethodException)
+        {
+            return null; // NativeAOT: constructor metadata was trimmed
+        }
+        catch (MemberAccessException)
+        {
+            return null;
+        }
+    }
+
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Failures are caught by the caller and resolution falls back to source-generated registrations.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055",
+        Justification = "Only instantiates library formatter types over types already in use; failures fall back to source-generated registrations.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072",
+        Justification = "All mapped formatter types define a public parameterless constructor.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070",
+        Justification = "Only enum types reach the EnumAsStringFormatter instantiation; their default constructor is intrinsic.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2071",
+        Justification = "Only enum types reach the EnumAsStringFormatter instantiation; their default constructor is intrinsic.")]
+    static object? TryCreateGenericFormatterCore(Type type)
     {
         Type? formatterType = null;
 
@@ -188,6 +223,10 @@ public class BuiltinResolver : IMRubyValueFormatterResolver
         return null;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Failures are caught by the caller and resolution falls back to source-generated registrations.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055",
+        Justification = "Only instantiates library formatter types over types already in use; failures fall back to source-generated registrations.")]
     static Type? TryCreateGenericFormatterType(Type type, IDictionary<Type, Type> knownTypes)
     {
         if (type.IsGenericType)

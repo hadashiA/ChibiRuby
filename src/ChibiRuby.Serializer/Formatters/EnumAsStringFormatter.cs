@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ChibiRuby.Serializer;
 
-public class EnumAsStringFormatter<T> : IMRubyValueFormatter<T> where T : Enum
+public class EnumAsStringFormatter<T> : IMRubyValueFormatter<T> where T : struct, Enum
 {
     class EnumSymbolTable(
         Dictionary<Symbol, T> values,
@@ -17,8 +17,13 @@ public class EnumAsStringFormatter<T> : IMRubyValueFormatter<T> where T : Enum
             var values = new Dictionary<Symbol, T>();
             var symbols = new Dictionary<T, Symbol>();
 
+#if NETSTANDARD2_1
             var csharpNames = Enum.GetNames(typeof(T));
             var csharpValues = (T[])Enum.GetValues(typeof(T));
+#else
+            var csharpNames = Enum.GetNames<T>();
+            var csharpValues = Enum.GetValues<T>();
+#endif
             var maxNameLength = 0;
             foreach (var n in csharpNames)
             {

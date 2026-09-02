@@ -1,3 +1,8 @@
+using ChibiRuby.Serializer;
+
+// Call-site-only root declaration: exercises the [assembly: MRubyFormattable] AOT registration path.
+[assembly: MRubyFormattable(typeof(List<double>))]
+
 namespace ChibiRuby.Serializer.Tests;
 
 [MRubyObject]
@@ -45,4 +50,22 @@ class AttributeStrippedObject
         public AttributeStrippedObject? Deserialize(MRubyValue value, MRubyState mrb, MRubyValueSerializerOptions options)
             => new() { Value = checked((int)value.IntegerValue) };
     }
+}
+
+enum SampleKind
+{
+    None,
+    FooBar,
+}
+
+// Exercises the eager member-formatter registrations (enum / nullable / collections / multi-dim
+// array) that the generator emits for AOT builds.
+[MRubyObject]
+partial class AotMemberObject
+{
+    public SampleKind Kind { get; set; }
+    public int? MaybeCount { get; set; }
+    public List<int> Ids { get; set; } = [];
+    public Dictionary<string, Struct1> DictField { get; set; } = new();
+    public int[,] Grid { get; set; } = new int[0, 0];
 }

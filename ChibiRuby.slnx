@@ -1,6 +1,7 @@
 ﻿<Solution>
   <Folder Name="/sandbox/">
     <Project Path="sandbox\ChibiRuby.Benchmark\ChibiRuby.Benchmark.csproj" Type="Classic C#" />
+    <Project Path="sandbox\NativeAotSanity\NativeAotSanity.csproj" Type="Classic C#" />
     <Project Path="sandbox\SampleConsoleApp\SampleConsoleApp.csproj" Type="Classic C#" />
     <Project Path="sandbox\SampleDebuggerEmbedded\SampleDebuggerEmbedded.csproj" Type="Classic C#" />
   </Folder>
