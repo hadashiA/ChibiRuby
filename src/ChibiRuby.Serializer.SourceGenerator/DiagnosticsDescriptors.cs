@@ -73,6 +73,14 @@ static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor FormattableTypeMustBeClosed = new(
+        id: "MRBCS010",
+        title: "[assembly: MRubyFormattable] type must be a closed constructed type",
+        messageFormat: "The MRubyFormattable type '{0}' must be a closed (fully constructed) type; open generic types cannot be registered ahead of time",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor ConstructorHasNoMatchedParameter = new(
         id: "MRBCS009",
         title: "MRubyObject's constructor has no matched parameter",

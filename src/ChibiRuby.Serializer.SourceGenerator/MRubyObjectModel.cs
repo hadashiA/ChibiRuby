@@ -120,7 +120,13 @@ sealed record MRubyObjectModel(
     EquatableArray<string> ConstructorParameterNames,
     EquatableArray<MRubyMemberModel> Members,
     EquatableArray<DiagnosticInfo> Diagnostics,
-    bool HasError) : IEquatable<MRubyObjectModel>
+    bool HasError,
+    // Registration statements for member formatter instantiations (collections, enums, ...)
+    // emitted into __RegisterMRubyValueFormatter so AOT builds never hit MakeGenericType.
+    EquatableArray<string> EagerRegistrations,
+    // Whether the assembly-level generated module initializer can call this type's
+    // __RegisterMRubyValueFormatter directly (non-generic and accessible in the assembly).
+    bool EmitInInitializer) : IEquatable<MRubyObjectModel>
 {
     public static MRubyObjectModel Create(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
@@ -140,7 +146,9 @@ sealed record MRubyObjectModel(
             EquatableArray<string>.Empty,
             EquatableArray<MRubyMemberModel>.Empty,
             new EquatableArray<DiagnosticInfo>(diagnostics.ToImmutableArray()),
-            HasError: true);
+            HasError: true,
+            EagerRegistrations: EquatableArray<string>.Empty,
+            EmitInInitializer: false);
 
     static MRubyObjectModel CreateCore(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
@@ -241,6 +249,19 @@ sealed record MRubyObjectModel(
             (false, false) => "class",
         };
 
+        var eagerRegistrations = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var member in typeMeta.MemberMetas)
+        {
+            BuiltinFormatterWalker.Collect(member.MemberType, references, eagerRegistrations);
+        }
+        // The registration for the type itself is emitted unconditionally; a statement produced
+        // for a self-typed member would just be a duplicate of it.
+        eagerRegistrations.Remove($"{typeMeta.FullTypeName}.__RegisterMRubyValueFormatter();");
+
+        var compilation = context.SemanticModel.Compilation;
+        var emitInInitializer = typeMeta.Symbol is { IsGenericType: false } symbol &&
+                                compilation.IsSymbolAccessibleWithin(symbol, compilation.Assembly);
+
         var ns = typeMeta.Symbol.ContainingNamespace;
         var hintName = typeMeta.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             .Replace("global::", "")
@@ -258,7 +279,9 @@ sealed record MRubyObjectModel(
             ConstructorParameterNames: new EquatableArray<string>(constructedMembers.Select(x => x.Name).ToImmutableArray()),
             Members: new EquatableArray<MRubyMemberModel>(memberModels.ToImmutable()),
             Diagnostics: new EquatableArray<DiagnosticInfo>(diagnostics.ToImmutable()),
-            HasError: false);
+            HasError: false,
+            EagerRegistrations: new EquatableArray<string>(eagerRegistrations.ToImmutableArray()),
+            EmitInInitializer: emitInInitializer);
     }
 
     static bool TryGetConstructor(

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ChibiRuby.Serializer;
 
-class KeyValuePairFormatter<TKey, TValue> : IMRubyValueFormatter<KeyValuePair<TKey, TValue>>
+public class KeyValuePairFormatter<TKey, TValue> : IMRubyValueFormatter<KeyValuePair<TKey, TValue>>
 {
     public MRubyValue Serialize(KeyValuePair<TKey, TValue> value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -34,7 +34,7 @@ class KeyValuePairFormatter<TKey, TValue> : IMRubyValueFormatter<KeyValuePair<TK
     }
 }
 
-class TupleFormatter<T1> : IMRubyValueFormatter<Tuple<T1>?>
+public class TupleFormatter<T1> : IMRubyValueFormatter<Tuple<T1>?>
 {
     public MRubyValue Serialize(Tuple<T1>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -63,7 +63,7 @@ class TupleFormatter<T1> : IMRubyValueFormatter<Tuple<T1>?>
     }
 }
 
-class TupleFormatter<T1, T2> : IMRubyValueFormatter<Tuple<T1, T2>?>
+public class TupleFormatter<T1, T2> : IMRubyValueFormatter<Tuple<T1, T2>?>
 {
     public MRubyValue Serialize(Tuple<T1, T2>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -96,7 +96,7 @@ class TupleFormatter<T1, T2> : IMRubyValueFormatter<Tuple<T1, T2>?>
     }
 }
 
-class TupleFormatter<T1, T2, T3> : IMRubyValueFormatter<Tuple<T1, T2, T3>?>
+public class TupleFormatter<T1, T2, T3> : IMRubyValueFormatter<Tuple<T1, T2, T3>?>
 {
     public MRubyValue Serialize(Tuple<T1, T2, T3>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -134,7 +134,7 @@ class TupleFormatter<T1, T2, T3> : IMRubyValueFormatter<Tuple<T1, T2, T3>?>
     }
 }
 
-class TupleFormatter<T1, T2, T3, T4> : IMRubyValueFormatter<Tuple<T1, T2, T3, T4>?>
+public class TupleFormatter<T1, T2, T3, T4> : IMRubyValueFormatter<Tuple<T1, T2, T3, T4>?>
 {
     public MRubyValue Serialize(Tuple<T1, T2, T3, T4>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -176,7 +176,7 @@ class TupleFormatter<T1, T2, T3, T4> : IMRubyValueFormatter<Tuple<T1, T2, T3, T4
     }
 }
 
-class TupleFormatter<T1, T2, T3, T4, T5> : IMRubyValueFormatter<Tuple<T1, T2, T3, T4, T5>?>
+public class TupleFormatter<T1, T2, T3, T4, T5> : IMRubyValueFormatter<Tuple<T1, T2, T3, T4, T5>?>
 {
     public MRubyValue Serialize(Tuple<T1, T2, T3, T4, T5>? value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -222,7 +222,7 @@ class TupleFormatter<T1, T2, T3, T4, T5> : IMRubyValueFormatter<Tuple<T1, T2, T3
     }
 }
 
-class ValueTupleFormatter<T1> : IMRubyValueFormatter<ValueTuple<T1>>
+public class ValueTupleFormatter<T1> : IMRubyValueFormatter<ValueTuple<T1>>
 {
     public MRubyValue Serialize(ValueTuple<T1> value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -249,7 +249,7 @@ class ValueTupleFormatter<T1> : IMRubyValueFormatter<ValueTuple<T1>>
     }
 }
 
-class ValueTupleFormatter<T1, T2> : IMRubyValueFormatter<ValueTuple<T1, T2>>
+public class ValueTupleFormatter<T1, T2> : IMRubyValueFormatter<ValueTuple<T1, T2>>
 {
     public MRubyValue Serialize(ValueTuple<T1, T2> value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -280,7 +280,7 @@ class ValueTupleFormatter<T1, T2> : IMRubyValueFormatter<ValueTuple<T1, T2>>
     }
 }
 
-class ValueTupleFormatter<T1, T2, T3> : IMRubyValueFormatter<ValueTuple<T1, T2, T3>>
+public class ValueTupleFormatter<T1, T2, T3> : IMRubyValueFormatter<ValueTuple<T1, T2, T3>>
 {
     public MRubyValue Serialize(ValueTuple<T1, T2, T3> value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -315,7 +315,7 @@ class ValueTupleFormatter<T1, T2, T3> : IMRubyValueFormatter<ValueTuple<T1, T2, 
     }
 }
 
-class ValueTupleFormatter<T1, T2, T3, T4> : IMRubyValueFormatter<ValueTuple<T1, T2, T3, T4>>
+public class ValueTupleFormatter<T1, T2, T3, T4> : IMRubyValueFormatter<ValueTuple<T1, T2, T3, T4>>
 {
     public MRubyValue Serialize(ValueTuple<T1, T2, T3, T4> value, MRubyState state, MRubyValueSerializerOptions options)
     {
@@ -354,7 +354,7 @@ class ValueTupleFormatter<T1, T2, T3, T4> : IMRubyValueFormatter<ValueTuple<T1, 
     }
 }
 
-class ValueTupleFormatter<T1, T2, T3, T4, T5> : IMRubyValueFormatter<ValueTuple<T1, T2, T3, T4, T5>>
+public class ValueTupleFormatter<T1, T2, T3, T4, T5> : IMRubyValueFormatter<ValueTuple<T1, T2, T3, T4, T5>>
 {
     public MRubyValue Serialize(ValueTuple<T1, T2, T3, T4, T5> value, MRubyState state, MRubyValueSerializerOptions options)
     {

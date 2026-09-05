@@ -1883,6 +1883,35 @@ deserialized.Y //=> 222
 deserialized.Z //=> 333
 ```
 
+### NativeAOT / trimming / IL2CPP
+
+ChibiRuby.Serializer is AOT-safe by default. The source generator emits, per assembly, a
+[module initializer](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/general#moduleinitializer-attribute)
+that eagerly registers every generated formatter — including the closed generic instantiations for
+collection / enum / nullable member types (e.g. `Dictionary<string, MyStruct>`, `MyEnum`) — when the
+assembly is loaded. Because all registrations are rooted statically, they survive:
+
+- .NET trimming (`PublishTrimmed`) and NativeAOT (`PublishAot`)
+- Unity's managed code stripping and IL2CPP (including Unity 6000.5+, whose linker removes
+  `[MRubyObject]` attribute instances at build time)
+
+No configuration is required for types that appear as `[MRubyObject]` members. The one case that
+needs a declaration is a serializable type used *only* at a call site, since the generator cannot
+see `Deserialize<T>` type arguments:
+
+```cs
+// List<double> appears in no [MRubyObject] member, only at call sites:
+[assembly: MRubyFormattable(typeof(List<double>))]
+
+var xs = MRubyValueSerializer.Deserialize<List<double>>(value, mrb); // OK on NativeAOT/IL2CPP
+```
+
+`[assembly: MRubyFormattable]` accepts any closed constructed type, including closed generics of
+your own `[MRubyObject]` types (e.g. `typeof(MyContainer<int>)`).
+
+Custom formatters registered through `CompositeResolver` / `MRubyValueSerializerOptions` are plain
+statically-referenced code and need no extra care.
+
 ## License
 
 MIT

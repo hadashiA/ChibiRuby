@@ -95,4 +95,42 @@ public class GeneratedFormatterTest
         Assert.That(result.Y, Is.EqualTo(456));
         Assert.That(result.Hoge, Is.EqualTo("hello hello"));
     }
+
+    [Test]
+    public void EagerMemberFormatterRegistrations()
+    {
+        // These closed generic/enum instantiations are registered statically by the generated
+        // code (module initializer), so they must be resolvable from GeneratedResolver without
+        // any runtime MakeGenericType — the invariant NativeAOT/IL2CPP builds rely on.
+        Assert.That(GeneratedResolver.Instance.GetFormatter<SampleKind>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<int?>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<List<int>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<Dictionary<string, Struct1>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<int[,]>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<string[]>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<HashSet<string>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<Stack<long>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<KeyValuePair<string, int>>(), Is.Not.Null);
+        Assert.That(GeneratedResolver.Instance.GetFormatter<(int, string)>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void MRubyFormattableRootRegistration()
+    {
+        // Registered via [assembly: MRubyFormattable(typeof(List<double>))] in Classes.cs;
+        // List<double> appears in no [MRubyObject] member.
+        Assert.That(GeneratedResolver.Instance.GetFormatter<List<double>>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void RegisterFormatterWithoutAttributeInstance()
+    {
+        // The [MRubyObject] attribute instance may be stripped by Unity 6000.5+'s linker (#199).
+        // Registration must work based on the generated method alone.
+        var result = MRubyValueSerializer.Deserialize<AttributeStrippedObject>(new MRubyValue(42), state)!;
+        Assert.That(result.Value, Is.EqualTo(42));
+
+        var serialized = MRubyValueSerializer.Serialize(new AttributeStrippedObject { Value = 43 }, state);
+        Assert.That(serialized, Is.EqualTo(new MRubyValue(43)));
+    }
 }
