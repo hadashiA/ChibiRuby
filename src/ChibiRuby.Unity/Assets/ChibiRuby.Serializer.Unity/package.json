@@ -1,7 +1,7 @@
 {
   "name": "jp.hadashikick.chibiruby-serializer",
   "displayName": "ChibiRuby.Serializer",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "unity": "2021.3",
   "description": "ChibiRuby serializer extensions for unity",
   "keywords": ["mruby", "ruby"],
